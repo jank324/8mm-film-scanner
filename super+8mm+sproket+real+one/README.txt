@@ -1,1 +1,0 @@
-super 8mm sproket real one by Admiral_lj on Thingiverse: https://www.thingiverse.com/thing:4548640
