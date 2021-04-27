@@ -1,10 +1,8 @@
 import RPi.GPIO as GPIO
 from time import sleep
 
-DIRPIN, STEPPIN = 21, 20
+ENABLE_PIN = 16
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(DIRPIN, GPIO.OUT)
-GPIO.setup(STEPPIN, GPIO.OUT)
+GPIO.setup(ENABLE_PIN, GPIO.OUT)
 
-GPIO.output(DIRPIN, GPIO.HIGH)
-GPIO.output(STEPPIN, GPIO.LOW)
+GPIO.output(ENABLE_PIN, GPIO.HIGH)
