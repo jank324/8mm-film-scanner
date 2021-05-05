@@ -1,7 +1,18 @@
-import RPi.GPIO as GPIO
-from machine import StepperMotor, HallEffectSensor
+import signal
+import sys
 from time import sleep
 
+import RPi.GPIO as GPIO
+from machine import StepperMotor, HallEffectSensor
+
+
+close_requested = False
+
+def cleanup_and_close(sig, frame):
+    global close_requested
+    close_requested = True
+
+signal.signal(signal.SIGINT, cleanup_and_close)
 
 GPIO.setmode(GPIO.BCM)
 
@@ -12,13 +23,18 @@ motor.enable()
 
 # Run motor unless interupted
 i = 0
-leaving = False
+leaving = True
 while True:
     if sensor.rising_edge_detected and not leaving:
         print(f"Taking photo at {i}")
         sleep(1)
         i = 0
         leaving = True
+
+        if close_requested:
+            motor.disable()
+            GPIO.cleanup()
+            sys.exit(0)
     
     if leaving and i > 200:
         leaving = False
