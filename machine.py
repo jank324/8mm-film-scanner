@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 from time import sleep
 
 
-class Stepper:
+class StepperMotor:
 
     def __init__(self, enable_pin, direction_pin, step_pin):
         self.enable_pin = enable_pin
@@ -31,3 +31,15 @@ class Stepper:
         sleep(delay)
         GPIO.output(self.step_pin, GPIO.LOW)
         sleep(delay)
+
+class HallEffectSensor:
+
+    def __init__(self, input_pin):
+        self.input_pin = input_pin
+        self.rising_edge_detected = False
+        
+        GPIO.setup(self.input_pin, GPIO.IN)
+        GPIO.add_event_detect(self.input_pin, GPIO.RISING, callback=self.detect_rising_edge)
+
+    def detect_rising_edge(self, channel):
+        self.rising_edge_detected = True
