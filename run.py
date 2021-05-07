@@ -26,6 +26,7 @@ i = 0
 leaving = True
 while True:
     if sensor.rising_edge_detected and not leaving:
+        motor.decelerate()
         print(f"Taking photo at {i}")
         sleep(1)
         i = 0
@@ -35,6 +36,8 @@ while True:
             motor.disable()
             GPIO.cleanup()
             sys.exit(0)
+        else:
+            motor.accelerate()
     
     if leaving and i > 200:
         leaving = False

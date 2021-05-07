@@ -1,8 +1,13 @@
-import RPi.GPIO as GPIO
 from time import sleep
+
+import numpy as np
+import RPi.GPIO as GPIO
 
 
 class StepperMotor:
+
+    min_speed = 0.001
+    max_speed = 0.0007
 
     def __init__(self, enable_pin, direction_pin, step_pin):
         self.enable_pin = enable_pin
@@ -26,11 +31,20 @@ class StepperMotor:
         GPIO.output(self.enable_pin, GPIO.LOW)
         self.enabled = False
     
+    def accelerate(self, steps=10):
+        for delay in np.linspace(self.min_speed, self.max_speed, steps):
+            self.step(delay=delay)
+    
     def step(self, delay=0.0009):
         GPIO.output(self.step_pin, GPIO.HIGH)
-        sleep(delay)
+        sleep(self.max_speed)
         GPIO.output(self.step_pin, GPIO.LOW)
-        sleep(delay)
+        sleep(self.max_speed)
+        
+    def decelerate(self, steps=10):
+        for delay in np.linspace(self.max_speed, self.min_speed, steps):
+            self.step(delay=delay)
+
 
 class HallEffectSensor:
 
