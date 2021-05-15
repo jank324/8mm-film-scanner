@@ -7,7 +7,7 @@ import RPi.GPIO as GPIO
 class StepperMotor:
 
     min_speed = 0.001
-    max_speed = 0.0007
+    max_speed = 0.0009
 
     def __init__(self, enable_pin, direction_pin, step_pin):
         self.enable_pin = enable_pin

@@ -2,7 +2,9 @@ import signal
 import sys
 from time import sleep
 
+import picamera
 import RPi.GPIO as GPIO
+
 from machine import StepperMotor, HallEffectSensor
 
 
@@ -28,29 +30,31 @@ sensor = HallEffectSensor(input_pin=26)
 
 motor.enable()
 
-# Run motor unless interupted
-i = 0
-leaving = True
-while True:
-    if sensor.rising_edge_detected and not leaving:
-        motor.decelerate()
-        print(f"Taking photo at {i}")
-        sleep(1)
-        i = 0
-        leaving = True
+with picamera.PiCamera() as camera:
+    # Run motor unless interupted
+    i = 0
+    photo_index = 0
+    leaving = True
+    while True:
+        if sensor.rising_edge_detected and not leaving:
+            motor.decelerate()
+            print(f"Taking photo {photo_index} at {i}")
+            camera.capture(f"testrun/img{photo_index:05}.jpg")
+            photo_index += 1
+            i = 0
+            leaving = True
 
-        if close_requested:
-            motor.disable()
-            GPIO.output(enable_12v_pin, GPIO.LOW)
-            GPIO.cleanup()
-            sys.exit(0)
-        else:
-            motor.accelerate()
-    
-    if leaving and i > 200:
-        leaving = False
-        sensor.rising_edge_detected = False
+            if close_requested:
+                motor.disable()
+                GPIO.output(enable_12v_pin, GPIO.LOW)
+                GPIO.cleanup()
+                sys.exit(0)
+            else:
+                motor.accelerate()
+        
+        if leaving and i > 200:
+            leaving = False
+            sensor.rising_edge_detected = False
 
-    motor.step()
-    i += 1
-
+        motor.step()
+        i += 1
