@@ -113,7 +113,7 @@ class StepperMotor:
             self.step(delay=delay)
 
 
-class Machine:
+class FilmScanner:
 
     def __init__(self):
         GPIO.setmode(GPIO.BCM)
