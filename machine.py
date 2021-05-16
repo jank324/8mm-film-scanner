@@ -1,6 +1,7 @@
 from time import sleep
 
 import numpy as np
+from picamera import PiCamera
 import RPi.GPIO as GPIO
 
 
@@ -110,3 +111,61 @@ class StepperMotor:
     def decelerate(self, steps=10):
         for delay in np.linspace(self.max_speed, self.min_speed, steps):
             self.step(delay=delay)
+
+
+class Machine:
+
+    def __init__(self):
+        GPIO.setmode(GPIO.BCM)
+
+        self.backlight = Light()
+        self.motor = StepperMotor(16, 21, 20)
+        self.frame_sensor = HallEffectSensor(26)
+
+        self.circuit12v = Circuit(6, loads=[self.backlight,self.motor])
+
+        self.camera = PiCamera()
+
+        self.close_requested = False
+
+    def __del__(self):
+        self.motor.disable()
+        self.backlight.turn_off()
+        self.camera.close()
+        
+        GPIO.cleanup()
+
+    def run(self):
+        self.backlight.turn_on()
+        sleep(1)
+        self.motor.enable()
+
+        # with picamera.PiCamera() as camera:
+        if True:
+            # Run motor unless interupted
+            i = 0
+            photo_index = 249
+            leaving = True
+            while True:
+                if self.frame_sensor.rising_edge_detected and not leaving:
+                    self.motor.decelerate()
+                    print(f"Taking photo {photo_index} at {i}")
+                    # camera.capture(f"testrun/img{photo_index:05}.jpg")
+                    sleep(0.7)
+                    photo_index += 1
+                    i = 0
+                    leaving = True
+
+                    if self.close_requested:
+                        self.motor.disable()
+                        self.backlight.turn_off()
+                        break
+                    else:
+                        self.motor.accelerate()
+                
+                if leaving and i > 200:
+                    leaving = False
+                    self.frame_sensor.rising_edge_detected = False
+
+                self.motor.step()
+                i += 1
