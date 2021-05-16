@@ -30,8 +30,8 @@ sensor = HallEffectSensor(input_pin=26)
 
 motor.enable()
 
-with picamera.PiCamera() as camera:
-# if True:
+# with picamera.PiCamera() as camera:
+if True:
     # Run motor unless interupted
     i = 0
     photo_index = 249
@@ -40,8 +40,8 @@ with picamera.PiCamera() as camera:
         if sensor.rising_edge_detected and not leaving:
             motor.decelerate()
             print(f"Taking photo {photo_index} at {i}")
-            camera.capture(f"testrun/img{photo_index:05}.jpg")
-            # sleep(0.7)
+            # camera.capture(f"testrun/img{photo_index:05}.jpg")
+            sleep(0.7)
             photo_index += 1
             i = 0
             leaving = True
