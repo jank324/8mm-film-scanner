@@ -4,6 +4,36 @@ import numpy as np
 import RPi.GPIO as GPIO
 
 
+class Circuit:
+    
+    def __init__(self, switch_pin):
+        self.switch_pin = switch_pin
+        self.is_on = False
+
+        GPIO.setup(self.switch_pin, GPIO.OUT, initial=GPIO.LOW)
+    
+    def turn_on(self):
+        self.is_on = True
+        GPIO.output(self.switch_pin, GPIO.HIGH)
+    
+    def turn_off(self):
+        self.is_on = False
+        GPIO.output(self.switch_pin, GPIO.LOW)
+
+
+class HallEffectSensor:
+
+    def __init__(self, input_pin):
+        self.input_pin = input_pin
+        self.rising_edge_detected = False
+        
+        GPIO.setup(self.input_pin, GPIO.IN)
+        GPIO.add_event_detect(self.input_pin, GPIO.RISING, callback=self.detect_rising_edge)
+
+    def detect_rising_edge(self, channel):
+        self.rising_edge_detected = True
+
+
 class StepperMotor:
 
     min_speed = 0.001
@@ -44,16 +74,3 @@ class StepperMotor:
     def decelerate(self, steps=10):
         for delay in np.linspace(self.max_speed, self.min_speed, steps):
             self.step(delay=delay)
-
-
-class HallEffectSensor:
-
-    def __init__(self, input_pin):
-        self.input_pin = input_pin
-        self.rising_edge_detected = False
-        
-        GPIO.setup(self.input_pin, GPIO.IN)
-        GPIO.add_event_detect(self.input_pin, GPIO.RISING, callback=self.detect_rising_edge)
-
-    def detect_rising_edge(self, channel):
-        self.rising_edge_detected = True

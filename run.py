@@ -5,10 +5,8 @@ from time import sleep
 import picamera
 import RPi.GPIO as GPIO
 
-from machine import StepperMotor, HallEffectSensor
+from machine import Circuit, HallEffectSensor, StepperMotor
 
-
-enable_12v_pin = 6
 
 close_requested = False
 
@@ -20,10 +18,10 @@ signal.signal(signal.SIGINT, cleanup_and_close)
 
 GPIO.setmode(GPIO.BCM)
 
-GPIO.setup(enable_12v_pin, GPIO.OUT, initial=GPIO.LOW)
-GPIO.output(enable_12v_pin, GPIO.HIGH)
-
 sleep(1)
+
+circuit12v = Circuit(switch_pin=6)
+circuit12v.turn_on()
 
 motor = StepperMotor(enable_pin=16, direction_pin=21, step_pin=20)
 sensor = HallEffectSensor(input_pin=26)
@@ -48,7 +46,7 @@ if True:
 
             if close_requested:
                 motor.disable()
-                GPIO.output(enable_12v_pin, GPIO.LOW)
+                circuit12v.turn_off()
                 GPIO.cleanup()
                 sys.exit(0)
             else:
