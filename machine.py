@@ -6,11 +6,15 @@ import RPi.GPIO as GPIO
 
 class Circuit:
     
-    def __init__(self, switch_pin):
+    def __init__(self, switch_pin, loads):
         self.switch_pin = switch_pin
         self.is_on = False
+        self.loads = loads
 
         GPIO.setup(self.switch_pin, GPIO.OUT, initial=GPIO.LOW)
+
+        for load in loads:
+            load.circuit = self
     
     def turn_on(self):
         self.is_on = True
@@ -19,6 +23,10 @@ class Circuit:
     def turn_off(self):
         self.is_on = False
         GPIO.output(self.switch_pin, GPIO.LOW)
+    
+    def suggest_turn_off(self):
+        if all(not load.is_on for load in self.loads):
+            self.turn_off()
 
 
 class HallEffectSensor:
@@ -32,6 +40,24 @@ class HallEffectSensor:
 
     def detect_rising_edge(self, channel):
         self.rising_edge_detected = True
+
+
+class Light:
+    
+    def __init__(self):
+        self.is_on = False
+    
+    def turn_on(self):
+        if self.circuit is not None:
+            self.circuit.turn_on()
+        
+        self.is_on = True
+    
+    def turn_off(self):
+        self.is_on = False
+
+        if self.circuit is not None:
+            self.circuit.suggest_turn_off()
 
 
 class StepperMotor:
@@ -53,13 +79,23 @@ class StepperMotor:
         # Set motor direction counter-clockwise
         GPIO.output(self.direction_pin, GPIO.LOW)
     
+    @property
+    def is_on(self):
+        return self.enabled
+    
     def enable(self):
+        if self.circuit is not None:
+            self.circuit.turn_on()
+
         GPIO.output(self.enable_pin, GPIO.LOW)
         self.enabled = True
     
     def disable(self):
         GPIO.output(self.enable_pin, GPIO.LOW)
         self.enabled = False
+
+        if self.circuit is not None:
+            self.circuit.suggest_turn_off()
     
     def accelerate(self, steps=10):
         for delay in np.linspace(self.min_speed, self.max_speed, steps):
