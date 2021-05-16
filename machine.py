@@ -135,37 +135,37 @@ class Machine:
         
         GPIO.cleanup()
 
-    def run(self):
+    def run(self, capture=False):
         self.backlight.turn_on()
         sleep(1)
         self.motor.enable()
 
-        # with picamera.PiCamera() as camera:
-        if True:
-            # Run motor unless interupted
-            i = 0
-            photo_index = 249
-            leaving = True
-            while True:
-                if self.frame_sensor.rising_edge_detected and not leaving:
-                    self.motor.decelerate()
-                    print(f"Taking photo {photo_index} at {i}")
-                    # camera.capture(f"testrun/img{photo_index:05}.jpg")
+        # Run motor unless interupted
+        i = 0
+        photo_index = 249
+        leaving = True
+        while True:
+            if self.frame_sensor.rising_edge_detected and not leaving:
+                self.motor.decelerate()
+                print(f"Taking photo {photo_index} at {i}")
+                if capture:
+                    self.camera.capture(f"testrun/img{photo_index:05}.jpg")
+                else:
                     sleep(0.7)
-                    photo_index += 1
-                    i = 0
-                    leaving = True
+                photo_index += 1
+                i = 0
+                leaving = True
 
-                    if self.close_requested:
-                        self.motor.disable()
-                        self.backlight.turn_off()
-                        break
-                    else:
-                        self.motor.accelerate()
-                
-                if leaving and i > 200:
-                    leaving = False
-                    self.frame_sensor.rising_edge_detected = False
+                if self.close_requested:
+                    self.motor.disable()
+                    self.backlight.turn_off()
+                    break
+                else:
+                    self.motor.accelerate()
+            
+            if leaving and i > 200:
+                leaving = False
+                self.frame_sensor.rising_edge_detected = False
 
-                self.motor.step()
-                i += 1
+            self.motor.step()
+            i += 1
