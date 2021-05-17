@@ -2,15 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>8mm Film Scanner</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
 </head>
 <body>
     <h1>8mm Film Scanner</h1>
     by Jan Kaiser
     <div>
-        <img style="width: 100%; height:80%; background-attachment: fixed;" class="center" src="{{ url_for('videostream') }}">
+        <img style="width: 50%; height:40%; background-attachment: fixed;" class="center" src="{{ url_for('videostream') }}">
+        <button id="scan_button">Scan</button>
+        <button id="rewind_button">Rewind</button>
+        <button id="advance_button">Advance</button>
+        <button id="reverse_button">Reverse</button>
+        <button id="light_button">Light</button>
     </div>
 </body>
+<script type="text/javascript">
+    $("#light_button").click(function() {
+        alert("light button pressed")
+        $.post("/light")
+    })
+</script>
 </html>
