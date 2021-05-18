@@ -11,13 +11,17 @@ class HallEffectSensor:
 
     def __init__(self, input_pin):
         self.input_pin = input_pin
-        self.rising_edge_detected = False
         
         GPIO.setup(self.input_pin, GPIO.IN)
-        GPIO.add_event_detect(self.input_pin, GPIO.RISING, callback=self.detect_rising_edge)
+        GPIO.add_event_detect(self.input_pin, GPIO.RISING, callback=self.detect)
 
-    def detect_rising_edge(self, channel):
-        self.rising_edge_detected = True
+        self.reset()
+
+    def detect(self, channel):
+        self.has_detected = True
+    
+    def reset(self):
+        self.has_detected = False
 
 
 class Light:
@@ -120,9 +124,9 @@ class FilmScanner:
 
         for _ in range(200):
             self.motor.step()
-        self.frame_sensor.rising_edge_detected = False
+        self.frame_sensor.reset()
         
-        while not self.frame_sensor.rising_edge_detected:
+        while not self.frame_sensor.has_detected:
             self.motor.step()
         
         self.motor.decelerate()
@@ -137,7 +141,7 @@ class FilmScanner:
         photo_index = 249
         leaving = True
         while True:
-            if self.frame_sensor.rising_edge_detected and not leaving:
+            if self.frame_sensor.has_detected and not leaving:
                 self.motor.decelerate()
                 print(f"Taking photo {photo_index} at {i}")
                 if capture:
@@ -157,7 +161,7 @@ class FilmScanner:
             
             if leaving and i > 200:
                 leaving = False
-                self.frame_sensor.rising_edge_detected = False
+                self.frame_sensor.has_detected = False
 
             self.motor.step()
             i += 1
