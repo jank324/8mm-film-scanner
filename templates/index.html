@@ -19,8 +19,10 @@
 </body>
 <script type="text/javascript">
     $("#light_button").click(function() {
-        alert("light button pressed")
         $.post("/light")
+    })
+    $("#advance_button").click(function() {
+        $.post("/advance")
     })
 </script>
 </html>
