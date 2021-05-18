@@ -1,5 +1,7 @@
 from time import sleep
 
+import cv2
+from imutils.video.pivideostream import PiVideoStream
 import numpy as np
 from picamera import PiCamera
 import RPi.GPIO as GPIO
@@ -87,19 +89,46 @@ class FilmScanner:
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
         
-        self.camera = PiCamera()
+        # self.camera = PiCamera()
+        # self.video_stream = PiVideoStream(resolution=(1024,768))
+        # self.video_stream.start()
 
         self.close_requested = False
 
     def __del__(self):
         self.motor.disable()
         self.backlight.turn_off()
-        self.camera.close()
+        # self.camera.close()
         
         GPIO.cleanup()
+    
+    def current_frame(self):
+        frame = cv2.imread("mercedes_a-class_review31.jpg", cv2.IMREAD_COLOR)
+    #     frame = self.video_stream.read()
+        _, jpeg = cv2.imencode(".jpg", frame)
+        jpeg_bytes = jpeg.tobytes()
+        packaged = b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + jpeg_bytes + b"\r\n\r\n"
+        return packaged
+    #     while True:
+    #         yield packaged
+
+    def advance(self):
+        if not self.motor.enabled:
+            self.motor.enable()
+
+        self.motor.accelerate()
+
+        for _ in range(200):
+            self.motor.step()
+        self.frame_sensor.rising_edge_detected = False
+        
+        while not self.frame_sensor.rising_edge_detected:
+            self.motor.step()
+        
+        self.motor.decelerate()
 
     def run(self, capture=False):
-        self.backlight.turn_on()
+        # self.backlight.turn_on()
         sleep(1)
         self.motor.enable()
 

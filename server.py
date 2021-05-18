@@ -1,44 +1,39 @@
-import cv2
 from imutils.video.pivideostream import PiVideoStream
 from flask import Flask, render_template, Response
+
+from machine import FilmScanner
 
 
 app = Flask(__name__)
 
-video_stream = PiVideoStream(resolution=(1024,768))
-video_stream.start()
-
-import RPi.GPIO as GPIO
-from machine import Light
-GPIO.setmode(GPIO.BCM)
-light = Light(6)
+machine = FilmScanner()
 
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-
-def gen(stream):
-    while True:
-        frame = stream.read()
-        _, jpeg = cv2.imencode(".jpg", frame)
-        jpeg_bytes = jpeg.tobytes()
-        packaged = b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + jpeg_bytes + b"\r\n\r\n"
-        yield packaged
-
-
 @app.route("/videostream")
 def videostream():
-    return Response(gen(video_stream), mimetype="multipart/x-mixed-replace; boundry=frame")
-
+    return Response(machine.current_frame(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 @app.route("/light", methods=["POST"])
 def toggle_light():
-    if light.is_on:
-        light.turn_off()
-    else:
-        light.turn_on()
+    import RPi.GPIO as GPIO
+    GPIO.output(6, GPIO.LOW)
+    # print("foo_1")
+    # if machine.backlight.is_on:
+    #     print("foo_2a")
+    #     machine.backlight.turn_off()
+    # else:
+    #     print("foo_2b")
+    #     machine.backlight.turn_on()
+    # print("foo_3")
+    return ("", 204)
+
+@app.route("/advance", methods=["POST"])
+def advance():
+    machine.advance()
     return ("", 204)
 
 
