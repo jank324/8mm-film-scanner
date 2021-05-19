@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>8mm Film Scanner</title>
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 <body>
     <h1>8mm Film Scanner</h1>
@@ -17,14 +18,4 @@
         <button id="light_button">Light</button>
     </div>
 </body>
-<script type="text/javascript">
-    $("#light_button").click(function() {
-        $.post("/light")
-    })
-    $("#advance_button").click(function() {
-        $.post("/advance", function() {
-            $("#preview").attr("src", "{{ url_for('videostream') }}")
-        })
-    })
-</script>
 </html>
