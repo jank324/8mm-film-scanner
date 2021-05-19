@@ -2,6 +2,7 @@ from time import sleep
 
 import cv2
 from imutils.video.pivideostream import PiVideoStream
+from io import BytesIO
 import numpy as np
 from picamera import PiCamera
 import RPi.GPIO as GPIO
@@ -93,28 +94,26 @@ class FilmScanner:
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
         
-        # self.camera = PiCamera()
-        # self.video_stream = PiVideoStream(resolution=(1024,768))
-        # self.video_stream.start()
+        self.camera = PiCamera()
 
         self.close_requested = False
 
     def __del__(self):
         self.motor.disable()
         self.backlight.turn_off()
-        # self.camera.close()
+        self.camera.close()
         
         GPIO.cleanup()
     
     def current_frame(self):
-        frame = cv2.imread("mercedes_a-class_review31.jpg", cv2.IMREAD_COLOR)
-    #     frame = self.video_stream.read()
-        _, jpeg = cv2.imencode(".jpg", frame)
-        jpeg_bytes = jpeg.tobytes()
+        stream = BytesIO()
+        self.camera.capture(stream, "jpeg")
+        stream.seek(0)
+        jpeg_bytes = stream.read()
         packaged = b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + jpeg_bytes + b"\r\n\r\n"
         return packaged
-    #     while True:
-    #         yield packaged
+        # while True:
+        #     yield packaged
 
     def advance(self):
         if not self.motor.enabled:

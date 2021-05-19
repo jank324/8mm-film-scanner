@@ -9,7 +9,7 @@
     <h1>8mm Film Scanner</h1>
     by Jan Kaiser
     <div>
-        <img style="width: 50%; height:40%; background-attachment: fixed;" class="center" src="{{ url_for('videostream') }}">
+        <img id="preview" style="width: 50%; height:40%; background-attachment: fixed;" class="center" src="{{ url_for('videostream') }}">
         <button id="scan_button">Scan</button>
         <button id="rewind_button">Rewind</button>
         <button id="advance_button">Advance</button>
@@ -22,7 +22,9 @@
         $.post("/light")
     })
     $("#advance_button").click(function() {
-        $.post("/advance")
+        $.post("/advance", function() {
+            $("#preview").attr("src", "{{ url_for('videostream') }}")
+        })
     })
 </script>
 </html>
