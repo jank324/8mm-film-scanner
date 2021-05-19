@@ -8,14 +8,13 @@
 </head>
 <body>
     <h1>8mm Film Scanner</h1>
-    by Jan Kaiser
-    <div>
-        <img id="preview" style="width: 50%; height:40%; background-attachment: fixed;" class="center" src="{{ url_for('videostream') }}">
-        <button id="scan_button">Scan</button>
-        <button id="rewind_button">Rewind</button>
-        <button id="advance_button">Advance</button>
-        <button id="reverse_button">Reverse</button>
-        <button id="light_button">Light</button>
+    <div style="width: 100%;">
+        <img id="preview" style="width: 70%; height:52%; background-attachment: fixed;" class="center" src="{{ url_for('videostream') }}">
     </div>
+    <button id="scan_button">Scan</button>
+    <button id="rewind_button">Rewind</button>
+    <button id="advance_button">Advance</button>
+    <button id="reverse_button">Reverse</button>
+    <button id="light_button">Light</button>
 </body>
 </html>
