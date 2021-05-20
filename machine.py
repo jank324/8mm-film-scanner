@@ -93,8 +93,6 @@ class FilmScanner:
         self.backlight = Light(6)
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
-        
-        self.camera = PiCamera()
 
         self.close_requested = False
 
@@ -107,13 +105,13 @@ class FilmScanner:
     
     def current_frame(self):
         stream = BytesIO()
-        self.camera.capture(stream, "jpeg")
-        stream.seek(0)
-        jpeg_bytes = stream.read()
-        packaged = b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + jpeg_bytes + b"\r\n\r\n"
-        return packaged
-        # while True:
-        #     yield packaged
+        for _ in self.camera.capture_continuous(stream, "jpeg", use_video_port=True):
+            stream.truncate()
+            stream.seek(0)
+            packaged = b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + stream.read() + b"\r\n\r\n"
+            yield packaged
+            
+            stream.seek(0)
 
     def advance(self):
         if not self.motor.enabled:
