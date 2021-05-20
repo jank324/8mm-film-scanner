@@ -1,4 +1,3 @@
-import argparse
 from time import sleep
 
 import cv2
@@ -165,18 +164,3 @@ class FilmScanner:
 
             self.motor.step()
             i += 1
-
-
-if __name__ == "__main__":
-    machine = FilmScanner()
-
-    parser = argparse.ArgumentParser(description="Run a command on the 8mm film scanner.")
-    parser.add_argument("command", help="Name of the command to run")
-
-    args = parser.parse_args()
-    if args.command == "advance":
-        machine.advance()
-    else:
-        raise ValueError(f"{args.command} is not a valid command.")
-    
-    del(machine)
