@@ -17,20 +17,6 @@ def index():
 def videostream():
     return Response(machine.current_frame(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
-@app.route("/light", methods=["POST"])
-def toggle_light():
-    import RPi.GPIO as GPIO
-    GPIO.output(6, GPIO.LOW)
-    # print("foo_1")
-    # if machine.backlight.is_on:
-    #     print("foo_2a")
-    #     machine.backlight.turn_off()
-    # else:
-    #     print("foo_2b")
-    #     machine.backlight.turn_on()
-    # print("foo_3")
-    return ("", 204)
-
 @app.route("/advance", methods=["POST"])
 def advance():
     machine.advance()
