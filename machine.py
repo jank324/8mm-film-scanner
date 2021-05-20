@@ -1,3 +1,4 @@
+from threading import Event, Thread
 from time import sleep
 
 import cv2
@@ -85,14 +86,60 @@ class StepperMotor:
             self.step(delay=delay)
 
 
+class LiveView:
+
+    def __init__(self):
+        self.current_frame = None
+        self.close_requested = False
+
+        self.capture_thread = Thread(target=self.run)
+        self.pause_event = Event()
+
+        self.pause_event.set()
+        self.capture_thread.start()
+    
+    def __del__(self):
+        self.capture_thread.join()
+    
+    def close(self):
+        self.close_requested = True
+    
+    def pause(self):
+        self.pause_event.clear()
+
+    def resume(self):
+        self.pause_event.set()
+    
+    def run(self):
+        camera = PiCamera()
+        stream = BytesIO()
+
+        for _ in camera.capture_continuous(stream, "jpeg", use_video_port=True):
+            stream.truncate()
+            stream.seek(0)
+            self.current_frame = stream.read()
+
+            stream.seek(0)
+
+            if self.close_requested:
+                break
+            
+            self.pause_event.wait()
+        
+        camera.close()
+
+
 class FilmScanner:
 
     def __init__(self):
-        GPIO.setmode(GPIO.BCM)
+        self.mode = "liveview"  # TODO: Alternative would be "scan"
 
+        GPIO.setmode(GPIO.BCM)
         self.backlight = Light(6)
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
+
+        self.camera = LiveView()
 
         self.close_requested = False
 
@@ -104,14 +151,7 @@ class FilmScanner:
         GPIO.cleanup()
     
     def current_frame(self):
-        stream = BytesIO()
-        for _ in self.camera.capture_continuous(stream, "jpeg", use_video_port=True):
-            stream.truncate()
-            stream.seek(0)
-            packaged = b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + stream.read() + b"\r\n\r\n"
-            yield packaged
-            
-            stream.seek(0)
+        return self.camera.current_frame
 
     def advance(self):
         if not self.motor.enabled:
