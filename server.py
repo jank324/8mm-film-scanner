@@ -1,4 +1,5 @@
 from time import sleep
+from time import time
 
 from imutils.video.pivideostream import PiVideoStream
 from flask import Flask, render_template, Response
@@ -15,15 +16,15 @@ machine = FilmScanner()
 def index():
     return render_template("index.html")
 
-def gen_liveview():
-    while True:
-        frame = machine.current_frame()
-        yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n"
-
 @app.route("/liveview")
 def liveview():
-    sleep(2)
-    return Response(gen_liveview(), mimetype="multipart/x-mixed-replace; boundry=frame")
+
+    def generator():
+        while True:
+            frame = machine.camera.get_frame()
+            yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n"
+
+    return Response(generator(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 @app.route("/advance", methods=["POST"])
 def advance():
