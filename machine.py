@@ -94,6 +94,7 @@ class LiveView:
 
         self.capture_thread = Thread(target=self.run)
         self.pause_event = Event()
+        self.frame_event = Event()
 
         self.pause_event.set()
         self.capture_thread.start()
@@ -117,7 +118,7 @@ class LiveView:
         for _ in camera.capture_continuous(stream, "jpeg", use_video_port=True):
             stream.truncate()
             stream.seek(0)
-            self.current_frame = stream.read()
+            self.set_frame(stream.read())
 
             stream.seek(0)
 
@@ -127,6 +128,15 @@ class LiveView:
             self.pause_event.wait()
         
         camera.close()
+    
+    def set_frame(self, frame):
+        self.current_frame = frame
+        self.frame_event.set()
+    
+    def get_frame(self):
+        self.frame_event.wait()
+        self.frame_event.clear()
+        return self.current_frame
 
 
 class FilmScanner:
@@ -149,9 +159,6 @@ class FilmScanner:
         self.camera.close()
         
         GPIO.cleanup()
-    
-    def current_frame(self):
-        return self.camera.current_frame
 
     def advance(self):
         if not self.motor.enabled:
