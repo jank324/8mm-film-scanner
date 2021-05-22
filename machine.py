@@ -146,7 +146,7 @@ class FilmScanner:
         self.counter = 0
 
         GPIO.setmode(GPIO.BCM)
-        # self.backlight = Light(6)
+        self.backlight = Light(6)
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
 
@@ -156,7 +156,7 @@ class FilmScanner:
 
     def __del__(self):
         self.motor.disable()
-        # self.backlight.turn_off()
+        self.backlight.turn_off()
         # self.camera.close()
         
         GPIO.cleanup()
