@@ -143,6 +143,7 @@ class FilmScanner:
 
     def __init__(self):
         self.mode = "liveview"  # TODO: Alternative would be "scan"
+        self.counter = 0
 
         GPIO.setmode(GPIO.BCM)
         self.backlight = Light(6)
@@ -174,6 +175,8 @@ class FilmScanner:
             self.motor.step()
         
         self.motor.decelerate()
+
+        self.counter += 1
 
     def run(self, capture=False):
         # self.backlight.turn_on()

@@ -16,6 +16,13 @@ machine = FilmScanner()
 def index():
     return render_template("index.html")
 
+@app.route("/advance", methods=["POST"])
+def advance():
+    machine.camera.pause()
+    machine.advance()
+    machine.camera.resume()
+    return ("", 204)
+
 @app.route("/liveview")
 def liveview():
 
@@ -26,12 +33,15 @@ def liveview():
 
     return Response(generator(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
-@app.route("/advance", methods=["POST"])
-def advance():
-    machine.camera.pause()
-    machine.advance()
-    machine.camera.resume()
-    return ("", 204)
+@app.route("/counter")
+def counter():
+
+    def generator():
+        while True:
+            value = machine.counter
+            yield b"--value\r\n" + b"ContentType: text\r\n\r\n" + value + b"\r\n\r\n"
+    
+    return Response(generator(), mimetype="multipart/x-mixed-replace; boundry=value")
 
 
 if __name__ == "__main__":
