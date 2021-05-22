@@ -18,7 +18,7 @@ if __name__ == "__main__":
         bgr = np.empty((768,1024,3), dtype=np.uint8)
 
         while True:
-            camera.capture(bgr, format="bgr")
+            camera.capture(bgr, format="bgr", use_video_port=True)
             cv2.imshow("Live View", bgr)
 
             if cv2.waitKey(1) == 27:
