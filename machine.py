@@ -162,8 +162,7 @@ class FilmScanner:
         GPIO.cleanup()
 
     def advance(self):
-        if not self.motor.enabled:
-            self.motor.enable()
+        self.motor.enable()
 
         self.motor.accelerate()
 
@@ -175,6 +174,8 @@ class FilmScanner:
             self.motor.step()
         
         self.motor.decelerate()
+
+        self.motor.disable()
 
         self.counter += 1
 
