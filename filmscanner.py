@@ -92,7 +92,8 @@ class FilmScanner:
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
 
-        self.camera = PiCamera()
+        self.camera = PiCamera(resolution=(1024,768))
+        self.camera.meter_mode = "backlit"
 
         self.close_requested = False
 
@@ -129,6 +130,9 @@ class FilmScanner:
         self.camera.iso = 100
 
         sleep(2)
+
+        self.camera.shutter_speed = self.camera.exposure_speed
+        self.camera.exposure_mode = "off"
 
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.jpg"
