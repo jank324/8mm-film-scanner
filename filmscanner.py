@@ -112,13 +112,17 @@ class FilmScanner:
             self.motor.step()
         self.frame_sensor.reset()
         
+        i = 0
         while not self.frame_sensor.has_detected:
             self.motor.step()
-        
+            i += 1
+            if i > 300:
+                raise ValueError(f"It seems the frame sensor was missed")
+
         self.motor.decelerate()
 
         self.motor.disable()
-    
+
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
@@ -133,3 +137,6 @@ class FilmScanner:
             self.camera.capture(filepath, bayer=True)
 
             self.advance()
+
+            if self.close_requested == True:
+                break

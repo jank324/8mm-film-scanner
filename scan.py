@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+import signal
 
 from filmscanner import FilmScanner
 
@@ -12,4 +13,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     scanner = FilmScanner()
+
+    def cleanup_and_close(sig, frame):
+        scanner.close_requested = True
+    signal.signal(signal.SIGINT, cleanup_and_close)
+
     scanner.scan(args.output, n_frames=args.nframes, start_index=args.start)
