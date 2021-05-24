@@ -2,8 +2,8 @@ import sys
 
 import cv2
 import numpy as np
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
+from PyQt5.QtGui import QImage, QPixmap, QPalette, QColor
 from PyQt5.QtWidgets import QWidget, QApplication, QHBoxLayout, QLabel, QPushButton
 
 from filmscanner import FilmScanner
@@ -62,10 +62,31 @@ class App(QWidget):
     def update_image(self, image):
         q_pixmap = cv2qt(image)
         self.image_label.setPixmap(q_pixmap)
-
+    
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    # Force the style to be the same on all OSs:
+    app.setStyle("Fusion")
+
+    # Now use a palette to switch to dark colors:
+    palette = QPalette()
+    palette.setColor(QPalette.Window, QColor(53, 53, 53))
+    palette.setColor(QPalette.WindowText, Qt.white)
+    palette.setColor(QPalette.Base, QColor(25, 25, 25))
+    palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+    palette.setColor(QPalette.ToolTipBase, Qt.white)
+    palette.setColor(QPalette.ToolTipText, Qt.white)
+    palette.setColor(QPalette.Text, Qt.white)
+    palette.setColor(QPalette.Button, QColor(53, 53, 53))
+    palette.setColor(QPalette.ButtonText, Qt.white)
+    palette.setColor(QPalette.BrightText, Qt.red)
+    palette.setColor(QPalette.Link, QColor(42, 130, 218))
+    palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
+    palette.setColor(QPalette.HighlightedText, Qt.black)
+    app.setPalette(palette)
+
     window = App()
     window.show()
     sys.exit(app.exec_())
