@@ -59,28 +59,26 @@ class Histogram(FigureCanvasQTAgg):
 
         super().__init__(self.fig)
 
-        self.ax.set_xlim([0, 257])
+        self.ax.set_xlim([0, 255])
         self.ax.set_ylim([0, None])
-        # self.ax.set_xticks([])
-        # self.ax.set_yticks([])
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
         
-        self.plot_blue, = self.ax.plot(np.zeros(256), color="b")
-        self.plot_green, = self.ax.plot(np.zeros(256), color="g")
-        self.plot_red, = self.ax.plot(np.zeros(256), color="r")
+        self.plot_blue, = self.ax.plot(range(256), np.zeros(256), color="b")
+        self.plot_green, = self.ax.plot(range(256), np.zeros(256), color="g")
+        self.plot_red, = self.ax.plot(range(256), np.zeros(256), color="r")
 
-        # self.fig.tight_layout()
+        self.fig.tight_layout()
 
         self.setFixedSize(300, 150)
     
     @pyqtSlot(np.ndarray)
     def update_data(self, histogram):
-        print(histogram.max())
-        self.plot_blue.set_xdata(histogram[0])
-        self.plot_green.set_xdata(histogram[1])
-        self.plot_red.set_xdata(histogram[2])
+        self.plot_blue.set_ydata(histogram[0])
+        self.plot_green.set_ydata(histogram[1])
+        self.plot_red.set_ydata(histogram[2])
 
-        # self.ax.set_ylim([0, histogram.max()])
-        self.ax.set_ylim([0, 0.003])
+        self.ax.set_ylim([0, histogram.max()])
 
         self.draw()
 
