@@ -4,9 +4,6 @@ import signal
 from filmscanner import FilmScanner
 
 
-
-
-
 if __name__ == "__main__":
     parser = ArgumentParser(description="Advance (or reverse depending on mechanical setting) the film.")
     parser.add_argument("--nframes", type=int, default=0, help="Number of frames to advance")
