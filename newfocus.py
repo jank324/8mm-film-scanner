@@ -1,6 +1,12 @@
+import sys
+
 import cv2
+import numpy as np
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QWidget, QApplication, QHBoxLayout, QLabel, QPushButton
+
+from filmscanner import FilmScanner
 
 
 def cv2qt(image):
@@ -11,31 +17,54 @@ def cv2qt(image):
     return QPixmap.fromImage(q_image)
 
 
-class MainWindow(QWidget):
+class VideoThread(QThread):
+    
+    change_pixmap_signal = pyqtSignal(np.ndarray)
+
+    def __init__(self, camera):
+        super().__init__()
+
+        self.camera = camera
+        self.camera.resolution = (1024, 768)
+
+    def run(self):
+        bgr = np.empty((768, 1024,3), dtype=np.uint8)
+
+        for _ in self.camera.capture_continuous(bgr, format="bgr", use_video_port=True):
+            self.change_pixmap_signal.emit(bgr)
+
+
+class App(QWidget):
 
     def __init__(self):
         super().__init__()
 
-        image = cv2.imread("mercedes_a-class_review31.jpg", cv2.IMREAD_COLOR)
-        q_pixmap = cv2qt(image)
+        self.scanner = FilmScanner()
 
         self.setWindowTitle("Live View")
 
+        self.image_label = QLabel()
+        self.image_label.resize(1024, 768)
+
+        self.button = QPushButton("Click me!")
+
         hbox = QHBoxLayout()
-
-        image_label = QLabel()
-        image_label.setPixmap(q_pixmap)
-        hbox.addWidget(image_label)
-
-        button = QPushButton("Click me!")
-        hbox.addWidget(button)
-
+        hbox.addWidget(self.image_label)
+        hbox.addWidget(self.button)
         self.setLayout(hbox)
 
-        self.show()
+        self.video_thread = VideoThread(self.scanner.camera)
+        self.video_thread.change_pixmap_signal.connect(self.update_image)
+        self.video_thread.start()
+    
+    @pyqtSlot(np.ndarray)
+    def update_image(self, image):
+        q_pixmap = cv2qt(image)
+        self.image_label.setPixmap(q_pixmap)
 
 
 if __name__ == "__main__":
-    app = QApplication([])
-    window = MainWindow()
-    app.exec_()
+    app = QApplication(sys.argv)
+    window = App()
+    window.show()
+    sys.exit(app.exec_())
