@@ -45,8 +45,19 @@ class VideoThread(QThread):
 
 class LiveView(QLabel):
 
+    def __init__(self):
+        super().__init__()
+
+        self.grid = False
+        self.focus_peaking = False
+
     @pyqtSlot(np.ndarray)
     def update_image(self, image):
+        if self.focus_peaking:
+            image = self.draw_focus_peaking(image)
+        if self.grid:
+            image = self.draw_grid(image)
+
         q_pixmap = self.cv2qt(image)
         self.setPixmap(q_pixmap)
     
@@ -56,6 +67,28 @@ class LiveView(QLabel):
         bytes_per_line = channels * width
         q_image = QImage(rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
         return QPixmap.fromImage(q_image)
+    
+    @pyqtSlot()
+    def toggle_grid(self):
+        self.grid = not self.grid
+    
+    def draw_grid(self, image):
+        color = (255, 255, 255)
+        for y in np.linspace(0, image.shape[0], 10)[1:]:
+            cv2.line(image, (0,int(y)), (image.shape[1],int(y)), color)
+        for x in np.linspace(0, image.shape[1], 10)[1:]:
+            cv2.line(image, (int(x),0), (int(x),image.shape[0]), color)
+        return image
+
+    @pyqtSlot()
+    def toggle_focus_peaking(self):
+        self.focus_peaking = not self.focus_peaking
+
+    def draw_focus_peaking(self, image):
+        grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(grey, 0, 255)
+        overlay = cv2.add(image, cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))
+        return overlay
 
 
 class Histogram(FigureCanvasQTAgg):
@@ -100,20 +133,25 @@ class App(QWidget):
         self.setWindowTitle("Live View")
 
         self.live_view = LiveView()
-        
+
         self.histogram = Histogram()
 
-        self.button = QPushButton("Advance")
-        self.button.clicked.connect(self.clicked_advance)
+        self.advance_button = QPushButton("Advance")
+        self.advance_button.clicked.connect(self.clicked_advance)
 
-        self.button2 = QPushButton("Other")
+        self.grid_button = QPushButton("Grid")
+        self.grid_button.clicked.connect(self.live_view.toggle_grid)
+        
+        self.focus_peaking_button = QPushButton("Focus Peaking")
+        self.focus_peaking_button.clicked.connect(self.live_view.toggle_focus_peaking)
 
         hbox = QHBoxLayout()
         hbox.addWidget(self.live_view)
         vbox = QVBoxLayout()
         vbox.addWidget(self.histogram)
-        vbox.addWidget(self.button)
-        vbox.addWidget(self.button2)
+        vbox.addWidget(self.advance_button)
+        vbox.addWidget(self.grid_button)
+        vbox.addWidget(self.focus_peaking_button)
         hbox.addLayout(vbox)
         self.setLayout(hbox)
 
