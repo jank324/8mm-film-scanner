@@ -15,14 +15,6 @@ from numpy.lib.histograms import histogram
 from filmscanner import FilmScanner
 
 
-def cv2qt(image):
-    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    height, width, channels = rgb.shape
-    bytes_per_line = channels * width
-    q_image = QImage(rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
-    return QPixmap.fromImage(q_image)
-
-
 class VideoThread(QThread):
     
     change_image_signal = pyqtSignal(np.ndarray)
@@ -49,6 +41,21 @@ class VideoThread(QThread):
             self.change_histogram_signal.emit(histogram)
             
             self.not_advancing_event.wait()
+        
+
+class LiveView(QLabel):
+
+    @pyqtSlot(np.ndarray)
+    def update_image(self, image):
+        q_pixmap = self.cv2qt(image)
+        self.setPixmap(q_pixmap)
+    
+    def cv2qt(self, image):
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        height, width, channels = rgb.shape
+        bytes_per_line = channels * width
+        q_image = QImage(rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        return QPixmap.fromImage(q_image)
 
 
 class Histogram(FigureCanvasQTAgg):
@@ -92,9 +99,8 @@ class App(QWidget):
 
         self.setWindowTitle("Live View")
 
-        self.image_label = QLabel()
-        self.image_label.resize(1024, 768)
-
+        self.live_view = LiveView()
+        
         self.histogram = Histogram()
 
         self.button = QPushButton("Advance")
@@ -103,7 +109,7 @@ class App(QWidget):
         self.button2 = QPushButton("Other")
 
         hbox = QHBoxLayout()
-        hbox.addWidget(self.image_label)
+        hbox.addWidget(self.live_view)
         vbox = QVBoxLayout()
         vbox.addWidget(self.histogram)
         vbox.addWidget(self.button)
@@ -112,15 +118,9 @@ class App(QWidget):
         self.setLayout(hbox)
 
         self.video_thread = VideoThread(self.scanner.camera)
-        self.video_thread.change_image_signal.connect(self.update_image)
+        self.video_thread.change_image_signal.connect(self.live_view.update_image)
         self.video_thread.change_histogram_signal.connect(self.histogram.update_data)
         self.video_thread.start()
-    
-    @pyqtSlot(np.ndarray)
-    def update_image(self, image):
-        q_pixmap = cv2qt(image)
-        # print(histogram)
-        self.image_label.setPixmap(q_pixmap)
     
     @pyqtSlot()
     def clicked_advance(self):
