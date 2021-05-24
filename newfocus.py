@@ -128,6 +128,10 @@ class App(QWidget):
         self.scanner.advance()
         self.video_thread.not_advancing_event.set()
     
+    @pyqtSlot()
+    def handle_application_exit(self):
+        del(self.scanner)
+    
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -154,4 +158,7 @@ if __name__ == "__main__":
 
     window = App()
     window.show()
+
+    app.aboutToQuit.connect(window.handle_application_exit)
+
     sys.exit(app.exec_())
