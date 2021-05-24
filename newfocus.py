@@ -46,7 +46,8 @@ class App(QWidget):
         self.image_label = QLabel()
         self.image_label.resize(1024, 768)
 
-        self.button = QPushButton("Click me!")
+        self.button = QPushButton("Advance")
+        self.button.clicked.connect(lambda: self.scanner.advance())
 
         hbox = QHBoxLayout()
         hbox.addWidget(self.image_label)
