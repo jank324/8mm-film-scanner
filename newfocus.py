@@ -1,4 +1,5 @@
 import sys
+from threading import Event
 
 import cv2
 import numpy as np
@@ -20,6 +21,7 @@ def cv2qt(image):
 class VideoThread(QThread):
     
     change_pixmap_signal = pyqtSignal(np.ndarray)
+    not_advancing_event = Event()
 
     def __init__(self, camera):
         super().__init__()
@@ -27,11 +29,14 @@ class VideoThread(QThread):
         self.camera = camera
         self.camera.resolution = (1024, 768)
 
+        self.not_advancing_event.set()
+
     def run(self):
         bgr = np.empty((768, 1024,3), dtype=np.uint8)
 
         for _ in self.camera.capture_continuous(bgr, format="bgr", use_video_port=True):
             self.change_pixmap_signal.emit(bgr)
+            self.not_advancing_event.wait()
 
 
 class App(QWidget):
@@ -47,7 +52,7 @@ class App(QWidget):
         self.image_label.resize(1024, 768)
 
         self.button = QPushButton("Advance")
-        self.button.clicked.connect(lambda: self.scanner.advance())
+        self.button.clicked.connect(self.clicked_advance)
 
         hbox = QHBoxLayout()
         hbox.addWidget(self.image_label)
@@ -62,6 +67,12 @@ class App(QWidget):
     def update_image(self, image):
         q_pixmap = cv2qt(image)
         self.image_label.setPixmap(q_pixmap)
+    
+    @pyqtSlot()
+    def clicked_advance(self):
+        self.video_thread.not_advancing_event.clear()
+        self.scanner.advance()
+        self.video_thread.not_advancing_event.set()
     
 
 if __name__ == "__main__":
