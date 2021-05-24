@@ -152,6 +152,7 @@ class App(QWidget):
         vbox.addWidget(self.advance_button)
         vbox.addWidget(self.grid_button)
         vbox.addWidget(self.focus_peaking_button)
+        vbox.addStretch()
         hbox.addLayout(vbox)
         self.setLayout(hbox)
 
