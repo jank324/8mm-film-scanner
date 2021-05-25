@@ -4,6 +4,8 @@ from threading import Event
 import cv2
 import matplotlib
 matplotlib.use("Qt5Agg")
+import matplotlib.pyplot as plt
+plt.style.use("dark_background")
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import numpy as np
@@ -106,9 +108,9 @@ class Histogram(FigureCanvasQTAgg):
         self.ax.set_xticks([])
         self.ax.set_yticks([])
         
-        self.plot_blue, = self.ax.plot(range(256), np.zeros(256), color="b")
-        self.plot_green, = self.ax.plot(range(256), np.zeros(256), color="g")
-        self.plot_red, = self.ax.plot(range(256), np.zeros(256), color="r")
+        self.plot_blue, = self.ax.plot(range(256), np.zeros(256), color="blue")
+        self.plot_green, = self.ax.plot(range(256), np.zeros(256), color="green")
+        self.plot_red, = self.ax.plot(range(256), np.zeros(256), color="red")
 
         self.fig.tight_layout()
 
@@ -120,7 +122,7 @@ class Histogram(FigureCanvasQTAgg):
         self.plot_green.set_ydata(histogram[1])
         self.plot_red.set_ydata(histogram[2])
 
-        self.ax.set_ylim([0, histogram[:,20:].max()])
+        self.ax.set_ylim([0, max(1, histogram[:,20:].max())])
 
         self.draw()
 
