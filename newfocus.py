@@ -158,8 +158,53 @@ class ShutterSpeedSelector(QWidget):
     def value_index(self, index):
         self._value_index = index
         speed = self.options[index]
-        self.speed_label.setText(f"1/{int(1/speed)}")
+        self.speed_label.setText(f"1/{int(1/speed)} s")
         self.camera.shutter_speed = int(speed * 1000000)
+    
+    @pyqtSlot()
+    def decrease(self):
+        self.value_index = max(0, self.value_index-1)
+    
+    @pyqtSlot()
+    def increase(self):
+        self.value_index = min(len(self.options)-1, self.value_index+1)
+
+
+class ISOSelector(QWidget):
+
+    def __init__(self, camera):
+        super().__init__()
+
+        self.camera = camera
+
+        self.down_button = QPushButton("Down")
+        self.down_button.clicked.connect(self.decrease)
+
+        self.speed_label = QLabel("---")
+
+        self.up_button = QPushButton("Up")
+        self.up_button.clicked.connect(self.increase)
+
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.down_button)
+        hbox.addWidget(self.speed_label)
+        hbox.addWidget(self.up_button)
+        self.setLayout(hbox)
+
+        self.options = [100, 200, 400, 800]
+
+        self.value_index = 0
+    
+    @property
+    def value_index(self):
+        return self._value_index
+    
+    @value_index.setter
+    def value_index(self, index):
+        self._value_index = index
+        iso = self.options[index]
+        self.speed_label.setText(f"ISO {iso}")
+        self.camera.iso = iso
     
     @pyqtSlot()
     def decrease(self):
@@ -185,6 +230,8 @@ class App(QWidget):
 
         self.shutter_speed_selector = ShutterSpeedSelector(self.scanner.camera)
 
+        self.iso_selector = ISOSelector(self.scanner.camera)
+
         self.advance_button = QPushButton("Advance")
         self.advance_button.clicked.connect(self.clicked_advance)
 
@@ -198,9 +245,10 @@ class App(QWidget):
         hbox.addWidget(self.live_view)
         vbox = QVBoxLayout()
         vbox.addWidget(self.histogram)
-        vbox.addWidget(QLabel("Shutter Speed"))
+        vbox.addWidget(QLabel("Camera Controls"))
         vbox.addWidget(self.shutter_speed_selector)
-        vbox.addWidget(QLabel("Machine Control"))
+        vbox.addWidget(self.iso_selector)
+        vbox.addWidget(QLabel("Machine Controls"))
         vbox.addWidget(self.advance_button)
         vbox.addWidget(QLabel("Overlays"))
         vbox.addWidget(self.grid_button)
