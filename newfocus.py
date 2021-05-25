@@ -53,6 +53,8 @@ class LiveView(QLabel):
 
     @pyqtSlot(np.ndarray)
     def update_image(self, image):
+        image = cv2.flip(image, 0)
+
         if self.focus_peaking:
             image = self.draw_focus_peaking(image)
         if self.grid:
@@ -118,9 +120,54 @@ class Histogram(FigureCanvasQTAgg):
         self.plot_green.set_ydata(histogram[1])
         self.plot_red.set_ydata(histogram[2])
 
-        self.ax.set_ylim([0, histogram.max()])
+        self.ax.set_ylim([0, histogram[:,20:].max()])
 
         self.draw()
+
+
+class ShutterSpeedSelector(QWidget):
+
+    def __init__(self, camera):
+        super().__init__()
+
+        self.camera = camera
+
+        self.down_button = QPushButton("Down")
+        self.down_button.clicked.connect(self.decrease)
+
+        self.speed_label = QLabel("---")
+
+        self.up_button = QPushButton("Up")
+        self.up_button.clicked.connect(self.increase)
+
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.down_button)
+        hbox.addWidget(self.speed_label)
+        hbox.addWidget(self.up_button)
+        self.setLayout(hbox)
+
+        self.options = [1/4000, 1/2000, 1/1000, 1/500, 1/250, 1/125, 1/60, 1/30, 1/15]
+
+        self.value_index = 0
+    
+    @property
+    def value_index(self):
+        return self._value_index
+    
+    @value_index.setter
+    def value_index(self, index):
+        self._value_index = index
+        speed = self.options[index]
+        self.speed_label.setText(f"1/{int(1/speed)}")
+        self.camera.shutter_speed = int(speed * 1000000)
+    
+    @pyqtSlot()
+    def decrease(self):
+        self.value_index = max(0, self.value_index-1)
+    
+    @pyqtSlot()
+    def increase(self):
+        self.value_index = min(len(self.options)-1, self.value_index+1)
 
 
 class App(QWidget):
@@ -136,6 +183,8 @@ class App(QWidget):
 
         self.histogram = Histogram()
 
+        self.shutter_speed_selector = ShutterSpeedSelector(self.scanner.camera)
+
         self.advance_button = QPushButton("Advance")
         self.advance_button.clicked.connect(self.clicked_advance)
 
@@ -149,6 +198,7 @@ class App(QWidget):
         hbox.addWidget(self.live_view)
         vbox = QVBoxLayout()
         vbox.addWidget(self.histogram)
+        vbox.addWidget(self.shutter_speed_selector)
         vbox.addWidget(self.advance_button)
         vbox.addWidget(self.grid_button)
         vbox.addWidget(self.focus_peaking_button)
