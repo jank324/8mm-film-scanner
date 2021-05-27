@@ -1,3 +1,4 @@
+from fractions import Fraction
 import os
 from pathlib import Path
 from time import sleep
@@ -93,7 +94,11 @@ class FilmScanner:
         self.frame_sensor = HallEffectSensor(26)
 
         self.camera = PiCamera(resolution=(1024,768))
-        self.camera.meter_mode = "backlit"
+        # self.camera.iso = 100
+        sleep(2)
+        # self.camera.exposure_mode = "off"
+        # self.camera.shutter_speed = int(1e6 * 1 / 4000)    # 1/4000s
+        self.camera.awb_mode = "tungsten"
 
         self.close_requested = False
 
@@ -127,17 +132,14 @@ class FilmScanner:
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-        self.camera.iso = 100
-
-        sleep(2)
-
-        self.camera.shutter_speed = self.camera.exposure_speed
-        self.camera.exposure_mode = "off"
+        sleep(5)
 
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.jpg"
             filepath = os.path.join(output_directory, filename)
 
+            print(f"Shutter Speed = {self.camera.shutter_speed}")
+            print(f"Exposure Speed = {self.camera.exposure_speed}")
             self.camera.capture(filepath, bayer=True)
 
             self.advance()
