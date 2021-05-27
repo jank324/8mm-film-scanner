@@ -1,3 +1,4 @@
+from io import BytesIO
 import sys
 from threading import Event
 
@@ -12,7 +13,7 @@ import numpy as np
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
 from PyQt5.QtGui import QImage, QPixmap, QPalette, QColor
 from PyQt5.QtWidgets import QWidget, QApplication, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
-from numpy.lib.histograms import histogram
+from pydng.core import RPICAM2DNG
 
 from filmscanner import FilmScanner
 
@@ -52,6 +53,7 @@ class LiveView(QLabel):
 
         self.grid = False
         self.focus_peaking = False
+        self.limit_mask_mode = 0
 
     @pyqtSlot(np.ndarray)
     def update_image(self, image):
@@ -59,6 +61,8 @@ class LiveView(QLabel):
 
         if self.focus_peaking:
             image = self.draw_focus_peaking(image)
+        if self.limit_mask_mode != 0:
+            image = self.draw_rgb_limit_mask(image)
         if self.grid:
             image = self.draw_grid(image)
 
@@ -83,6 +87,16 @@ class LiveView(QLabel):
         for x in np.linspace(0, image.shape[1], 10)[1:]:
             cv2.line(image, (int(x),0), (int(x),image.shape[0]), color)
         return image
+    
+    @pyqtSlot()
+    def toggle_limit_mask(self):
+        self.limit_mask_mode = (self.limit_mask_mode + 1) % 3
+    
+    def draw_rgb_limit_mask(self, image):
+        image[image[:,:,2]==255] = [0, 0, 255]
+        image[image[:,:,1]==255] = [0, 0, 255]
+        image[image[:,:,0]==255] = [0, 0, 255]
+        return image
 
     @pyqtSlot()
     def toggle_focus_peaking(self):
@@ -97,34 +111,58 @@ class LiveView(QLabel):
 
 class Histogram(FigureCanvasQTAgg):
 
-    def __init__(self):
+    def __init__(self, camera):
+        self.camera = camera
+
         self.fig = Figure()
-        self.ax = self.fig.add_subplot(111)
+        self.ax0 = self.fig.add_subplot(211)
+        self.ax1 = self.fig.add_subplot(212)
 
         super().__init__(self.fig)
 
-        self.ax.set_xlim([0, 255])
-        self.ax.set_ylim([0, None])
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
-        
-        self.plot_blue, = self.ax.plot(range(256), np.zeros(256), color="blue")
-        self.plot_green, = self.ax.plot(range(256), np.zeros(256), color="green")
-        self.plot_red, = self.ax.plot(range(256), np.zeros(256), color="red")
+        self.ax0.set_xlim([0, 255])
+        self.ax0.set_ylim([0, None])
+        self.ax0.set_xticks([])
+        self.ax0.set_yticks([])
+        self.plot_blue, = self.ax0.plot(range(256), np.zeros(256), color="blue")
+        self.plot_green, = self.ax0.plot(range(256), np.zeros(256), color="green")
+        self.plot_red, = self.ax0.plot(range(256), np.zeros(256), color="red")
+
+        self.ax1.set_xlim([0, 4095])
+        self.ax1.set_ylim([0, None])
+        self.ax1.set_xticks([])
+        self.ax1.set_yticks([])
+        self.plot_bayer, = self.ax1.plot(range(4096), np.zeros(4096), color="white")
 
         self.fig.tight_layout()
 
-        self.setFixedSize(300, 150)
+        self.setFixedSize(300, 300)
     
     @pyqtSlot(np.ndarray)
-    def update_data(self, histogram):
+    def update_rgb(self, histogram):
         self.plot_blue.set_ydata(histogram[0])
         self.plot_green.set_ydata(histogram[1])
         self.plot_red.set_ydata(histogram[2])
 
-        self.ax.set_ylim([0, max(1, histogram[:,20:].max())])
+        self.ax0.set_ylim([0, max(1, histogram[:,20:].max())])
 
         self.draw()
+    
+    @pyqtSlot()
+    def update_bayer(self):
+        stream = BytesIO()
+        self.camera.capture(stream, format="jpeg", bayer=True)
+        stream.seek(0)
+
+        def set_histogram(raw):
+            histogram = cv2.calcHist([raw], [0], None, [4096], [0,4096])[:,0]
+            self.plot_bayer.set_ydata(histogram)
+            self.ax1.set_ylim([0, max(1, histogram[320:].max())])
+            return raw
+
+        RPICAM2DNG().convert(stream, process=set_histogram)
+
+        # self.draw()
 
 
 class ShutterSpeedSelector(QWidget):
@@ -228,11 +266,14 @@ class App(QWidget):
 
         self.live_view = LiveView()
 
-        self.histogram = Histogram()
+        self.histogram = Histogram(self.scanner.camera)
 
         self.shutter_speed_selector = ShutterSpeedSelector(self.scanner.camera)
 
         self.iso_selector = ISOSelector(self.scanner.camera)
+
+        self.bayer_histogram_button = QPushButton("Bayer Histogram")
+        self.bayer_histogram_button.clicked.connect(self.histogram.update_bayer)
 
         self.advance_button = QPushButton("Advance")
         self.advance_button.clicked.connect(self.clicked_advance)
@@ -243,10 +284,14 @@ class App(QWidget):
         self.focus_peaking_button = QPushButton("Focus Peaking")
         self.focus_peaking_button.clicked.connect(self.live_view.toggle_focus_peaking)
 
+        self.rgb_limit_mask_button = QPushButton("Limit Mask")
+        self.rgb_limit_mask_button.clicked.connect(self.live_view.toggle_limit_mask)
+
         hbox = QHBoxLayout()
         hbox.addWidget(self.live_view)
         vbox = QVBoxLayout()
         vbox.addWidget(self.histogram)
+        vbox.addWidget(self.bayer_histogram_button)
         vbox.addWidget(QLabel("Camera Controls"))
         vbox.addWidget(self.shutter_speed_selector)
         vbox.addWidget(self.iso_selector)
@@ -255,13 +300,14 @@ class App(QWidget):
         vbox.addWidget(QLabel("Overlays"))
         vbox.addWidget(self.grid_button)
         vbox.addWidget(self.focus_peaking_button)
+        vbox.addWidget(self.rgb_limit_mask_button)
         vbox.addStretch()
         hbox.addLayout(vbox)
         self.setLayout(hbox)
 
         self.video_thread = VideoThread(self.scanner.camera)
         self.video_thread.change_image_signal.connect(self.live_view.update_image)
-        self.video_thread.change_histogram_signal.connect(self.histogram.update_data)
+        self.video_thread.change_histogram_signal.connect(self.histogram.update_rgb)
         self.video_thread.start()
     
     @pyqtSlot()
