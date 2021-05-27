@@ -4,7 +4,7 @@ from pathlib import Path
 from time import sleep
 
 import numpy as np
-from picamera import PiCamera
+from picamerax import PiCamera
 import RPi.GPIO as GPIO
 
 
@@ -94,11 +94,15 @@ class FilmScanner:
         self.frame_sensor = HallEffectSensor(26)
 
         self.camera = PiCamera(resolution=(1024,768))
-        # self.camera.iso = 100
+        self.camera.exposure_mode = "off"
+        self.camera.analog_gain = 1
+        self.camera.digital_gain = 1
         sleep(2)
-        # self.camera.exposure_mode = "off"
+        print("Analog gain", self.camera.analog_gain)
+        print("Digital gain", self.camera.digital_gain)
         # self.camera.shutter_speed = int(1e6 * 1 / 4000)    # 1/4000s
         self.camera.awb_mode = "tungsten"
+        sleep(2)
 
         self.close_requested = False
 
