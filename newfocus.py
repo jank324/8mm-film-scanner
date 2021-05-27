@@ -53,20 +53,26 @@ class LiveView(QLabel):
 
         self.grid = False
         self.focus_peaking = False
-        self.limit_mask_mode = 0
+        self.rgb_black = False
+        self.rgb_white = False
+        self.bayer_black = False
+        self.bayer_white = False
 
     @pyqtSlot(np.ndarray)
     def update_image(self, image):
         image = cv2.flip(image, 0)
 
+        preview = image.copy()
         if self.focus_peaking:
-            image = self.draw_focus_peaking(image)
-        if self.limit_mask_mode != 0:
-            image = self.draw_rgb_limit_mask(image)
+            preview = self.draw_focus_peaking(preview, image)
+        if self.rgb_black:
+            preview = self.draw_rgb_black(preview, image)
+        if self.rgb_white:
+            preview = self.draw_rgb_white(preview, image)
         if self.grid:
-            image = self.draw_grid(image)
+            preview = self.draw_grid(preview)
 
-        q_pixmap = self.cv2qt(image)
+        q_pixmap = self.cv2qt(preview)
         self.setPixmap(q_pixmap)
     
     def cv2qt(self, image):
@@ -89,23 +95,41 @@ class LiveView(QLabel):
         return image
     
     @pyqtSlot()
-    def toggle_limit_mask(self):
-        self.limit_mask_mode = (self.limit_mask_mode + 1) % 3
+    def toggle_rgb_black(self):
+        self.rgb_black = not self.rgb_black
     
-    def draw_rgb_limit_mask(self, image):
-        image[image[:,:,2]==255] = [0, 0, 255]
-        image[image[:,:,1]==255] = [0, 0, 255]
-        image[image[:,:,0]==255] = [0, 0, 255]
-        return image
+    @pyqtSlot()
+    def toggle_rgb_white(self):
+        self.rgb_white = not self.rgb_white
+    
+    @pyqtSlot()
+    def toggle_bayer_black(self):
+        self.bayer_black = not self.bayer_black
+    
+    @pyqtSlot()
+    def toggle_bayer_white(self):
+        self.bayer_white = not self.bayer_white
+    
+    def draw_rgb_black(self, preview, image):
+        preview[image[:,:,2]==0] = [255, 0, 0]
+        preview[image[:,:,1]==0] = [255, 0, 0]
+        preview[image[:,:,0]==0] = [255, 0, 0]
+        return preview
+    
+    def draw_rgb_white(self, preview, image):
+        preview[image[:,:,2]==255] = [0, 0, 255]
+        preview[image[:,:,1]==255] = [0, 0, 255]
+        preview[image[:,:,0]==255] = [0, 0, 255]
+        return preview
 
     @pyqtSlot()
     def toggle_focus_peaking(self):
         self.focus_peaking = not self.focus_peaking
 
-    def draw_focus_peaking(self, image):
+    def draw_focus_peaking(self, preview, image):
         grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(grey, 0, 255)
-        overlay = cv2.add(image, cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))
+        overlay = cv2.add(preview, cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))
         return overlay
 
 
@@ -284,8 +308,15 @@ class App(QWidget):
         self.focus_peaking_button = QPushButton("Focus Peaking")
         self.focus_peaking_button.clicked.connect(self.live_view.toggle_focus_peaking)
 
-        self.rgb_limit_mask_button = QPushButton("Limit Mask")
-        self.rgb_limit_mask_button.clicked.connect(self.live_view.toggle_limit_mask)
+        self.rgb_black_button = QPushButton("RGB Black")
+        self.rgb_black_button.clicked.connect(self.live_view.toggle_rgb_black)
+        self.rgb_white_button = QPushButton("RGB White")
+        self.rgb_white_button.clicked.connect(self.live_view.toggle_rgb_white)
+        self.bayer_black_button = QPushButton("Bayer Black")
+        # self.bayer_black_button.clicked.connect(self.live_view.toggle_limit_mask)
+        self.bayer_white_button = QPushButton("Bayer White")
+        # self.bayer_white_button.clicked.connect(self.live_view.toggle_limit_mask)
+
 
         hbox = QHBoxLayout()
         hbox.addWidget(self.live_view)
@@ -300,7 +331,12 @@ class App(QWidget):
         vbox.addWidget(QLabel("Overlays"))
         vbox.addWidget(self.grid_button)
         vbox.addWidget(self.focus_peaking_button)
-        vbox.addWidget(self.rgb_limit_mask_button)
+        hbox2 = QHBoxLayout()
+        hbox2.addWidget(self.rgb_black_button)
+        hbox2.addWidget(self.rgb_white_button)
+        hbox2.addWidget(self.bayer_black_button)
+        hbox2.addWidget(self.bayer_white_button)
+        vbox.addLayout(hbox2)
         vbox.addStretch()
         hbox.addLayout(vbox)
         self.setLayout(hbox)
