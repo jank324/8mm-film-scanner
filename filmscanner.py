@@ -98,8 +98,6 @@ class FilmScanner:
         self.camera.analog_gain = 1
         self.camera.digital_gain = 1
         sleep(2)
-        print("Analog gain", self.camera.analog_gain)
-        print("Digital gain", self.camera.digital_gain)
         # self.camera.shutter_speed = int(1e6 * 1 / 4000)    # 1/4000s
         self.camera.awb_mode = "tungsten"
         sleep(2)
