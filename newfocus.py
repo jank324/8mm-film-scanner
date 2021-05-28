@@ -125,9 +125,7 @@ class LiveView(QLabel):
 
 class Histogram(FigureCanvasQTAgg):
 
-    def __init__(self, camera):
-        self.camera = camera
-
+    def __init__(self):
         self.fig = Figure()
         self.ax0 = self.fig.add_subplot(111)
 
@@ -257,7 +255,7 @@ class App(QWidget):
 
         self.live_view = LiveView()
 
-        self.histogram = Histogram(self.scanner.camera)
+        self.histogram = Histogram()
 
         self.shutter_speed_selector = ShutterSpeedSelector(self.scanner.camera)
 
