@@ -55,10 +55,6 @@ class LiveView(QLabel):
         self.focus_peaking = False
         self.rgb_black = False
         self.rgb_white = False
-        self.bayer_black = False
-        self.bayer_white = False
-
-        self.bayer = None
 
     @pyqtSlot(np.ndarray)
     def update_image(self, image):
@@ -71,10 +67,6 @@ class LiveView(QLabel):
             preview = self.draw_rgb_black(preview, image)
         if self.rgb_white:
             preview = self.draw_rgb_white(preview, image)
-        if self.bayer_black:
-            preview = self.draw_bayer_black(preview)
-        if self.bayer_white:
-            preview = self.draw_bayer_white(preview)
         if self.grid:
             preview = self.draw_grid(preview)
 
@@ -108,14 +100,6 @@ class LiveView(QLabel):
     def toggle_rgb_white(self):
         self.rgb_white = not self.rgb_white
     
-    @pyqtSlot()
-    def toggle_bayer_black(self):
-        self.bayer_black = not self.bayer_black
-    
-    @pyqtSlot()
-    def toggle_bayer_white(self):
-        self.bayer_white = not self.bayer_white
-    
     def draw_rgb_black(self, preview, image):
         preview[image[:,:,2]<10] = [255, 0, 0]
         preview[image[:,:,1]<10] = [255, 0, 0]
@@ -127,18 +111,6 @@ class LiveView(QLabel):
         preview[image[:,:,1]>245] = [0, 0, 255]
         preview[image[:,:,0]>245] = [0, 0, 255]
         return preview
-    
-    def draw_bayer_black(self, preview):
-        preview[self.bayer<40] = [255, 0, 0]
-        preview[self.bayer<40] = [255, 0, 0]
-        preview[self.bayer<40] = [255, 0, 0]
-        return preview
-    
-    def draw_bayer_white(self, preview):
-        preview[self.bayer>4020] = [0, 0, 255]
-        preview[self.bayer>4020] = [0, 0, 255]
-        preview[self.bayer>4020] = [0, 0, 255]
-        return preview
 
     @pyqtSlot()
     def toggle_focus_peaking(self):
@@ -149,9 +121,6 @@ class LiveView(QLabel):
         edges = cv2.Canny(grey, 0, 255)
         overlay = cv2.add(preview, cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))
         return overlay
-    
-    def update_bayer(self, raw):
-        self.bayer = cv2.resize(raw, dsize=(1024,768), interpolation=cv2.INTER_NEAREST)
 
 
 class Histogram(FigureCanvasQTAgg):
@@ -160,8 +129,7 @@ class Histogram(FigureCanvasQTAgg):
         self.camera = camera
 
         self.fig = Figure()
-        self.ax0 = self.fig.add_subplot(211)
-        self.ax1 = self.fig.add_subplot(212)
+        self.ax0 = self.fig.add_subplot(111)
 
         super().__init__(self.fig)
 
@@ -173,15 +141,9 @@ class Histogram(FigureCanvasQTAgg):
         self.plot_green, = self.ax0.plot(range(256), np.zeros(256), color="green")
         self.plot_red, = self.ax0.plot(range(256), np.zeros(256), color="red")
 
-        self.ax1.set_xlim([0, 4095])
-        self.ax1.set_ylim([0, None])
-        self.ax1.set_xticks([])
-        self.ax1.set_yticks([])
-        self.plot_bayer, = self.ax1.plot(range(4096), np.zeros(4096), color="white")
-
         self.fig.tight_layout()
 
-        self.setFixedSize(300, 300)
+        self.setFixedSize(300, 150)
     
     @pyqtSlot(np.ndarray)
     def update_rgb(self, histogram):
@@ -192,13 +154,6 @@ class Histogram(FigureCanvasQTAgg):
         self.ax0.set_ylim([0, max(1, histogram[:,20:].max())])
 
         self.draw()
-    
-    def update_bayer(self, raw):
-        histogram = cv2.calcHist([raw], [0], None, [4096], [0,4096])[:,0]
-        self.plot_bayer.set_ydata(histogram)
-        self.ax1.set_ylim([0, max(1, histogram[320:].max())])
-
-        # self.draw()
 
 
 class ShutterSpeedSelector(QWidget):
@@ -308,9 +263,6 @@ class App(QWidget):
 
         self.iso_selector = ISOSelector(self.scanner.camera)
 
-        self.bayer_histogram_button = QPushButton("Bayer Histogram")
-        self.bayer_histogram_button.clicked.connect(self.get_bayer)
-
         self.advance_button = QPushButton("Advance")
         self.advance_button.clicked.connect(self.clicked_advance)
 
@@ -324,17 +276,12 @@ class App(QWidget):
         self.rgb_black_button.clicked.connect(self.live_view.toggle_rgb_black)
         self.rgb_white_button = QPushButton("RGB White")
         self.rgb_white_button.clicked.connect(self.live_view.toggle_rgb_white)
-        self.bayer_black_button = QPushButton("Bayer Black")
-        self.bayer_black_button.clicked.connect(self.live_view.toggle_bayer_black)
-        self.bayer_white_button = QPushButton("Bayer White")
-        self.bayer_white_button.clicked.connect(self.live_view.toggle_bayer_white)
 
 
         hbox = QHBoxLayout()
         hbox.addWidget(self.live_view)
         vbox = QVBoxLayout()
         vbox.addWidget(self.histogram)
-        vbox.addWidget(self.bayer_histogram_button)
         vbox.addWidget(QLabel("Camera Controls"))
         vbox.addWidget(self.shutter_speed_selector)
         vbox.addWidget(self.iso_selector)
@@ -346,8 +293,6 @@ class App(QWidget):
         hbox2 = QHBoxLayout()
         hbox2.addWidget(self.rgb_black_button)
         hbox2.addWidget(self.rgb_white_button)
-        hbox2.addWidget(self.bayer_black_button)
-        hbox2.addWidget(self.bayer_white_button)
         vbox.addLayout(hbox2)
         vbox.addStretch()
         hbox.addLayout(vbox)
@@ -367,19 +312,6 @@ class App(QWidget):
     @pyqtSlot()
     def handle_application_exit(self):
         del(self.scanner)
-    
-    @pyqtSlot()
-    def get_bayer(self):
-        stream = BytesIO()
-        self.scanner.camera.capture(stream, format="jpeg", bayer=True)
-        stream.seek(0)
-
-        def save_data(raw):
-            self.histogram.update_bayer(raw)
-            self.live_view.update_bayer(raw)
-            return raw
-
-        RPICAM2DNG().convert(stream, process=save_data)
     
 
 if __name__ == "__main__":
