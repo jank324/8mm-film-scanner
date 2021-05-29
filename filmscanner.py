@@ -1,11 +1,10 @@
-from threading import Event, Thread
+from fractions import Fraction
+import os
+from pathlib import Path
 from time import sleep
 
-import cv2
-from imutils.video.pivideostream import PiVideoStream
-from io import BytesIO
 import numpy as np
-from picamera import PiCamera
+from picamerax import PiCamera
 import RPi.GPIO as GPIO
 
 
@@ -86,78 +85,28 @@ class StepperMotor:
             self.step(delay=delay)
 
 
-class LiveView:
-
-    def __init__(self):
-        self.current_frame = None
-        self.close_requested = False
-
-        self.capture_thread = Thread(target=self.run)
-        self.pause_event = Event()
-        self.frame_event = Event()
-
-        self.pause_event.set()
-        self.capture_thread.start()
-    
-    def __del__(self):
-        self.capture_thread.join()
-    
-    def close(self):
-        self.close_requested = True
-    
-    def pause(self):
-        self.pause_event.clear()
-
-    def resume(self):
-        self.pause_event.set()
-    
-    def run(self):
-        camera = PiCamera()
-        stream = BytesIO()
-
-        for _ in camera.capture_continuous(stream, "jpeg", use_video_port=True):
-            stream.truncate()
-            stream.seek(0)
-            self.set_frame(stream.read())
-
-            stream.seek(0)
-
-            if self.close_requested:
-                break
-            
-            self.pause_event.wait()
-        
-        camera.close()
-    
-    def set_frame(self, frame):
-        self.current_frame = frame
-        self.frame_event.set()
-    
-    def get_frame(self):
-        self.frame_event.wait()
-        self.frame_event.clear()
-        return self.current_frame
-
-
 class FilmScanner:
 
     def __init__(self):
-        self.mode = "liveview"  # TODO: Alternative would be "scan"
-        self.counter = 0
-
         GPIO.setmode(GPIO.BCM)
         self.backlight = Light(6)
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
 
-        # self.camera = LiveView()
+        self.camera = PiCamera(resolution=(1024,768))
+        self.camera.exposure_mode = "off"
+        self.camera.analog_gain = 1
+        self.camera.digital_gain = 1
+        self.camera.shutter_speed = int(1e6 * 1 / 4000)    # 1/4000s
+        self.camera.awb_mode = "tungsten"
+        sleep(2)
 
         self.close_requested = False
 
     def __del__(self):
         self.motor.disable()
         self.backlight.turn_off()
-        # self.camera.close()
+        self.camera.close()
         
         GPIO.cleanup()
 
@@ -170,46 +119,31 @@ class FilmScanner:
             self.motor.step()
         self.frame_sensor.reset()
         
+        i = 0
         while not self.frame_sensor.has_detected:
             self.motor.step()
-        
+            i += 1
+            if i > 300:
+                raise ValueError(f"It seems the frame sensor was missed")
+
         self.motor.decelerate()
 
         self.motor.disable()
 
-        self.counter += 1
+    def scan(self, output_directory, n_frames=3900, start_index=0):
+        Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-    def run(self, capture=False):
-        # self.backlight.turn_on()
-        sleep(1)
-        self.motor.enable()
+        sleep(5)
 
-        # Run motor unless interupted
-        i = 0
-        photo_index = 249
-        leaving = True
-        while True:
-            if self.frame_sensor.has_detected and not leaving:
-                self.motor.decelerate()
-                print(f"Taking photo {photo_index} at {i}")
-                if capture:
-                    self.camera.capture(f"testrun/img{photo_index:05}.jpg")
-                else:
-                    sleep(0.7)
-                photo_index += 1
-                i = 0
-                leaving = True
+        for i in range(start_index, n_frames):
+            filename = f"frame-{i:05d}.jpg"
+            filepath = os.path.join(output_directory, filename)
 
-                if self.close_requested:
-                    self.motor.disable()
-                    self.backlight.turn_off()
-                    break
-                else:
-                    self.motor.accelerate()
-            
-            if leaving and i > 200:
-                leaving = False
-                self.frame_sensor.has_detected = False
+            print(f"Shutter Speed = {self.camera.shutter_speed}")
+            print(f"Exposure Speed = {self.camera.exposure_speed}")
+            self.camera.capture(filepath, bayer=True)
 
-            self.motor.step()
-            i += 1
+            self.advance()
+
+            if self.close_requested == True:
+                break
