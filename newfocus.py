@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 import numpy as np
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
 from PyQt5.QtGui import QImage, QPixmap, QPalette, QColor
-from PyQt5.QtWidgets import QWidget, QApplication, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QSlider
+from PyQt5.QtWidgets import QWidget, QApplication, QHBoxLayout, QVBoxLayout, QGridLayout, QLabel, QPushButton, QSlider
 from pydng.core import RPICAM2DNG
 
 from filmscanner import FilmScanner
@@ -152,51 +152,6 @@ class Histogram(FigureCanvasQTAgg):
         self.ax0.set_ylim([0, max(1, histogram[:,20:].max())])
 
         self.draw()
-
-
-class ShutterSpeedSelector(QWidget):
-
-    def __init__(self, camera):
-        super().__init__()
-
-        self.camera = camera
-
-        self.down_button = QPushButton("Down")
-        self.down_button.clicked.connect(self.decrease)
-
-        self.speed_label = QLabel("---")
-
-        self.up_button = QPushButton("Up")
-        self.up_button.clicked.connect(self.increase)
-
-        hbox = QHBoxLayout()
-        hbox.addWidget(self.down_button)
-        hbox.addWidget(self.speed_label)
-        hbox.addWidget(self.up_button)
-        self.setLayout(hbox)
-
-        self.options = [1/4000, 1/2000, 1/1000, 1/500, 1/250, 1/125, 1/60, 1/30, 1/15]
-
-        self.value_index = 0
-    
-    @property
-    def value_index(self):
-        return self._value_index
-    
-    @value_index.setter
-    def value_index(self, index):
-        self._value_index = index
-        speed = self.options[index]
-        self.speed_label.setText(f"1/{int(1/speed)} s")
-        self.camera.shutter_speed = int(speed * 1000000)
-    
-    @pyqtSlot()
-    def decrease(self):
-        self.value_index = max(0, self.value_index-1)
-    
-    @pyqtSlot()
-    def increase(self):
-        self.value_index = min(len(self.options)-1, self.value_index+1)
 
 
 class CameraControls(QWidget):
