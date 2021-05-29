@@ -4,6 +4,8 @@ __pycache__
 
 *.jpg
 *.png
+*.dng
+*.m4v
 
 A4988 Schrittmotor-Treiber-Modul Datenblatt.pdf
 
