@@ -1,6 +1,7 @@
 from io import BytesIO
 import sys
 from threading import Event
+import time
 
 import cv2
 import matplotlib
@@ -184,8 +185,8 @@ class CameraControls(QWidget):
         self.digital_gain_slider.valueChanged.connect(self.set_digital_gain)
         self.digital_gain_value_label = QLabel()
 
-        self.update_timer = QTimer()
-        self.update_timer.timeout.connect(self.update_value_displays)
+        self.test_capture_button = QPushButton("Test Capture")
+        self.test_capture_button.clicked.connect(self.test_capture)
 
         grid = QGridLayout()
         self.setLayout(grid)
@@ -198,7 +199,10 @@ class CameraControls(QWidget):
         grid.addWidget(self.digital_gain_label, 2, 0, 1, 1)
         grid.addWidget(self.digital_gain_slider, 2, 1, 1, 3)
         grid.addWidget(self.digital_gain_value_label, 2, 5, 1, 1)
+        grid.addWidget(self.test_capture_button, 3, 0, 1, 6)
 
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self.update_value_displays)
         self.update_timer.start(1000/24)
     
     def set_shutter_speed(self, value):
@@ -215,6 +219,12 @@ class CameraControls(QWidget):
         self.shutter_speed_value_label.setText(f"1/{int(1e6/self.camera.exposure_speed)}")
         self.analog_gain_value_label.setText(f"{int(self.camera.analog_gain)}.0")
         self.digital_gain_value_label.setText(f"{int(self.camera.digital_gain)}.0")
+        self.iso_value_label.setText(f"{self.camera.iso}")
+    
+    def test_capture(self):
+        time_string = time.strftime("%Y%m%d%H%M%S")
+        filename = f"test_capture/test_capture_{time_string}.jpg"
+        self.camera.capture(filename, bayer=True)
 
 
 class App(QWidget):
