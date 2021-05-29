@@ -10,7 +10,7 @@ plt.style.use("dark_background")
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import numpy as np
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QTimer
 from PyQt5.QtGui import QImage, QPixmap, QPalette, QColor
 from PyQt5.QtWidgets import QWidget, QApplication, QHBoxLayout, QVBoxLayout, QGridLayout, QLabel, QPushButton, QSlider
 from pydng.core import RPICAM2DNG
@@ -175,14 +175,17 @@ class CameraControls(QWidget):
         self.analog_gain_slider.setMinimum(1)
         self.analog_gain_slider.setMaximum(16)
         self.analog_gain_slider.valueChanged.connect(self.set_analog_gain)
-        self.analog_gain_value_label = QLabel(str(int(camera.analog_gain)))
+        self.analog_gain_value_label = QLabel()
 
         self.digital_gain_label = QLabel("Dgitial Gain")
         self.digital_gain_slider = QSlider(Qt.Horizontal)
         self.digital_gain_slider.setMinimum(1)
         self.digital_gain_slider.setMaximum(16)
         self.digital_gain_slider.valueChanged.connect(self.set_digital_gain)
-        self.digital_gain_value_label = QLabel(str(int(camera.digital_gain)))
+        self.digital_gain_value_label = QLabel()
+
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self.update_value_displays)
 
         grid = QGridLayout()
         self.setLayout(grid)
@@ -195,19 +198,23 @@ class CameraControls(QWidget):
         grid.addWidget(self.digital_gain_label, 2, 0, 1, 1)
         grid.addWidget(self.digital_gain_slider, 2, 1, 1, 3)
         grid.addWidget(self.digital_gain_value_label, 2, 5, 1, 1)
+
+        self.update_timer.start(1000/24)
     
     def set_shutter_speed(self, value):
         speed = self.shutter_speeds[value]
         self.camera.shutter_speed = int(speed * 1000000)
-        self.shutter_speed_value_label.setText(f"1/{int(1/speed)}")
     
     def set_analog_gain(self, value):
         self.camera.analog_gain = value
-        self.analog_gain_value_label.setText(str(int(self.camera.analog_gain)))
     
     def set_digital_gain(self, value):
         self.camera.digital_gain = value
-        self.digital_gain_value_label.setText(str(int(self.camera.digital_gain)))
+    
+    def update_value_displays(self):
+        self.shutter_speed_value_label.setText(f"1/{int(1e6/self.camera.exposure_speed)}")
+        self.analog_gain_value_label.setText(f"{int(self.camera.analog_gain)}.0")
+        self.digital_gain_value_label.setText(f"{int(self.camera.digital_gain)}.0")
 
 
 class App(QWidget):
