@@ -212,8 +212,8 @@ class CameraControls(qtw.QWidget):
     
     def update_value_displays(self):
         self.shutter_speed_value_label.setText(f"1/{int(1e6/self.camera.exposure_speed)}")
-        self.analog_gain_value_label.setText(f"{int(self.camera.analog_gain)}.0")
-        self.digital_gain_value_label.setText(f"{int(self.camera.digital_gain)}.0")
+        self.analog_gain_value_label.setText(f"{float(self.camera.analog_gain):.2f}")
+        self.digital_gain_value_label.setText(f"{float(self.camera.digital_gain):.2f}")
 
     def test_capture(self):
         time_string = time.strftime("%Y%m%d%H%M%S")
