@@ -97,8 +97,7 @@ class FilmScanner:
         self.camera.exposure_mode = "off"
         self.camera.analog_gain = 1
         self.camera.digital_gain = 1
-        sleep(2)
-        # self.camera.shutter_speed = int(1e6 * 1 / 4000)    # 1/4000s
+        self.camera.shutter_speed = int(1e6 * 1 / 4000)    # 1/4000s
         self.camera.awb_mode = "tungsten"
         sleep(2)
 
