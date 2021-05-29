@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 import numpy as np
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
 from PyQt5.QtGui import QImage, QPixmap, QPalette, QColor
-from PyQt5.QtWidgets import QWidget, QApplication, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QWidget, QApplication, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QSlider
 from pydng.core import RPICAM2DNG
 
 from filmscanner import FilmScanner
@@ -199,49 +199,66 @@ class ShutterSpeedSelector(QWidget):
         self.value_index = min(len(self.options)-1, self.value_index+1)
 
 
-class ISOSelector(QWidget):
+class CameraControls(QWidget):
+
+    shutter_speeds = [1/4000, 1/2000, 1/1000, 1/500, 1/250, 1/125, 1/60, 1/30, 1/15, 1/5, 1/2, 1]
 
     def __init__(self, camera):
         super().__init__()
-
+        
         self.camera = camera
 
-        self.down_button = QPushButton("Down")
-        self.down_button.clicked.connect(self.decrease)
+        self.shutter_speed_label = QLabel("Shutter Speed")
+        self.shutter_speed_slider = QSlider(Qt.Horizontal)
+        self.shutter_speed_slider.setMinimum(0)
+        self.shutter_speed_slider.setMaximum(11)
+        self.shutter_speed_slider.valueChanged.connect(self.set_shutter_speed)
+        self.shutter_speed_value_label = QLabel(f"1/{int(1/camera.shutter_speed)}")
 
-        self.speed_label = QLabel("---")
+        self.analog_gain_label = QLabel("Analog Gain")
+        self.analog_gain_slider = QSlider(Qt.Horizontal)
+        self.analog_gain_slider.setMinimum(1)
+        self.analog_gain_slider.setMaximum(16)
+        self.analog_gain_slider.valueChanged.connect(self.set_analog_gain)
+        self.analog_gain_value_label = QLabel(str(int(camera.analog_gain)))
 
-        self.up_button = QPushButton("Up")
-        self.up_button.clicked.connect(self.increase)
+        self.digital_gain_label = QLabel("Dgitial Gain")
+        self.digital_gain_slider = QSlider(Qt.Horizontal)
+        self.digital_gain_slider.setMinimum(1)
+        self.digital_gain_slider.setMaximum(16)
+        self.digital_gain_slider.valueChanged.connect(self.set_digital_gain)
+        self.digital_gain_value_label = QLabel(str(int(camera.digital_gain)))
 
-        hbox = QHBoxLayout()
-        hbox.addWidget(self.down_button)
-        hbox.addWidget(self.speed_label)
-        hbox.addWidget(self.up_button)
-        self.setLayout(hbox)
-
-        self.options = [100, 200, 400, 800]
-
-        self.value_index = 0
+        vbox = QVBoxLayout()
+        self.setLayout(vbox)
+        hbox_shutter = QHBoxLayout()
+        vbox.addLayout(hbox_shutter)
+        hbox_shutter.addWidget(self.shutter_speed_label)
+        hbox_shutter.addWidget(self.shutter_speed_slider)
+        hbox_shutter.addWidget(self.shutter_speed_value_label)
+        hbox_again = QHBoxLayout()
+        vbox.addLayout(hbox_again)
+        hbox_again.addWidget(self.analog_gain_label)
+        hbox_again.addWidget(self.analog_gain_slider)
+        hbox_again.addWidget(self.analog_gain_value_label)
+        hbox_dgain = QHBoxLayout()
+        vbox.addLayout(hbox_dgain)
+        hbox_dgain.addWidget(self.digital_gain_label)
+        hbox_dgain.addWidget(self.digital_gain_slider)
+        hbox_dgain.addWidget(self.digital_gain_value_label)
     
-    @property
-    def value_index(self):
-        return self._value_index
+    def set_shutter_speed(self, value):
+        speed = self.shutter_speeds[value]
+        self.camera.shutter_speed = int(speed * 1000000)
+        self.shutter_speed_value_label.setText(f"1/{int(1/speed)} s")
     
-    @value_index.setter
-    def value_index(self, index):
-        self._value_index = index
-        iso = self.options[index]
-        self.speed_label.setText(f"ISO {iso}")
-        self.camera.iso = iso
+    def set_analog_gain(self, value):
+        self.camera.analog_gain = value
+        self.analog_gain_value_label.setText(str(int(self.camera.analog_gain)))
     
-    @pyqtSlot()
-    def decrease(self):
-        self.value_index = max(0, self.value_index-1)
-    
-    @pyqtSlot()
-    def increase(self):
-        self.value_index = min(len(self.options)-1, self.value_index+1)
+    def set_digital_gain(self, value):
+        self.camera.digital_gain = value
+        self.digital_gain_value_label.setText(str(int(self.camera.digital_gain)))
 
 
 class App(QWidget):
@@ -257,9 +274,7 @@ class App(QWidget):
 
         self.histogram = Histogram()
 
-        self.shutter_speed_selector = ShutterSpeedSelector(self.scanner.camera)
-
-        self.iso_selector = ISOSelector(self.scanner.camera)
+        self.camera_controls = CameraControls(self.scanner.camera)
 
         self.advance_button = QPushButton("Advance")
         self.advance_button.clicked.connect(self.clicked_advance)
@@ -281,8 +296,7 @@ class App(QWidget):
         vbox = QVBoxLayout()
         vbox.addWidget(self.histogram)
         vbox.addWidget(QLabel("Camera Controls"))
-        vbox.addWidget(self.shutter_speed_selector)
-        vbox.addWidget(self.iso_selector)
+        vbox.addWidget(self.camera_controls)
         vbox.addWidget(QLabel("Machine Controls"))
         vbox.addWidget(self.advance_button)
         vbox.addWidget(QLabel("Overlays"))
