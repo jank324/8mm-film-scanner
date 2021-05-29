@@ -184,28 +184,22 @@ class CameraControls(QWidget):
         self.digital_gain_slider.valueChanged.connect(self.set_digital_gain)
         self.digital_gain_value_label = QLabel(str(int(camera.digital_gain)))
 
-        vbox = QVBoxLayout()
-        self.setLayout(vbox)
-        hbox_shutter = QHBoxLayout()
-        vbox.addLayout(hbox_shutter)
-        hbox_shutter.addWidget(self.shutter_speed_label)
-        hbox_shutter.addWidget(self.shutter_speed_slider)
-        hbox_shutter.addWidget(self.shutter_speed_value_label)
-        hbox_again = QHBoxLayout()
-        vbox.addLayout(hbox_again)
-        hbox_again.addWidget(self.analog_gain_label)
-        hbox_again.addWidget(self.analog_gain_slider)
-        hbox_again.addWidget(self.analog_gain_value_label)
-        hbox_dgain = QHBoxLayout()
-        vbox.addLayout(hbox_dgain)
-        hbox_dgain.addWidget(self.digital_gain_label)
-        hbox_dgain.addWidget(self.digital_gain_slider)
-        hbox_dgain.addWidget(self.digital_gain_value_label)
+        grid = QGridLayout()
+        self.setLayout(grid)
+        grid.addWidget(self.shutter_speed_label, 0, 0, 1, 1)
+        grid.addWidget(self.shutter_speed_slider, 0, 1, 1, 3)
+        grid.addWidget(self.shutter_speed_value_label, 0, 5, 1, 1)
+        grid.addWidget(self.analog_gain_label, 1, 0, 1, 1)
+        grid.addWidget(self.analog_gain_slider, 1, 1, 1, 3)
+        grid.addWidget(self.analog_gain_value_label, 1, 5, 1, 1)
+        grid.addWidget(self.digital_gain_label, 2, 0, 1, 1)
+        grid.addWidget(self.digital_gain_slider, 2, 1, 1, 3)
+        grid.addWidget(self.digital_gain_value_label, 2, 5, 1, 1)
     
     def set_shutter_speed(self, value):
         speed = self.shutter_speeds[value]
         self.camera.shutter_speed = int(speed * 1000000)
-        self.shutter_speed_value_label.setText(f"1/{int(1/speed)} s")
+        self.shutter_speed_value_label.setText(f"1/{int(1/speed)}")
     
     def set_analog_gain(self, value):
         self.camera.analog_gain = value
