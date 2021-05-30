@@ -240,7 +240,7 @@ class App(qtw.QWidget):
 
         self.scanner = FilmScanner()
 
-        self.setWindowTitle("Live View")
+        self.setWindowTitle("8mm Film Scanner Setup")
 
         self.live_view = LiveView(self.scanner.camera)
 
