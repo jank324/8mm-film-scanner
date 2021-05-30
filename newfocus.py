@@ -30,9 +30,22 @@ class VideoThread(qtc.QThread):
         self.camera = camera
         self.camera.resolution = (1024, 768)
 
+        self.focus_zoom = False
         self.not_advancing_event.set()
 
     def run(self):
+        while True:
+            if self.focus_zoom:
+                self.zoomed_capture()
+            else:
+                self.standard_capture()
+    
+    def toggle_focus_zoom(self):
+        self.focus_zoom = not self.focus_zoom
+    
+    def standard_capture(self):
+        self.camera.resolution = (1024, 768)
+
         bgr = np.empty((768, 1024,3), dtype=np.uint8)
         histogram = np.empty((3,256))
 
@@ -44,6 +57,29 @@ class VideoThread(qtc.QThread):
             self.histogram_updated.emit(histogram)
             
             self.not_advancing_event.wait()
+
+            if self.focus_zoom:
+                break
+    
+    def zoomed_capture(self):
+        self.camera.resolution = (4032, 3040)
+
+        bgr = np.empty((3040,4032,3), dtype=np.uint8)
+        histogram = np.empty((3,256))
+
+        for _ in self.camera.capture_continuous(bgr, format="bgr"):#, use_video_port=True):
+            zoomed = bgr[1520-384:1520+384,2016-512:2016+512,:]
+
+            for i in range(3):
+                histogram[i] = cv2.calcHist([zoomed], [i], None, [256], [0,256])[:,0]
+
+            self.image_updated.emit(zoomed)
+            self.histogram_updated.emit(histogram)
+            
+            self.not_advancing_event.wait()
+
+            if not self.focus_zoom:
+                break
 
 
 class LiveView(qtw.QLabel):
@@ -129,6 +165,9 @@ class LiveView(qtw.QLabel):
         edges = cv2.Canny(grey, 0, 255)
         overlay = cv2.add(preview, cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR))
         return overlay
+    
+    def toggle_focus_zoom(self):
+        self.video_thread.toggle_focus_zoom()
 
 
 class Histogram(FigureCanvasQTAgg):
@@ -223,7 +262,10 @@ class CameraControls(qtw.QWidget):
         self.camera.digital_gain = value
     
     def update_value_displays(self):
-        self.shutter_speed_value_label.setText(f"1/{int(1e6/self.camera.exposure_speed)}")
+        if self.camera.exposure_speed != 0:
+            self.shutter_speed_value_label.setText(f"1/{int(1e6/self.camera.exposure_speed)}")
+        else:
+            self.shutter_speed_value_label.setText(f"1/{int(1e6/self.camera.shutter_speed)}")
         self.analog_gain_value_label.setText(f"{float(self.camera.analog_gain):.2f}")
         self.digital_gain_value_label.setText(f"{float(self.camera.digital_gain):.2f}")
 
@@ -259,6 +301,7 @@ class App(qtw.QWidget):
         self.focus_peaking_button.clicked.connect(self.live_view.toggle_focus_peaking)
 
         self.focus_zoom_button = qtw.QPushButton("Focus Zoom")
+        self.focus_zoom_button.clicked.connect(self.live_view.toggle_focus_zoom)
 
         self.rgb_black_button = qtw.QPushButton("RGB Black")
         self.rgb_black_button.clicked.connect(self.live_view.toggle_rgb_black)
