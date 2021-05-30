@@ -44,17 +44,23 @@ class VideoThread(qtc.QThread):
             self.histogram_updated.emit(histogram)
             
             self.not_advancing_event.wait()
-        
+
 
 class LiveView(qtw.QLabel):
 
-    def __init__(self):
+    def __init__(self, camera):
         super().__init__()
+
+        self.camera = camera
 
         self.grid = False
         self.focus_peaking = False
         self.rgb_black = False
         self.rgb_white = False
+
+        self.video_thread = VideoThread(self.camera)
+        self.video_thread.image_updated.connect(self.update_image)
+        self.video_thread.start()
 
     @qtc.pyqtSlot(np.ndarray)
     def update_image(self, image):
@@ -79,6 +85,12 @@ class LiveView(qtw.QLabel):
         bytes_per_line = channels * width
         q_image = qtg.QImage(rgb.data, width, height, bytes_per_line, qtg.QImage.Format_RGB888)
         return qtg.QPixmap.fromImage(q_image)
+    
+    def pause(self):
+        self.video_thread.not_advancing_event.clear()
+    
+    def resume(self):
+        self.video_thread.not_advancing_event.set()
     
     def toggle_grid(self):
         self.grid = not self.grid
@@ -230,9 +242,10 @@ class App(qtw.QWidget):
 
         self.setWindowTitle("Live View")
 
-        self.live_view = LiveView()
+        self.live_view = LiveView(self.scanner.camera)
 
         self.histogram = Histogram()
+        self.live_view.video_thread.histogram_updated.connect(self.histogram.update_rgb)
 
         self.camera_controls = CameraControls(self.scanner.camera)
 
@@ -245,11 +258,12 @@ class App(qtw.QWidget):
         self.focus_peaking_button = qtw.QPushButton("Focus Peaking")
         self.focus_peaking_button.clicked.connect(self.live_view.toggle_focus_peaking)
 
+        self.focus_zoom_button = qtw.QPushButton("Focus Zoom")
+
         self.rgb_black_button = qtw.QPushButton("RGB Black")
         self.rgb_black_button.clicked.connect(self.live_view.toggle_rgb_black)
         self.rgb_white_button = qtw.QPushButton("RGB White")
         self.rgb_white_button.clicked.connect(self.live_view.toggle_rgb_white)
-
 
         hbox = qtw.QHBoxLayout()
         hbox.addWidget(self.live_view)
@@ -259,9 +273,10 @@ class App(qtw.QWidget):
         vbox.addWidget(self.camera_controls)
         vbox.addWidget(qtw.QLabel("Machine Controls"))
         vbox.addWidget(self.advance_button)
-        vbox.addWidget(qtw.QLabel("Overlays"))
+        vbox.addWidget(qtw.QLabel("View"))
         vbox.addWidget(self.grid_button)
         vbox.addWidget(self.focus_peaking_button)
+        vbox.addWidget(self.focus_zoom_button)
         hbox2 = qtw.QHBoxLayout()
         hbox2.addWidget(self.rgb_black_button)
         hbox2.addWidget(self.rgb_white_button)
@@ -269,16 +284,11 @@ class App(qtw.QWidget):
         vbox.addStretch()
         hbox.addLayout(vbox)
         self.setLayout(hbox)
-
-        self.video_thread = VideoThread(self.scanner.camera)
-        self.video_thread.image_updated.connect(self.live_view.update_image)
-        self.video_thread.histogram_updated.connect(self.histogram.update_rgb)
-        self.video_thread.start()
     
     def clicked_advance(self):
-        self.video_thread.not_advancing_event.clear()
+        self.live_view.pause()
         self.scanner.advance()
-        self.video_thread.not_advancing_event.set()
+        self.live_view.resume()
     
     def handle_application_exit(self):
         del(self.scanner)
