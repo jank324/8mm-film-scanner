@@ -143,6 +143,7 @@ class FilmScanner:
             self.camera.capture(filepath, bayer=True)
 
             self.advance()
+            sleep(0.5)
 
             if self.close_requested == True:
                 break
