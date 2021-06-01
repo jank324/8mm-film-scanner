@@ -132,15 +132,25 @@ class FilmScanner:
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
+        d = RPICAM2DNG()
+
         sleep(5)
 
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.jpg"
             filepath = os.path.join(output_directory, filename)
 
-            print(f"Shutter Speed = {self.camera.shutter_speed}")
-            print(f"Exposure Speed = {self.camera.exposure_speed}")
-            self.camera.capture(filepath, bayer=True)
+            
+            stream = BytesIO()
+            self.camera.capture(stream, format="jpeg", bayer=True)
+            
+            stream.seek(0)
+            dng = d.convert(stream)
+            
+            time_string = time.strftime("%Y%m%d%H%M%S")
+            filename = f"test_capture/test_capture_{time_string}.dng"
+            with open(filepath, "wb") as file:
+                file.write(dng)
 
             self.advance()
             sleep(0.5)

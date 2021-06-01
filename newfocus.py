@@ -1,3 +1,4 @@
+from io import BytesIO
 import sys
 from threading import Event
 import time
@@ -10,6 +11,7 @@ plt.style.use("dark_background")
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import numpy as np
+from pydng.core import RPICAM2DNG
 import PyQt5.QtCore as qtc
 import PyQt5.QtGui as qtg
 import PyQt5.QtWidgets as qtw
@@ -270,9 +272,16 @@ class CameraControls(qtw.QWidget):
         self.digital_gain_value_label.setText(f"{float(self.camera.digital_gain):.2f}")
 
     def test_capture(self):
+        stream = BytesIO()
+        self.camera.capture(stream, format="jpeg", bayer=True)
+        
+        stream.seek(0)
+        dng = RPICAM2DNG().convert(stream)
+        
         time_string = time.strftime("%Y%m%d%H%M%S")
-        filename = f"test_capture/test_capture_{time_string}.jpg"
-        self.camera.capture(filename, bayer=True)
+        filename = f"test_capture/test_capture_{time_string}.dng"
+        with open(filename, "wb") as file:
+            file.write(dng)
 
 
 class App(qtw.QWidget):
