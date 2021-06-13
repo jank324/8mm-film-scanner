@@ -1,9 +1,11 @@
+from io import BytesIO
 import os
 from pathlib import Path
-from time import sleep
+import time
 
 import numpy as np
 from picamerax import PiCamera
+from pydng.core import RPICAM2DNG
 import RPi.GPIO as GPIO
 
 
@@ -45,7 +47,7 @@ class Light:
 class StepperMotor:
 
     min_speed = 0.001
-    max_speed = 0.0006
+    max_speed = 0.0009
 
     def __init__(self, enable_pin, direction_pin, step_pin):
         self.enable_pin = enable_pin
@@ -73,11 +75,14 @@ class StepperMotor:
         for delay in np.linspace(self.min_speed, self.max_speed, steps):
             self.step(delay=delay)
     
-    def step(self, delay=0.0009):
+    def step(self, delay=None):
+        if delay is None:
+            delay = self.max_speed
+
         GPIO.output(self.step_pin, GPIO.HIGH)
-        sleep(self.max_speed)
+        time.sleep(self.max_speed)
         GPIO.output(self.step_pin, GPIO.LOW)
-        sleep(self.max_speed)
+        time.sleep(self.max_speed)
         
     def decelerate(self, steps=10):
         for delay in np.linspace(self.max_speed, self.min_speed, steps):
@@ -96,11 +101,13 @@ class FilmScanner:
         self.camera.exposure_mode = "off"
         self.camera.analog_gain = 1
         self.camera.digital_gain = 1
-        self.camera.shutter_speed = int(1e6 * 1 / 4000)    # 1/4000s
+        self.camera.shutter_speed = int(1e6 * 1 / 2000)    # 1/2000s
         self.camera.awb_mode = "tungsten"
-        sleep(2)
+        time.sleep(2)
 
         self.close_requested = False
+
+        self.last_steps = 0
 
     def __del__(self):
         self.motor.disable()
@@ -122,8 +129,10 @@ class FilmScanner:
         while not self.frame_sensor.has_detected:
             self.motor.step()
             i += 1
-            if i > 300:
-                raise ValueError(f"It seems the frame sensor was missed")
+            if i > 260:
+                raise ValueError(f"It seems the frame sensor was missed ({i} steps)")
+        
+        self.last_steps = i
 
         self.motor.decelerate()
 
@@ -134,12 +143,13 @@ class FilmScanner:
 
         d = RPICAM2DNG()
 
-        sleep(5)
+        time.sleep(5)
 
         for i in range(start_index, n_frames):
-            filename = f"frame-{i:05d}.jpg"
+            filename = f"frame-{i:05d}.dng"
             filepath = os.path.join(output_directory, filename)
 
+            self.camera.shutter_speed = int(1e6 * 1 / 2000)
             
             stream = BytesIO()
             self.camera.capture(stream, format="jpeg", bayer=True)
@@ -147,13 +157,13 @@ class FilmScanner:
             stream.seek(0)
             dng = d.convert(stream)
             
-            time_string = time.strftime("%Y%m%d%H%M%S")
-            filename = f"test_capture/test_capture_{time_string}.dng"
             with open(filepath, "wb") as file:
                 file.write(dng)
+            
+            print(f"Saved {filepath} (steps {self.last_steps})")
 
             self.advance()
-            sleep(0.5)
+            time.sleep(0.2)
 
             if self.close_requested == True:
                 break
