@@ -60,6 +60,9 @@ class VideoThread(qtc.QThread):
             
             self.not_advancing_event.wait()
 
+            # TODO: Hack!
+            self.camera.shutter_speed = int(1e6 * 1 / 2000)
+
             if self.focus_zoom:
                 break
     
@@ -79,6 +82,9 @@ class VideoThread(qtc.QThread):
             self.histogram_updated.emit(histogram)
             
             self.not_advancing_event.wait()
+
+            # TODO: Hack!
+            self.camera.shutter_speed = int(1e6 * 1 / 2000)
 
             if not self.focus_zoom:
                 break
@@ -102,7 +108,7 @@ class LiveView(qtw.QLabel):
 
     @qtc.pyqtSlot(np.ndarray)
     def update_image(self, image):
-        image = cv2.flip(image, 0)
+        image = cv2.flip(image, 1)
 
         preview = image.copy()
         if self.focus_peaking:
