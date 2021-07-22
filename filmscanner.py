@@ -8,6 +8,8 @@ from picamerax import PiCamera
 from pydng.core import RPICAM2DNG
 import RPi.GPIO as GPIO
 
+from notification import send_notification
+
 
 class HallEffectSensor:
 
@@ -162,8 +164,15 @@ class FilmScanner:
             
             print(f"Saved {filepath} (steps {self.last_steps})")
 
-            self.advance()
+            try:
+                self.advance()
+            except ValueError as e:
+                send_notification(f"ERROR: Exceeded advance step limit at frame {i}")
+                raise e
             time.sleep(0.2)
 
             if self.close_requested == True:
+                send_notification(f"Film scan was manually terminated at frame {i}")
                 break
+        
+        send_notification(f"Finished scanning {i}/{n_frames}")
