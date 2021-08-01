@@ -1,3 +1,4 @@
+from collections import deque
 from io import BytesIO
 import os
 from pathlib import Path
@@ -144,8 +145,10 @@ class FilmScanner:
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
         d = RPICAM2DNG()
+        frame_times = deque(maxlen=100)
 
         time.sleep(5)
+        t_last = time.time()
 
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.dng"
@@ -162,7 +165,8 @@ class FilmScanner:
             with open(filepath, "wb") as file:
                 file.write(dng)
             
-            print(f"Saved {filepath} (steps {self.last_steps})")
+            fps = len(frame_times) / sum(frame_times) if len(frame_times) != 0 else 0
+            print(f"Saved {filepath} ({self.last_steps} steps / {fps:.1f} fps)")
 
             try:
                 self.advance()
@@ -171,8 +175,13 @@ class FilmScanner:
                 raise e
             time.sleep(0.2)
 
-            if self.close_requested == True:
+            t_now = time.time()
+            frame_times.append(t_now - t_last)
+            t_last = t_now
+
+            if self.close_requested:
                 send_notification(f"Film scan was manually terminated at frame {i}")
                 break
         
-        send_notification(f"Finished scanning {i}/{n_frames}")
+        if not self.close_requested:
+            send_notification(f"Finished scanning {i}/{n_frames}")
