@@ -49,8 +49,8 @@ class Light:
 
 class StepperMotor:
 
-    min_speed = 0.001
-    max_speed = 0.0009
+    # min_speed = 0.001
+    # max_speed = 0.0009
 
     def __init__(self, enable_pin, direction_pin, step_pin):
         self.enable_pin = enable_pin
@@ -60,6 +60,8 @@ class StepperMotor:
         GPIO.setup(self.enable_pin, GPIO.OUT, initial=GPIO.HIGH)
         GPIO.setup(self.direction_pin, GPIO.OUT, initial=GPIO.LOW)
         GPIO.setup(self.step_pin, GPIO.OUT, initial=GPIO.LOW)
+
+        self.pwm = GPIO.PWM(self.step_pin, 500)
 
         self.enabled = False
 
@@ -73,23 +75,29 @@ class StepperMotor:
     def disable(self):
         GPIO.output(self.enable_pin, GPIO.LOW)
         self.enabled = False
-    
-    def accelerate(self, steps=10):
-        for delay in np.linspace(self.min_speed, self.max_speed, steps):
-            self.step(delay=delay)
-    
-    def step(self, delay=None):
-        if delay is None:
-            delay = self.max_speed
 
-        GPIO.output(self.step_pin, GPIO.HIGH)
-        time.sleep(self.max_speed)
-        GPIO.output(self.step_pin, GPIO.LOW)
-        time.sleep(self.max_speed)
+    def start(self):
+        self.pwm.start(0.5)
+
+    def stop(self):
+        self.pwm.stop()
+    
+    # def accelerate(self, steps=10):
+    #     for delay in np.linspace(self.min_speed, self.max_speed, steps):
+    #         self.step(delay=delay)
+    
+    # def step(self, delay=None):
+    #     if delay is None:
+    #         delay = self.max_speed
+
+    #     GPIO.output(self.step_pin, GPIO.HIGH)
+    #     time.sleep(self.max_speed)
+    #     GPIO.output(self.step_pin, GPIO.LOW)
+    #     time.sleep(self.max_speed)
         
-    def decelerate(self, steps=10):
-        for delay in np.linspace(self.max_speed, self.min_speed, steps):
-            self.step(delay=delay)
+    # def decelerate(self, steps=10):
+    #     for delay in np.linspace(self.max_speed, self.min_speed, steps):
+    #         self.step(delay=delay)
 
 
 class FilmScanner:
@@ -97,7 +105,7 @@ class FilmScanner:
     def __init__(self):
         GPIO.setmode(GPIO.BCM)
         self.backlight = Light(6)
-        self.motor = StepperMotor(16, 21, 20)
+        self.motor = StepperMotor(16, 21, 12)
         self.frame_sensor = HallEffectSensor(26)
 
         self.camera = PiCamera(resolution=(1024,768))
@@ -109,6 +117,7 @@ class FilmScanner:
         time.sleep(2)
 
         self.close_requested = False
+        self.advanced_once = False
 
         self.last_steps = 0
 
@@ -121,23 +130,37 @@ class FilmScanner:
 
     def advance(self):
         self.motor.enable()
+        
+        t1 = time.time()
+        self.motor.start()
 
-        self.motor.accelerate()
-
-        for _ in range(200):
-            self.motor.step()
+        time.sleep(0.2)
         self.frame_sensor.reset()
-        
-        i = 0
         while not self.frame_sensor.has_detected:
-            self.motor.step()
-            i += 1
-            if i > 260:
-                raise ValueError(f"It seems the frame sensor was missed ({i} steps)")
-        
-        self.last_steps = i
+            t2 = time.time()
+            if t2 - t1 > 0.58 and self.advanced_once:
+                raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
 
-        self.motor.decelerate()
+        self.motor.stop()
+        
+        self.advanced_once = True
+
+        # self.motor.accelerate()
+
+        # for _ in range(200):
+        #     self.motor.step()
+        # self.frame_sensor.reset()
+        
+        # i = 0
+        # while not self.frame_sensor.has_detected:
+        #     self.motor.step()
+        #     i += 1
+        #     if i > 260:
+        #         raise ValueError(f"It seems the frame sensor was missed ({i} steps)")
+        
+        # self.last_steps = i
+
+        # self.motor.decelerate()
 
         self.motor.disable()
 
@@ -162,8 +185,8 @@ class FilmScanner:
             stream.seek(0)
             dng = d.convert(stream)
             
-            with open(filepath, "wb") as file:
-                file.write(dng)
+            # with open(filepath, "wb") as file:
+            #     file.write(dng)
             
             fps = len(frame_times) / sum(frame_times) if len(frame_times) != 0 else 0
             print(f"Saved {filepath} ({self.last_steps} steps / {fps:.1f} fps)")
