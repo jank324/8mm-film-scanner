@@ -6,23 +6,35 @@ import time
 
 import numpy as np
 from picamerax import PiCamera
+import pigpio
 from pydng.core import RPICAM2DNG
-import RPi.GPIO as GPIO
 
 from notification import send_notification
 
 
 class HallEffectSensor:
 
-    def __init__(self, input_pin):
+    def __init__(self, pi, input_pin):
+        self.pi = pi
         self.input_pin = input_pin
         
-        GPIO.setup(self.input_pin, GPIO.IN)
-        GPIO.add_event_detect(self.input_pin, GPIO.RISING, callback=self.detect)
-
+        self.pi.set_mode(self.input_pin, pigpio.INPUT)
+        
         self.reset()
+        self.armed = False
+    
+    def arm(self):
+        assert not self.armed, "Cannot arm armed Hall Effect sensor!"
+        self.armed = True
+        self.reset()
+        self.callback = self.pi.callback(self.input_pin, pigpio.RISING_EDGE, self.detect)
+    
+    def disarm(self):
+        assert self.armed, "Can only disarm armed Hall Effect sensor!"
+        self.callback.cancel()
+        self.armed = False
 
-    def detect(self, channel):
+    def detect(self, pin, level, tick):
         self.has_detected = True
     
     def reset(self):
@@ -31,82 +43,64 @@ class HallEffectSensor:
 
 class Light:
     
-    def __init__(self, switch_pin):
+    def __init__(self, pi, switch_pin):
+        self.pi = pi
         self.switch_pin = switch_pin
 
-        GPIO.setup(switch_pin, GPIO.OUT, initial=GPIO.LOW)
-
-        self.is_on = False
+        self.pi.set_mode(self.switch_pin, pigpio.OUTPUT)
+        
+        self.turn_on()
     
     def turn_on(self):
-        GPIO.output(self.switch_pin, GPIO.HIGH)
+        self.pi.write(self.switch_pin, 1)
         self.is_on = True
     
     def turn_off(self):
-        GPIO.output(self.switch_pin, GPIO.LOW)
+        self.pi.write(self.switch_pin, 0)
         self.is_on = False
 
 
 class StepperMotor:
 
-    # min_speed = 0.001
-    # max_speed = 0.0009
-
-    def __init__(self, enable_pin, direction_pin, step_pin):
+    def __init__(self, pi, enable_pin, direction_pin, step_pin):
+        self.pi = pi
         self.enable_pin = enable_pin
         self.direction_pin = direction_pin
         self.step_pin = step_pin
 
-        GPIO.setup(self.enable_pin, GPIO.OUT, initial=GPIO.HIGH)
-        GPIO.setup(self.direction_pin, GPIO.OUT, initial=GPIO.LOW)
-        GPIO.setup(self.step_pin, GPIO.OUT, initial=GPIO.LOW)
-
-        self.pwm = GPIO.PWM(self.step_pin, 500)
-
-        self.enabled = False
-
-        # Set motor direction counter-clockwise
-        GPIO.output(self.direction_pin, GPIO.LOW)
+        self.pi.set_mode(self.enable_pin, pigpio.OUTPUT)
+        self.disable()
+        
+        self.pi.set_mode(self.direction_pin, pigpio.OUTPUT)
+        self.pi.write(self.direction_pin, 0)    # Set motor direction counter-clockwise
+        
+        self.pi.set_PWM_dutycycle(self.step_pin, 0)
+        self.pi.set_PWM_frequency(self.step_pin, 800)
     
     def enable(self):
-        GPIO.output(self.enable_pin, GPIO.LOW)
-        self.enabled = True
+        self.pi.write(self.enable_pin, 0)
+        self.is_enabled = True
     
     def disable(self):
-        GPIO.output(self.enable_pin, GPIO.LOW)
-        self.enabled = False
+        self.pi.write(self.enable_pin, 1)
+        self.is_enabled = False
 
     def start(self):
-        self.pwm.start(0.5)
+        assert self.is_enabled, "Cannot start a disabled stepper motor!"
+        self.pi.set_PWM_dutycycle(self.step_pin, 128)
 
     def stop(self):
-        self.pwm.stop()
-    
-    # def accelerate(self, steps=10):
-    #     for delay in np.linspace(self.min_speed, self.max_speed, steps):
-    #         self.step(delay=delay)
-    
-    # def step(self, delay=None):
-    #     if delay is None:
-    #         delay = self.max_speed
-
-    #     GPIO.output(self.step_pin, GPIO.HIGH)
-    #     time.sleep(self.max_speed)
-    #     GPIO.output(self.step_pin, GPIO.LOW)
-    #     time.sleep(self.max_speed)
-        
-    # def decelerate(self, steps=10):
-    #     for delay in np.linspace(self.max_speed, self.min_speed, steps):
-    #         self.step(delay=delay)
+        self.pi.set_PWM_dutycycle(self.step_pin, 0)
 
 
 class FilmScanner:
 
     def __init__(self):
-        GPIO.setmode(GPIO.BCM)
-        self.backlight = Light(6)
-        self.motor = StepperMotor(16, 21, 12)
-        self.frame_sensor = HallEffectSensor(26)
+        self.pi = pigpio.pi()
+
+        self.backlight = Light(self.pi, 6)
+        self.motor = StepperMotor(self.pi, 16, 21, 20)
+        self.frame_sensor = HallEffectSensor(self.pi, 26)
 
         self.camera = PiCamera(resolution=(1024,768))
         self.camera.exposure_mode = "off"
@@ -126,7 +120,7 @@ class FilmScanner:
         self.backlight.turn_off()
         self.camera.close()
         
-        GPIO.cleanup()
+        self.pi.stop()
 
     def advance(self):
         self.motor.enable()
@@ -136,10 +130,12 @@ class FilmScanner:
 
         time.sleep(0.2)
         self.frame_sensor.reset()
-        while not self.frame_sensor.has_detected:
+        while False: # not self.frame_sensor.has_detected:
             t2 = time.time()
             if t2 - t1 > 0.58 and self.advanced_once:
                 raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
+        
+        time.sleep(0.3)
 
         self.motor.stop()
         
