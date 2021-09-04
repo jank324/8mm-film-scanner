@@ -74,8 +74,9 @@ class StepperMotor:
         self.pi.set_mode(self.direction_pin, pigpio.OUTPUT)
         self.pi.write(self.direction_pin, 0)    # Set motor direction counter-clockwise
         
-        self.pi.set_PWM_dutycycle(self.step_pin, 0)
-        self.pi.set_PWM_frequency(self.step_pin, 800)
+        self.pi.set_mode(self.step_pin, pigpio.OUTPUT)
+        # self.pi.set_PWM_dutycycle(self.step_pin, 0)
+        # self.pi.set_PWM_frequency(self.step_pin, 800)
     
     def enable(self):
         self.pi.write(self.enable_pin, 0)
@@ -87,10 +88,57 @@ class StepperMotor:
 
     def start(self):
         assert self.is_enabled, "Cannot start a disabled stepper motor!"
-        self.pi.set_PWM_dutycycle(self.step_pin, 128)
+
+        # Ramp up of 22 steps takes 4 * 1/320 + 8 * 1/500 + 10 * 1/800 = 0.041 seconds
+        # Ramping down for 22 steps takes just as long, i.e. 0.041 seconds
+        # Assuming 244 steps in total this leaves 200 steps to do at 1000 Hz, which
+        # takes 200 * 1/1000 = 0.2 seconds
+        # Alltogether, one advance takes 2 * 0.041 + 0.2 = 0.282 seconds
+
+        self.generate_ramp([
+            [320, 4],
+            [500, 8],
+            [800, 10],
+            [1000, 10000]
+        ])
+        # self.generate_ramp([[320, 20],
+        #                     [500, 40],
+        #                     [800, 50],
+        #                     [1000, 70],
+        #                     [1600, 90],
+        #                     [2000, 10000]])
 
     def stop(self):
-        self.pi.set_PWM_dutycycle(self.step_pin, 0)
+        self.generate_ramp([
+            [800, 10],
+            [500, 8],
+            [320, 4]
+        ])
+    
+    def generate_ramp(self, ramp):
+        self.pi.wave_clear()
+        length = len(ramp)
+        wid = [-1] * length
+
+        # Generate a wave ramp per ramp level
+        for i in range(length):
+            frequency = ramp[i][0]
+            micros = int(5e5 / frequency)
+            wf = []
+            wf.append(pigpio.pulse(1<<self.step_pin, 0, micros))    # Pulse on
+            wf.append(pigpio.pulse(0, 1<<self.step_pin, micros))    # Pulse off
+            self.pi.wave_add_generic(wf)
+            wid[i] = self.pi.wave_create()
+        
+        # Generate chain of waves
+        chain = []
+        for i in range(length):
+            steps= ramp[i][1]
+            x = steps & 255
+            y = steps >> 8
+            chain += [255, 0, wid[i], 255, 1, x, y]
+        
+        self.pi.wave_chain(chain)   # Transmit chain of wave forms
 
 
 class FilmScanner:
@@ -120,22 +168,25 @@ class FilmScanner:
         self.backlight.turn_off()
         self.camera.close()
         
+        self.pi.wave_clear()
         self.pi.stop()
 
     def advance(self):
-        self.motor.enable()
+        # self.motor.enable()
         
         t1 = time.time()
         self.motor.start()
 
-        time.sleep(0.2)
-        self.frame_sensor.reset()
-        while False: # not self.frame_sensor.has_detected:
-            t2 = time.time()
-            if t2 - t1 > 0.58 and self.advanced_once:
-                raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
+        time.sleep(0.282)
+
+        # time.sleep(0.2)
+        # self.frame_sensor.reset()
+        # while False: # not self.frame_sensor.has_detected:
+        #     t2 = time.time()
+        #     if t2 - t1 > 0.58 and self.advanced_once:
+        #         raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
         
-        time.sleep(0.3)
+        # time.sleep(2.8)
 
         self.motor.stop()
         
@@ -158,7 +209,7 @@ class FilmScanner:
 
         # self.motor.decelerate()
 
-        self.motor.disable()
+        # self.motor.disable()
 
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
@@ -168,6 +219,8 @@ class FilmScanner:
 
         time.sleep(5)
         t_last = time.time()
+
+        self.motor.enable()
 
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.dng"
@@ -201,6 +254,8 @@ class FilmScanner:
             if self.close_requested:
                 send_notification(f"Film scan was manually terminated at frame {i}")
                 break
+        
+        self.motor.disable()
         
         if not self.close_requested:
             send_notification(f"Finished scanning {i}/{n_frames}")
