@@ -2,9 +2,9 @@ from collections import deque
 from io import BytesIO
 import os
 from pathlib import Path
+from threading import Event
 import time
 
-import numpy as np
 from picamerax import PiCamera
 import pigpio
 from pydng.core import RPICAM2DNG
@@ -20,25 +20,22 @@ class HallEffectSensor:
         
         self.pi.set_mode(self.input_pin, pigpio.INPUT)
         
-        self.reset()
         self.armed = False
     
-    def arm(self):
+    def arm(self, callback):
         assert not self.armed, "Cannot arm armed Hall Effect sensor!"
         self.armed = True
-        self.reset()
-        self.callback = self.pi.callback(self.input_pin, pigpio.RISING_EDGE, self.detect)
+        self.callback = callback
+        self.pgpio_callback = self.pi.callback(self.input_pin, pigpio.RISING_EDGE, self.detect)
     
     def disarm(self):
         assert self.armed, "Can only disarm armed Hall Effect sensor!"
-        self.callback.cancel()
+        self.pgpio_callback.cancel()
         self.armed = False
 
     def detect(self, pin, level, tick):
-        self.has_detected = True
-    
-    def reset(self):
-        self.has_detected = False
+        print("HALL DETECT")
+        self.callback()
 
 
 class Light:
@@ -62,6 +59,9 @@ class Light:
 
 class StepperMotor:
 
+    # NOTE: Same time for each frequency in acceleration, i.e. steps = time * frequency
+    ramp_levels = [320, 500, 800, 1000, 1600, 2000]
+
     def __init__(self, pi, enable_pin, direction_pin, step_pin):
         self.pi = pi
         self.enable_pin = enable_pin
@@ -69,14 +69,12 @@ class StepperMotor:
         self.step_pin = step_pin
 
         self.pi.set_mode(self.enable_pin, pigpio.OUTPUT)
-        self.disable()
-        
         self.pi.set_mode(self.direction_pin, pigpio.OUTPUT)
-        self.pi.write(self.direction_pin, 0)    # Set motor direction counter-clockwise
-        
         self.pi.set_mode(self.step_pin, pigpio.OUTPUT)
-        # self.pi.set_PWM_dutycycle(self.step_pin, 0)
-        # self.pi.set_PWM_frequency(self.step_pin, 800)
+
+        self.disable()
+        self.pi.write(self.direction_pin, 0)    # Set direction counter-clockwise
+        self.running = False
     
     def enable(self):
         self.pi.write(self.enable_pin, 0)
@@ -86,34 +84,36 @@ class StepperMotor:
         self.pi.write(self.enable_pin, 1)
         self.is_enabled = False
 
-    def start(self):
-        assert self.is_enabled, "Cannot start a disabled stepper motor!"
-
+    def start(self, speed=4, acceleration=0.0125):
         # Ramp up of 22 steps takes 4 * 1/320 + 8 * 1/500 + 10 * 1/800 = 0.041 seconds
         # Ramping down for 22 steps takes just as long, i.e. 0.041 seconds
-        # Assuming 244 steps in total this leaves 200 steps to do at 1000 Hz, which
-        # takes 200 * 1/1000 = 0.2 seconds
-        # Alltogether, one advance takes 2 * 0.041 + 0.2 = 0.282 seconds
+        # Assuming 449 steps in total this leaves 405 steps to do at 1000 Hz, which
+        # take 405 * 1/1000 = 0.405 seconds
+        # Alltogether, one advance takes 2 * 0.041 + 0.405 = 0.487 seconds
 
-        self.generate_ramp([
-            [320, 4],
-            [500, 8],
-            [800, 10],
-            [1000, 10000]
-        ])
-        # self.generate_ramp([[320, 20],
-        #                     [500, 40],
-        #                     [800, 50],
-        #                     [1000, 70],
-        #                     [1600, 90],
-        #                     [2000, 10000]])
+        # Acceleration: 4 steps => 4 * 1/320 = 0.0125
+        # Ramping down the same
+        # 449 - 2 * 4 steps = 441
+        # 441 * 1/500 = 0.882
+        # 0.882 + 2 * 0.0125 = 0.907
+
+        assert self.is_enabled, "Cannot start a disabled stepper motor!"
+
+        self.running = True
+        self.speed = speed
+        self.acceleration = acceleration
+
+        ramp = [(level, int(acceleration*level)) for level in self.ramp_levels[:speed-1]]
+        ramp.append((self.ramp_levels[speed-1], 10000))
+
+        self.generate_ramp(ramp)
 
     def stop(self):
-        self.generate_ramp([
-            [800, 10],
-            [500, 8],
-            [320, 4]
-        ])
+        self.running = False
+
+        ramp = list(reversed([(level, int(self.acceleration*level)) for level in self.ramp_levels[:self.speed-1]]))
+
+        self.generate_ramp(ramp)
     
     def generate_ramp(self, ramp):
         self.pi.wave_clear()
@@ -159,7 +159,6 @@ class FilmScanner:
         time.sleep(2)
 
         self.close_requested = False
-        self.advanced_once = False
 
         self.last_steps = 0
 
@@ -171,46 +170,37 @@ class FilmScanner:
         self.pi.wave_clear()
         self.pi.stop()
 
-    def advance(self):
-        # self.motor.enable()
-        
-        t1 = time.time()
+    def advance(self):        
         self.motor.start()
 
-        time.sleep(0.282)
+        # Time = 0.487 seconds at 1/1000
+        # time = 0.907 seconds at 1/500
+        # dt = 0.907 * 1.025
+        dt = 0.487 * 1.025
 
-        # time.sleep(0.2)
-        # self.frame_sensor.reset()
-        # while False: # not self.frame_sensor.has_detected:
-        #     t2 = time.time()
-        #     if t2 - t1 > 0.58 and self.advanced_once:
-        #         raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
-        
-        # time.sleep(2.8)
+
+        # time.sleep(0.487)
+
+        # time.sleep(0.1)
+        t1 = time.time()
+        time.sleep(dt * 0.25)
+
+        frame_detected_event = Event()
+        frame_detected_event.clear()
+
+        self.frame_sensor.arm(callback=frame_detected_event.set)
+
+        # was_frame_detected = frame_detected_event.wait(timeout=0.387)
+        was_frame_detected = frame_detected_event.wait(timeout=dt*0.75)
+        t2 = time.time()
+        print(f"Took {t2-t1:.4f} / {dt:.4f} seconds (detected={was_frame_detected})")
 
         self.motor.stop()
+        self.frame_sensor.disarm()
+
+        if not was_frame_detected:
+            raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
         
-        self.advanced_once = True
-
-        # self.motor.accelerate()
-
-        # for _ in range(200):
-        #     self.motor.step()
-        # self.frame_sensor.reset()
-        
-        # i = 0
-        # while not self.frame_sensor.has_detected:
-        #     self.motor.step()
-        #     i += 1
-        #     if i > 260:
-        #         raise ValueError(f"It seems the frame sensor was missed ({i} steps)")
-        
-        # self.last_steps = i
-
-        # self.motor.decelerate()
-
-        # self.motor.disable()
-
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
