@@ -97,6 +97,23 @@ class StepperMotor:
         # 441 * 1/500 = 0.882
         # 0.882 + 2 * 0.0125 = 0.907
 
+        # a = v / t
+        # Linear acceleration means a remains constant
+        # Therefore, if v is increased, t must decrease
+        # v_1 / t_1 = v_2 / t_2 where v_2 > v_1
+        # Let's find out how to compute t_2 from t_1
+        # Times t_2:
+        # (v_1 * t_2) / t_1 = v_2
+        # Times t_1:
+        # v_1 * t_2 = v_2 * t_1
+        # Divided by v_1
+        # t_2 = (v_2 * t_1) / v_1
+        # Or
+        # t_2 = t_1 * (v_2 / v_1)
+
+        # But actually, I want to set a constant a in this function
+        # Therefore v = a * t => t = v / a QED
+
         assert self.is_enabled, "Cannot start a disabled stepper motor!"
 
         self.running = True
