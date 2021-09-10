@@ -59,7 +59,9 @@ class Light:
 
 class StepperMotor:
 
-    speeds = [320, 500, 800, 1000, 1600, 2000]
+    STEPS_PER_ROUND = 200
+
+    _PWM_FREQUENCIES = [320, 500, 800, 1000, 1600, 2000]
 
     def __init__(self, pi, enable_pin, direction_pin, step_pin):
         self.pi = pi
@@ -83,30 +85,31 @@ class StepperMotor:
         self.pi.write(self.enable_pin, 1)
         self.is_enabled = False
 
-    def start(self, steps_per_second=1000, speed=4, acceleration=80):
-        # Speed: Level of the speed, where speed in steps / second
-        # Acceleration: In steps / second^2
+    def start(self, rpm=300, acceleration=24):
+        # Speed: Level of the speed, where speed in rounds / minute
+        # Acceleration: In steps / (minute * second)
 
         assert self.is_enabled, "Cannot start a disabled stepper motor!"
 
         self.running = True
-        self.speed = speed
         self.acceleration = acceleration
 
-        ramp_speeds = [speed for speed in self.speeds if speed <= steps_per_second]
+        pwm_frequency = self.STEPS_PER_ROUND * rpm / 60
+        pwm_acceleration = self.STEPS_PER_ROUND * acceleration / 60
 
-        ramp = [(speed, int(speed/acceleration)) for speed in ramp_speeds[:-1]]
-        ramp.append((ramp_speeds[-1], 10000))
+        ramp_frequencies = [f for f in self._PWM_FREQUENCIES if f <= pwm_frequency]
+
+        ramp = [(speed, int(speed/pwm_acceleration)) for speed in ramp_frequencies[:-1]]
+        ramp.append((ramp_frequencies[-1], 10000))
 
         self.ramp = ramp
-        print("ramp", ramp)
 
         self.generate_ramp(ramp)
 
     def stop(self):
         self.running = False
 
-        ramp = list(reversed(self.ramp))
+        ramp = list(reversed(self.ramp[:-1]))
 
         self.generate_ramp(ramp)
     
