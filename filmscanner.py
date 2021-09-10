@@ -59,8 +59,7 @@ class Light:
 
 class StepperMotor:
 
-    # NOTE: Same time for each frequency in acceleration, i.e. steps = time * frequency
-    ramp_levels = [320, 500, 800, 1000, 1600, 2000]
+    speeds = [320, 500, 800, 1000, 1600, 2000]
 
     def __init__(self, pi, enable_pin, direction_pin, step_pin):
         self.pi = pi
@@ -84,35 +83,9 @@ class StepperMotor:
         self.pi.write(self.enable_pin, 1)
         self.is_enabled = False
 
-    def start(self, speed=4, acceleration=0.0125):
-        # Ramp up of 22 steps takes 4 * 1/320 + 8 * 1/500 + 10 * 1/800 = 0.041 seconds
-        # Ramping down for 22 steps takes just as long, i.e. 0.041 seconds
-        # Assuming 449 steps in total this leaves 405 steps to do at 1000 Hz, which
-        # take 405 * 1/1000 = 0.405 seconds
-        # Alltogether, one advance takes 2 * 0.041 + 0.405 = 0.487 seconds
-
-        # Acceleration: 4 steps => 4 * 1/320 = 0.0125
-        # Ramping down the same
-        # 449 - 2 * 4 steps = 441
-        # 441 * 1/500 = 0.882
-        # 0.882 + 2 * 0.0125 = 0.907
-
-        # a = v / t
-        # Linear acceleration means a remains constant
-        # Therefore, if v is increased, t must decrease
-        # v_1 / t_1 = v_2 / t_2 where v_2 > v_1
-        # Let's find out how to compute t_2 from t_1
-        # Times t_2:
-        # (v_1 * t_2) / t_1 = v_2
-        # Times t_1:
-        # v_1 * t_2 = v_2 * t_1
-        # Divided by v_1
-        # t_2 = (v_2 * t_1) / v_1
-        # Or
-        # t_2 = t_1 * (v_2 / v_1)
-
-        # But actually, I want to set a constant a in this function
-        # Therefore v = a * t => t = v / a QED
+    def start(self, steps_per_second=1000, speed=4, acceleration=80):
+        # Speed: Level of the speed, where speed in steps / second
+        # Acceleration: In steps / second^2
 
         assert self.is_enabled, "Cannot start a disabled stepper motor!"
 
@@ -120,15 +93,20 @@ class StepperMotor:
         self.speed = speed
         self.acceleration = acceleration
 
-        ramp = [(level, int(acceleration*level)) for level in self.ramp_levels[:speed-1]]
-        ramp.append((self.ramp_levels[speed-1], 10000))
+        ramp_speeds = [speed for speed in self.speeds if speed <= steps_per_second]
+
+        ramp = [(speed, int(speed/acceleration)) for speed in ramp_speeds[:-1]]
+        ramp.append((ramp_speeds[-1], 10000))
+
+        self.ramp = ramp
+        print("ramp", ramp)
 
         self.generate_ramp(ramp)
 
     def stop(self):
         self.running = False
 
-        ramp = list(reversed([(level, int(self.acceleration*level)) for level in self.ramp_levels[:self.speed-1]]))
+        ramp = list(reversed(self.ramp))
 
         self.generate_ramp(ramp)
     
