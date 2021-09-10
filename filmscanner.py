@@ -58,9 +58,30 @@ class Light:
 
 
 class StepperMotor:
+    """
+    Stepper motor controlled via `pigpio`.
 
-    STEPS_PER_ROUND = 200
+    Parameters
+    ----------
+    pi : pigpio.pi
+        Raspberry Pi that the stepper motor is connected to.
+    enable_pin : int
+        Broadcom number of the GPIO header pin connected to the stepper driver's `SLEEP` input.
+    direction_pin : int
+        Broadcom number of the GPIO header pin connected to the stepper driver's `DIR` input.
+    step_pin : int
+        Broadcom number of the GPIO header pin connected to the stepper driver's `STEP` input.
+    
+    Attributes
+    ---------
+    is_enabled : bool
+        Enable status of the motor. The motor must be enabled to provide a holding force or be able
+        to run.
+    speed : int
+        Current speed of the motor in RPM.
+    """
 
+    _STEPS_PER_ROUND = 200
     _PWM_FREQUENCIES = [320, 500, 800, 1000, 1600, 2000]
 
     def __init__(self, pi, enable_pin, direction_pin, step_pin):
@@ -75,45 +96,76 @@ class StepperMotor:
 
         self.disable()
         self.pi.write(self.direction_pin, 0)    # Set direction counter-clockwise
-        self.running = False
+        self.speed = 0
     
     def enable(self):
+        """Enable the stepper motor (and its holding force as well as ability to step)."""
         self.pi.write(self.enable_pin, 0)
         self.is_enabled = True
     
     def disable(self):
+        """Disable the stepper motor (and its holding force as well as ability to step)."""
         self.pi.write(self.enable_pin, 1)
         self.is_enabled = False
 
-    def start(self, rpm=300, acceleration=24):
-        # Speed: Level of the speed, where speed in rounds / minute
-        # Acceleration: In steps / (minute * second)
+    def start(self, speed=300, acceleration=24):
+        """
+        Start running the stepper motor.
+
+        Parameters
+        ----------
+        speed : int, optional
+            Desired target speed to run at in RPM. The achieved motor speed may be slightly slower.
+        acceleration : int, optional
+            Acceleration with which to approach the target speed in `rounds / (minute * second)`.
+        """
 
         assert self.is_enabled, "Cannot start a disabled stepper motor!"
 
-        self.running = True
-        self.acceleration = acceleration
+        pwm_frequency = self._rpm2hz(speed)
+        pwm_acceleration = self._rpm2hz(acceleration)
 
-        pwm_frequency = self.STEPS_PER_ROUND * rpm / 60
-        pwm_acceleration = self.STEPS_PER_ROUND * acceleration / 60
+        self.speed = speed
 
-        ramp_frequencies = [f for f in self._PWM_FREQUENCIES if f <= pwm_frequency]
+        ramp = self._make_ramp(pwm_frequency, pwm_acceleration, stay=10000)
+        self._send_ramp(ramp)
 
-        ramp = [(speed, int(speed/pwm_acceleration)) for speed in ramp_frequencies[:-1]]
-        ramp.append((ramp_frequencies[-1], 10000))
+    def stop(self, deceleration=24):
+        """
+        Stop the stepper motor.
 
-        self.ramp = ramp
+        Parameters
+        ----------
+        deceleration : int, optional
+            Deceleration with which to stop the motor in `rounds / (minute * second)`.
+        """
+        pwm_frequency = self._rpm2hz(self.speed)
+        pwm_deceleration = self._rpm2hz(deceleration)
 
-        self.generate_ramp(ramp)
+        self.speed = 0
 
-    def stop(self):
-        self.running = False
-
-        ramp = list(reversed(self.ramp[:-1]))
-
-        self.generate_ramp(ramp)
+        ramp = self._make_ramp(pwm_frequency, -pwm_deceleration)
+        self._send_ramp(ramp)
     
-    def generate_ramp(self, ramp):
+    def _rpm2hz(self, rpm):
+        """Convert RPM to PWM frequency in Hz for this particular stepper motor."""
+        return self._STEPS_PER_ROUND * rpm / 60
+    
+    def _make_ramp(self, target_frequency, acceleration, stay=0):
+        """
+        Make list of `(frequency, step)` pairs to ramp up the motor and stay at the target speed
+        for `stay` steps.
+        """
+        frequencies = [f for f in self._PWM_FREQUENCIES if f <= target_frequency]
+
+        ramp = [(speed, int(speed/abs(acceleration))) for speed in frequencies[:-1]]
+        if stay > 0:
+            ramp.append((frequencies[-1], stay))
+        
+        return ramp if acceleration > 0 else list(reversed(ramp))
+    
+    def _send_ramp(self, ramp):
+        """Send wave chain that describes list of `(frequency, step)` pairs to step pin."""
         self.pi.wave_clear()
         length = len(ramp)
         wid = [-1] * length
@@ -169,7 +221,7 @@ class FilmScanner:
         self.pi.stop()
 
     def advance(self):        
-        self.motor.start()
+        self.motor.start(speed=300, acceleration=24)
 
         # Time = 0.487 seconds at 1/1000
         # time = 0.907 seconds at 1/500
@@ -193,7 +245,7 @@ class FilmScanner:
         t2 = time.time()
         print(f"Took {t2-t1:.4f} / {dt:.4f} seconds (detected={was_frame_detected})")
 
-        self.motor.stop()
+        self.motor.stop(deceleration=24)
         self.frame_sensor.disarm()
 
         if not was_frame_detected:
