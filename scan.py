@@ -19,3 +19,5 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, cleanup_and_close)
 
     scanner.scan(args.output, n_frames=args.nframes, start_index=args.start)
+
+    del(scanner)

@@ -142,6 +142,9 @@ class StepperMotor:
         self.pi.write(self.direction_pin, 0)    # Set direction counter-clockwise
         self.speed = 0
     
+    def __del__(self):
+        self.pi.wave_clear()
+    
     def enable(self):
         """Enable the stepper motor (and its holding force as well as ability to step)."""
         self.pi.write(self.enable_pin, 0)
@@ -260,10 +263,10 @@ class FilmScanner:
 
     def __del__(self):
         self.motor.disable()
-        self.backlight.turn_off()
+        del(self.motor)
+
         self.camera.close()
         
-        self.pi.wave_clear()
         self.pi.stop()
     
     def scan(self, output_directory, n_frames=3900, start_index=0):
@@ -271,10 +274,11 @@ class FilmScanner:
 
         frame_times = deque(maxlen=100)
 
+        self.backlight.turn_on()
+        self.motor.enable()
+
         time.sleep(5)
         t_last = time.time()
-
-        self.motor.enable()
 
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.dng"
@@ -300,6 +304,7 @@ class FilmScanner:
                 send_notification(f"Film scan was manually terminated at frame {i}")
                 break
         
+        self.backlight.turn_off()
         self.motor.disable()
         
         if not self.close_requested:
