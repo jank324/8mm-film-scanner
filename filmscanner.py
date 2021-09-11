@@ -240,6 +240,16 @@ class StepperMotor:
 
 class FilmScanner:
 
+    class AdvanceTimeoutError(Exception):
+        """
+        Raised when the the frame sensor was not reached within some threshold time. This may have
+        one of two possible causes: (A) The magnet passed the Hall effect sensor undetected. (B) The
+        motor skipped steps, for example because it got stuck.
+        """
+        def __init__(self):
+            super().__init__("Frame sensor not reached in time. It was either missed, or the motor "
+                             "got stuck.")
+
     def __init__(self):
         self.pi = pigpio.pi()
 
@@ -291,7 +301,7 @@ class FilmScanner:
 
             try:
                 self.advance()
-            except ValueError as e:
+            except FilmScanner.AdvanceTimeoutError as e:
                 send_notification(f"ERROR: Exceeded advance step limit at frame {i}")
                 raise e
             time.sleep(0.2)
@@ -315,7 +325,7 @@ class FilmScanner:
 
         self.motor.start(speed=300, acceleration=24)
 
-        time.sleep(t_threshold * 0.25)  # Get magnet out of range before arming Hall effect sensor
+        time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
 
         frame_detected_event = Event()
         frame_detected_event.clear()
@@ -328,7 +338,7 @@ class FilmScanner:
         self.frame_sensor.disarm()
 
         if not was_frame_detected:
-            raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
+            raise FilmScanner.AdvanceTimeoutError()
     
     def capture_frame(self, filepath):
         self.camera.shutter_speed = int(1e6 * 1 / 2000)
