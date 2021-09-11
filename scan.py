@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 import signal
 
 from filmscanner import FilmScanner
+from notification import send_notification
 
 
 if __name__ == "__main__":
@@ -18,6 +19,9 @@ if __name__ == "__main__":
         scanner.close_requested = True
     signal.signal(signal.SIGINT, cleanup_and_close)
 
-    scanner.scan(args.output, n_frames=args.nframes, start_index=args.start)
+    try:
+        scanner.scan(args.output, n_frames=args.nframes, start_index=args.start)
+    except FilmScanner.AdvanceTimeoutError as e:
+        send_notification(f"ERROR: {e}")
 
     del(scanner)

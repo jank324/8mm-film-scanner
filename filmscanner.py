@@ -9,8 +9,6 @@ from picamerax import PiCamera
 import pigpio
 from pydng.core import RPICAM2DNG
 
-from notification import send_notification
-
 
 class HallEffectSensor:
     """
@@ -299,11 +297,8 @@ class FilmScanner:
             fps = len(frame_times) / sum(frame_times) if len(frame_times) != 0 else 0
             print(f"Saved {filepath} ({self.last_steps} steps / {fps:.1f} fps)")
 
-            try:
-                self.advance()
-            except FilmScanner.AdvanceTimeoutError as e:
-                send_notification(f"ERROR: Exceeded advance step limit at frame {i}")
-                raise e
+            self.advance()
+
             time.sleep(0.2)
 
             t_now = time.time()
