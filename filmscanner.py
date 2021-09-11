@@ -13,29 +13,56 @@ from notification import send_notification
 
 
 class HallEffectSensor:
+    """
+    Hall effect sensor interfaced via `pigpio`.
+
+    Parameters
+    ----------
+    pi : pigpio.pi
+        Raspberry Pi that the stepper motor is connected to.
+    input_pin : int
+        Broadcom number of the GPIO header pin receiving a digital signal from the sensor.
+    
+    Attributes
+    ---------
+    is_armed : bool
+        Flag set to true when the sensor is armed, i.e. setup to call a callback function whenever
+        the Hall effect is detected.
+    """
 
     def __init__(self, pi, input_pin):
-        self.pi = pi
-        self.input_pin = input_pin
+        self._pi = pi
+        self._input_pin = input_pin
         
-        self.pi.set_mode(self.input_pin, pigpio.INPUT)
+        self._pi.set_mode(self._input_pin, pigpio.INPUT)
         
-        self.armed = False
+        self.is_armed = False
     
     def arm(self, callback):
-        assert not self.armed, "Cannot arm armed Hall Effect sensor!"
-        self.armed = True
-        self.callback = callback
-        self.pgpio_callback = self.pi.callback(self.input_pin, pigpio.RISING_EDGE, self.detect)
+        """
+        Setup the sensor to run a callback function whenever the Hall effect is detected.
+
+        Parameters
+        ----------
+        callback : function
+            Callback function that is called everytime the sensor detects the Hall effect. The
+            function should receive no parameters nor return anything.
+        """
+        assert not self.is_armed, "Cannot arm armed Hall Effect sensor!"
+        self.is_armed = True
+        self._callback = callback
+        self._pgpio_callback = self._pi.callback(self._input_pin, pigpio.RISING_EDGE, self._detect)
     
     def disarm(self):
-        assert self.armed, "Can only disarm armed Hall Effect sensor!"
-        self.pgpio_callback.cancel()
-        self.armed = False
+        """Stop calling the callback function when the Hall effect is detected."""
+        assert self.is_armed, "Can only disarm armed Hall Effect sensor!"
+        self._pgpio_callback.cancel()
+        self.is_armed = False
 
-    def detect(self, pin, level, tick):
+    def _detect(self, pin, level, tick):
+        """Internal callback for `pgpio` which calls the sensor's callback function."""
         print("HALL DETECT")
-        self.callback()
+        self._callback()
 
 
 class Light:
