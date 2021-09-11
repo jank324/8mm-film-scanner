@@ -252,6 +252,8 @@ class FilmScanner:
         self.camera.awb_mode = "tungsten"
         time.sleep(2)
 
+        self._dng_converter = RPICAM2DNG()
+
         self.close_requested = False
 
         self.last_steps = 0
@@ -263,31 +265,10 @@ class FilmScanner:
         
         self.pi.wave_clear()
         self.pi.stop()
-
-    def advance(self):        
-        t_threshold = 0.487 * 1.025
-
-        self.motor.start(speed=300, acceleration=24)
-
-        time.sleep(t_threshold * 0.25)  # Get magnet out of range before arming Hall effect sensor
-
-        frame_detected_event = Event()
-        frame_detected_event.clear()
-
-        self.frame_sensor.arm(callback=frame_detected_event.set)
-
-        was_frame_detected = frame_detected_event.wait(timeout=t_threshold*0.75)
-
-        self.motor.stop(deceleration=24)
-        self.frame_sensor.disarm()
-
-        if not was_frame_detected:
-            raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
-        
+    
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-        d = RPICAM2DNG()
         frame_times = deque(maxlen=100)
 
         time.sleep(5)
@@ -299,16 +280,7 @@ class FilmScanner:
             filename = f"frame-{i:05d}.dng"
             filepath = os.path.join(output_directory, filename)
 
-            self.camera.shutter_speed = int(1e6 * 1 / 2000)
-            
-            stream = BytesIO()
-            self.camera.capture(stream, format="jpeg", bayer=True)
-            
-            stream.seek(0)
-            dng = d.convert(stream)
-            
-            # with open(filepath, "wb") as file:
-            #     file.write(dng)
+            self.capture_frame(filepath)
             
             fps = len(frame_times) / sum(frame_times) if len(frame_times) != 0 else 0
             print(f"Saved {filepath} ({self.last_steps} steps / {fps:.1f} fps)")
@@ -332,3 +304,35 @@ class FilmScanner:
         
         if not self.close_requested:
             send_notification(f"Finished scanning {i}/{n_frames}")
+
+    def advance(self):        
+        t_threshold = 0.487 * 1.025
+
+        self.motor.start(speed=300, acceleration=24)
+
+        time.sleep(t_threshold * 0.25)  # Get magnet out of range before arming Hall effect sensor
+
+        frame_detected_event = Event()
+        frame_detected_event.clear()
+
+        self.frame_sensor.arm(callback=frame_detected_event.set)
+
+        was_frame_detected = frame_detected_event.wait(timeout=t_threshold*0.75)
+
+        self.motor.stop(deceleration=24)
+        self.frame_sensor.disarm()
+
+        if not was_frame_detected:
+            raise ValueError(f"It seems the frame sensor was missed or the motor got stuck")
+    
+    def capture_frame(self, filepath):
+        self.camera.shutter_speed = int(1e6 * 1 / 2000)
+            
+        stream = BytesIO()
+        self.camera.capture(stream, format="jpeg", bayer=True)
+        
+        stream.seek(0)
+        dng = self._dng_converter.convert(stream)
+        
+        # with open(filepath, "wb") as file:
+        #     file.write(dng)
