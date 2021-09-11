@@ -13,7 +13,7 @@ from pydng.core import RPICAM2DNG
 
 # Setup logging (to console)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.INFO)
 formatter = logging.Formatter("%(message)s")
@@ -291,12 +291,9 @@ class FilmScanner:
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-        logpath = os.path.join(output_directory, "filmscanner.log")
-        file_handler = logging.FileHandler(logpath)
-        file_handler.setLevel(logging.INFO)
-        formatter = logging.Formatter("%(asctime)s - %(message)s")
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        self._setup_logging_to_file(output_directory)
+
+        logger.info(f"Start scanning frames {start_index} to {n_frames} into \"{output_directory}\"")
 
         self.backlight.turn_on()
         self.motor.enable()
@@ -376,3 +373,14 @@ class FilmScanner:
     def stop(self):
         self._stop_requested = True
         logger.info("Stop requested")
+    
+    def _setup_logging_to_file(self, directory):
+        logpath = os.path.join(directory, "scanner.log")
+
+        file_handler = logging.FileHandler(logpath)
+        file_handler.setLevel(logging.INFO)
+
+        formatter = logging.Formatter("%(asctime)s - %(message)s")
+        file_handler.setFormatter(formatter)
+
+        logger.addHandler(file_handler)
