@@ -13,15 +13,11 @@ if __name__ == "__main__":
     scanner = FilmScanner()
 
     def cleanup_and_close(sig, frame):
-        scanner.close_requested = True
+        scanner.stop()
     signal.signal(signal.SIGINT, cleanup_and_close)
 
     if args.nframes == 0:
-        while not scanner.close_requested:
+        while not scanner._stop_requested:
             scanner.advance()
     else:
-        for _ in range(args.nframes):
-            scanner.advance()
-            
-            if scanner.close_requested:
-                break
+        scanner.advance(args.nframes)

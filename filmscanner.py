@@ -265,7 +265,7 @@ class FilmScanner:
 
         self._dng_converter = RPICAM2DNG()
 
-        self.close_requested = False
+        self._stop_requested = False
 
         self.last_steps = 0
 
@@ -305,7 +305,7 @@ class FilmScanner:
             frame_times.append(t_now - t_last)
             t_last = t_now
 
-            if self.close_requested:
+            if self._stop_requested:
                 break
         
         self.backlight.turn_off()
@@ -313,25 +313,29 @@ class FilmScanner:
 
         return i + 1
 
-    def advance(self):        
+    def advance(self, n=1):
         t_threshold = 0.487 * 1.025
 
-        self.motor.start(speed=300, acceleration=24)
+        for _ in range(n):
+            self.motor.start(speed=300, acceleration=24)
 
-        time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
+            time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
 
-        frame_detected_event = Event()
-        frame_detected_event.clear()
+            frame_detected_event = Event()
+            frame_detected_event.clear()
 
-        self.frame_sensor.arm(callback=frame_detected_event.set)
+            self.frame_sensor.arm(callback=frame_detected_event.set)
 
-        was_frame_detected = frame_detected_event.wait(timeout=t_threshold*0.75)
+            was_frame_detected = frame_detected_event.wait(timeout=t_threshold*0.75)
 
-        self.motor.stop(deceleration=24)
-        self.frame_sensor.disarm()
+            self.motor.stop(deceleration=24)
+            self.frame_sensor.disarm()
 
-        if not was_frame_detected:
-            raise FilmScanner.AdvanceTimeoutError()
+            if not was_frame_detected:
+                raise FilmScanner.AdvanceTimeoutError()
+            
+            if self._stop_requested:
+                break
     
     def capture_frame(self, filepath):
         self.camera.shutter_speed = int(1e6 * 1 / 2000)
@@ -344,3 +348,6 @@ class FilmScanner:
         
         # with open(filepath, "wb") as file:
         #     file.write(dng)
+    
+    def stop(self):
+        self._stop_requested = True
