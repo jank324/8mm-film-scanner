@@ -39,6 +39,21 @@ class HallEffectSensor:
 
 
 class Light:
+    """
+    Light controlled via `pigpio`.
+
+    Parameters
+    ----------
+    pi : pigpio.pi
+        Raspberry Pi that the stepper motor is connected to.
+    switch_pin : int
+        Broadcom number of the GPIO header pin used to turn the light on and off.
+    
+    Attributes
+    ---------
+    is_on : bool
+        Flag representing the light's state, `True` when the light is on and `False` when it is off.
+    """
     
     def __init__(self, pi, switch_pin):
         self.pi = pi
@@ -49,10 +64,12 @@ class Light:
         self.turn_on()
     
     def turn_on(self):
+        """Turn the light on."""
         self.pi.write(self.switch_pin, 1)
         self.is_on = True
     
     def turn_off(self):
+        """Turn the light off."""
         self.pi.write(self.switch_pin, 0)
         self.is_on = False
 
