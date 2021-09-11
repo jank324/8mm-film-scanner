@@ -280,11 +280,16 @@ class FilmScanner:
 
         self.last_steps = 0
 
+        self.backlight.turn_on()
+        self.motor.enable()
+
     def __del__(self):
+        self.backlight.turn_off()
         self.motor.disable()
-        del(self.motor)
 
         self.camera.close()
+
+        del(self.motor)
         
         self.pi.stop()
     
@@ -294,9 +299,6 @@ class FilmScanner:
         self._setup_logging_to_file(output_directory)
 
         logger.info(f"Start scanning frames {start_index} to {n_frames} into \"{output_directory}\"")
-
-        self.backlight.turn_on()
-        self.motor.enable()
 
         time.sleep(5)
         t_start = time.time()
@@ -320,9 +322,6 @@ class FilmScanner:
 
             if self._stop_requested:
                 break
-        
-        self.backlight.turn_off()
-        self.motor.disable()
 
         t = t_now - t_start
         fps = (i + 1) / t
