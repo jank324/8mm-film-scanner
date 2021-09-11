@@ -306,14 +306,12 @@ class FilmScanner:
             t_last = t_now
 
             if self.close_requested:
-                send_notification(f"Film scan was manually terminated at frame {i}")
                 break
         
         self.backlight.turn_off()
         self.motor.disable()
-        
-        if not self.close_requested:
-            send_notification(f"Finished scanning {i}/{n_frames}")
+
+        return i + 1
 
     def advance(self):        
         t_threshold = 0.487 * 1.025
