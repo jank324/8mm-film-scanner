@@ -1,5 +1,6 @@
 from collections import deque
 from io import BytesIO
+import logging
 import os
 from pathlib import Path
 from threading import Event
@@ -8,6 +9,16 @@ import time
 from picamerax import PiCamera
 import pigpio
 from pydng.core import RPICAM2DNG
+
+
+# Setup logging (to console)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(message)s")
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
 
 
 class HallEffectSensor:
@@ -59,7 +70,7 @@ class HallEffectSensor:
 
     def _detect(self, pin, level, tick):
         """Internal callback for `pgpio` which calls the sensor's callback function."""
-        print("HALL DETECT")
+        logger.debug("Hall effect sensor detected")
         self._callback()
 
 
@@ -280,13 +291,19 @@ class FilmScanner:
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-        frame_times = deque(maxlen=100)
+        logpath = os.path.join(output_directory, "filmscanner.log")
+        file_handler = logging.FileHandler(logpath)
+        file_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter("%(asctime)s - %(message)s")
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
         self.backlight.turn_on()
         self.motor.enable()
 
         time.sleep(5)
-        t_last = time.time()
+        t_start = time.time()
+        t_last = t_start
 
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.dng"
@@ -294,15 +311,14 @@ class FilmScanner:
 
             self.capture_frame(filepath)
             
-            fps = len(frame_times) / sum(frame_times) if len(frame_times) != 0 else 0
-            print(f"Saved {filepath} ({self.last_steps} steps / {fps:.1f} fps)")
-
             self.advance()
 
             time.sleep(0.2)
 
             t_now = time.time()
-            frame_times.append(t_now - t_last)
+            dt = t_now - t_last
+            fps = 1 / dt
+            logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps)")
             t_last = t_now
 
             if self._stop_requested:
@@ -310,6 +326,10 @@ class FilmScanner:
         
         self.backlight.turn_off()
         self.motor.disable()
+
+        t = t_now - t_start
+        fps = (i + 1) / t
+        logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
 
         return i + 1
 
@@ -336,6 +356,8 @@ class FilmScanner:
             
             if self._stop_requested:
                 break
+        
+        logger.debug(f"Advanced {n} frames")
     
     def capture_frame(self, filepath):
         self.camera.shutter_speed = int(1e6 * 1 / 2000)
@@ -348,6 +370,9 @@ class FilmScanner:
         
         # with open(filepath, "wb") as file:
         #     file.write(dng)
+
+        logger.debug(f"Saved {filepath}")
     
     def stop(self):
         self._stop_requested = True
+        logger.info("Stop requested")
