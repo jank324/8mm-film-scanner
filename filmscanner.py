@@ -265,29 +265,18 @@ class FilmScanner:
         self.pi.stop()
 
     def advance(self):        
+        t_threshold = 0.487 * 1.025
+
         self.motor.start(speed=300, acceleration=24)
 
-        # Time = 0.487 seconds at 1/1000
-        # time = 0.907 seconds at 1/500
-        # dt = 0.907 * 1.025
-        dt = 0.487 * 1.025
-
-
-        # time.sleep(0.487)
-
-        # time.sleep(0.1)
-        t1 = time.time()
-        time.sleep(dt * 0.25)
+        time.sleep(t_threshold * 0.25)  # Get magnet out of range before arming Hall effect sensor
 
         frame_detected_event = Event()
         frame_detected_event.clear()
 
         self.frame_sensor.arm(callback=frame_detected_event.set)
 
-        # was_frame_detected = frame_detected_event.wait(timeout=0.387)
-        was_frame_detected = frame_detected_event.wait(timeout=dt*0.75)
-        t2 = time.time()
-        print(f"Took {t2-t1:.4f} / {dt:.4f} seconds (detected={was_frame_detected})")
+        was_frame_detected = frame_detected_event.wait(timeout=t_threshold*0.75)
 
         self.motor.stop(deceleration=24)
         self.frame_sensor.disarm()
