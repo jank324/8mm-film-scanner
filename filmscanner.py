@@ -364,8 +364,8 @@ class FilmScanner:
         stream.seek(0)
         dng = self._dng_converter.convert(stream)
         
-        # with open(filepath, "wb") as file:
-        #     file.write(dng)
+        with open(filepath, "wb") as file:
+            file.write(dng)
 
         logger.debug(f"Saved {filepath}")
     
