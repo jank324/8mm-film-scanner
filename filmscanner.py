@@ -308,17 +308,17 @@ class FilmScanner:
             filename = f"frame-{i:05d}.dng"
             filepath = os.path.join(output_directory, filename)
 
-            self.capture_frame(filepath)
-            
-            self.advance()
-
             time.sleep(0.2)
+
+            self.capture_frame(filepath)
 
             t_now = time.time()
             dt = t_now - t_last
             fps = 1 / dt
             logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps)")
             t_last = t_now
+            
+            self.advance()
 
             if self._stop_requested:
                 break
