@@ -1,15 +1,30 @@
 .DS_Store
+.ipynb_checkpoints
 .vscode
 __pycache__
 
-*.jpg
-*.png
 *.dng
+*.fcpbundle
+*.fcpxml
+*.jpg
+*.lrplugin
 *.m4v
+*.pdf
+*.png
 
-A4988 Schrittmotor-Treiber-Modul Datenblatt.pdf
-
-test_capture
+firsttest
+flatfieldtest
+kretatest
+kretatest3
+scans
+speedtest
+speedtest2
 stuff
+testroll
+testrun
+test_capture
+
+LR_10
+PyDNG
 
 notification_config.yml
