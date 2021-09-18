@@ -11,7 +11,7 @@ from filmscanner import FilmScanner
 
 
 HOST = "192.168.178.48"
-PORT = 7777
+PORT = 7778
 
 ENCODE_PARAMETERS = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
 
