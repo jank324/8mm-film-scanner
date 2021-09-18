@@ -28,15 +28,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         scanner = FilmScanner()
         scanner.camera.resolution = (1024, 768)
 
-        bgr = np.empty((768, 1024,3), dtype=np.uint8)
+        bgr = np.empty((768,1024,3), dtype=np.uint8)
 
         for _ in scanner.camera.capture_continuous(bgr, format="bgr", use_video_port=True):
             # TODO: Hack!
             scanner.camera.shutter_speed = int(1e6 * 1 / 2000)
 
-            encoded = cv2.imencode(".jpeg", bgr, params=ENCODE_PARAMETERS)[1]
-            data = pickle.dumps(encoded)
-            size = len(data)
-            message = struct.pack(">L", size) + data
+            _, encoded = cv2.imencode(".jpeg", bgr, params=ENCODE_PARAMETERS)
+            
+            payload = encoded.tobytes()
+            header = struct.pack(">L", len(payload))
+            message = header + payload
 
             connection.sendall(message)
