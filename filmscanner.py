@@ -1,4 +1,3 @@
-from collections import deque
 from io import BytesIO
 import logging
 import os
@@ -7,8 +6,8 @@ from threading import Event
 import time
 
 from picamerax import PiCamera
+from pidng.core import RPICAM2DNG
 import pigpio
-from pydng.core import RPICAM2DNG
 
 
 # Setup logging (to console)
