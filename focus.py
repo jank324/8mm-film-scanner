@@ -11,7 +11,7 @@ plt.style.use("dark_background")
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import numpy as np
-from pydng.core import RPICAM2DNG
+from pidng.core import RPICAM2DNG
 import PyQt5.QtCore as qtc
 import PyQt5.QtGui as qtg
 import PyQt5.QtWidgets as qtw
