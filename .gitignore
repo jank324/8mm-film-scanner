@@ -7,6 +7,8 @@ notification_config.yml
 
 lightroom
 resource
+stream_test
+stuff
 test_capture
 video
 
