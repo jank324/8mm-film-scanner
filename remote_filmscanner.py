@@ -8,7 +8,7 @@ import numpy as np
 
 class RemoteFilmScanner:
 
-    def __init__(self, host="192.168.178.48", video_port=1111):
+    def __init__(self, host="192.168.178.48", video_port=7778):
         self.video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.video_socket.connect((host, video_port))
     
@@ -33,3 +33,6 @@ class RemoteFilmScanner:
         bgr = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
 
         return bgr
+    
+    def advance(self):
+        self.video_socket.sendall("advance".encode("utf-8"))
