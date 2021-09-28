@@ -57,7 +57,7 @@ class App(qtw.QWidget):
         self.video_thread.new_frame.connect(self.live_view.show)
 
         self.advance_button = qtw.QPushButton("Advance")
-        # self.advance_button.clicked.connect(self.clicked_advance)
+        self.advance_button.clicked.connect(self.scanner.advance)
 
         hbox = qtw.QHBoxLayout()
         self.setLayout(hbox)
@@ -68,11 +68,6 @@ class App(qtw.QWidget):
         vbox.addStretch()
 
         self.video_thread.start()
-    
-    def clicked_advance(self):
-        self.live_view.pause()
-        self.scanner.advance()
-        self.live_view.resume()
     
     def handle_application_exit(self):
         del(self.scanner)
