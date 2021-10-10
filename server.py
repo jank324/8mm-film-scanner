@@ -12,6 +12,8 @@ class Server:
 
     # TODO: Host will fail if it has other IP
     def __init__(self, host="192.168.178.48", port=7778, jpeg_quality=50):
+        self.host = host
+        self.port = port
         self.jpeg_quality = jpeg_quality
 
         self.close_requested = False
@@ -19,34 +21,39 @@ class Server:
         self.scanner = FilmScanner()
         self.scanner.camera.resolution = (1024, 768)
 
-        self.live_view_thread = threading.Thread(target=self.stream_live_view)
-
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.bind((host, port))
-        self.server_socket.listen()
-    
-    def __del__(self):
-        self.server_socket.close()
+        self.send_lock = threading.Lock()
     
     def run(self):
-        print("Server is ready")
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((self.host,self.port))
+        self.server_socket.listen()
 
+        print("Server is ready")
         self.client_socket, address = self.server_socket.accept()
 
-        self.live_view_thread.start()
+        listen_thread = threading.Thread(target=self.listen)
+        stream_thread = threading.Thread(target=self.stream_live_view)
+        scanner_thread = threading.Thread()
 
+        listen_thread.start()
+        stream_thread.start()
+                
+        listen_thread.join()
+        stream_thread.join()
+
+        self.client_socket.close()
+
+    def listen(self):
         while True:
             message = self.client_socket.recv(4096)
             if message.decode("utf-8") == "advance":
                 self.scanner.advance()
-            elif not message:
+            elif not message or self.close_requested:
                 break
-        
-        self.close_requested = True
-        
-        self.live_view_thread.join()
 
-        self.client_socket.close()
+    def send(self, message):
+        with self.send_lock:
+            self.client_socket.sendall(message)
     
     def stream_live_view(self):
         bgr = np.empty((768,1024,3), dtype=np.uint8)
@@ -63,7 +70,7 @@ class Server:
             header = struct.pack(">L", len(payload))
             message = header + payload
 
-            self.client_socket.sendall(message)
+            self.send(message)
 
             if self.close_requested:
                 break
