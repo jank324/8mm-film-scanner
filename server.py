@@ -44,12 +44,12 @@ class Server:
         self.client_socket.close()
 
     def listen(self):
-        while True:
+        while not self.close_requested:
             message = self.client_socket.recv(4096)
             if message.decode("utf-8") == "advance":
                 self.scanner.advance()
-            elif not message or self.close_requested:
-                break
+            elif not message:
+                self.close_requested = True
 
     def send(self, message):
         with self.send_lock:
