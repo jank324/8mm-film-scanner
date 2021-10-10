@@ -16,8 +16,6 @@ class Server:
         self.port = port
         self.jpeg_quality = jpeg_quality
 
-        self.close_requested = False
-
         self.scanner = FilmScanner()
         self.scanner.camera.resolution = (1024, 768)
 
@@ -28,20 +26,24 @@ class Server:
         self.server_socket.bind((self.host,self.port))
         self.server_socket.listen()
 
-        print("Server is ready")
-        self.client_socket, address = self.server_socket.accept()
+        while True:
+            self.close_requested = False
+            print("Server is ready")
+            self.client_socket, address = self.server_socket.accept()
+            print("Connection accepted")
 
-        listen_thread = threading.Thread(target=self.listen)
-        stream_thread = threading.Thread(target=self.stream_live_view)
-        scanner_thread = threading.Thread()
+            listen_thread = threading.Thread(target=self.listen)
+            stream_thread = threading.Thread(target=self.stream_live_view)
+            scanner_thread = threading.Thread()
 
-        listen_thread.start()
-        stream_thread.start()
-                
-        listen_thread.join()
-        stream_thread.join()
+            listen_thread.start()
+            stream_thread.start()
+                    
+            listen_thread.join()
+            stream_thread.join()
 
-        self.client_socket.close()
+            self.client_socket.close()
+            print("Connection closed")
 
     def listen(self):
         while not self.close_requested:
