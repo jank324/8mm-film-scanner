@@ -17,9 +17,10 @@ class VideoThread(qtc.QThread):
         super().__init__()
 
         self.scanner = scanner
+        self.close_requested = False
 
     def run(self):
-        while True:
+        while not self.close_requested:
             frame = self.scanner.receive_frame()
             self.new_frame.emit(frame)
 
@@ -70,6 +71,9 @@ class App(qtw.QWidget):
         self.video_thread.start()
     
     def handle_application_exit(self):
+        self.video_thread.close_requested = True
+        self.video_thread.wait()
+        self.scanner.video_socket.close()
         del(self.scanner)
     
 
