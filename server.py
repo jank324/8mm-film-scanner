@@ -6,15 +6,15 @@ import cv2
 import numpy as np
 
 from filmscanner import FilmScanner
+import message
 
 
 class Server:
 
     # TODO: Host will fail if it has other IP
-    def __init__(self, host="192.168.178.48", port=7778, jpeg_quality=50):
+    def __init__(self, host="192.168.178.48", port=7778, ):
         self.host = host
         self.port = port
-        self.jpeg_quality = jpeg_quality
 
         self.scanner = FilmScanner()
         self.scanner.camera.resolution = (1024, 768)
@@ -47,15 +47,37 @@ class Server:
 
     def listen(self):
         while not self.close_requested:
-            message = self.client_socket.recv(4096)
-            if message.decode("utf-8") == "advance":
+            msg = self.receive_message()
+
+            if isinstance(msg, message.Advance):
                 self.scanner.advance()
-            elif not message:
+            elif not msg:
                 self.close_requested = True
+            
+    def receive_message(self):
+        if not self.client_socket.recv(4096):
+            return None
+
+        size_length = struct.calcsize(">L")
+
+        while len(self._recv_buffer) < size_length:
+            self._recv_buffer += self.client_socket.recv(4096)
+
+        length_bytes = self._recv_buffer[:size_length]
+        length, = struct.unpack(">L", length_bytes)
+
+        while len(self._recv_buffer) < length:
+            self._recv_buffer += self.client_socket.recv(4096)
+        
+        msg = self._recv_buffer[:length]
+
+        self._recv_buffer = self._recv_buffer[length:]
+
+        return message.deserialize(msg)
 
     def send(self, message):
         with self.send_lock:
-            self.client_socket.sendall(message)
+            self.client_socket.sendall(message.serialized)
     
     def stream_live_view(self):
         bgr = np.empty((768,1024,3), dtype=np.uint8)
@@ -65,14 +87,8 @@ class Server:
             # TODO: Hack!
             self.scanner.camera.shutter_speed = int(1e6 * 1 / 2000)
 
-            encode_parameters = [int(cv2.IMWRITE_JPEG_QUALITY), self.jpeg_quality]
-            _, encoded = cv2.imencode(".jpeg", bgr, params=encode_parameters)
-            
-            payload = encoded.tobytes()
-            header = struct.pack(">L", len(payload))
-            message = header + payload
-
-            self.send(message)
+            msg = message.Image(bgr)
+            self.send(msg)
 
             if self.close_requested:
                 break
