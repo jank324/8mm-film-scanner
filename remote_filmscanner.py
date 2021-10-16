@@ -4,6 +4,8 @@ import struct
 import cv2
 import numpy as np
 
+import message
+
 
 class RemoteFilmScanner:
 
@@ -15,28 +17,31 @@ class RemoteFilmScanner:
     
     def __del__(self):
         self.video_socket.close()
+    
+    def _receive_message(self):
+        size_length = struct.calcsize(">L")
 
-    def receive_frame(self):
-        header_size = struct.calcsize(">L")
-
-        while len(self._recv_buffer) < header_size:
+        while len(self._recv_buffer) < size_length:
             self._recv_buffer += self.video_socket.recv(4096)
 
-        header = self._recv_buffer[:header_size]
-        payload_size, = struct.unpack(">L", header)
+        length_bytes = self._recv_buffer[:size_length]
+        length, = struct.unpack(">L", length_bytes)
 
-        self._recv_buffer = self._recv_buffer[header_size:]
-
-        while len(self._recv_buffer) < payload_size:
+        while len(self._recv_buffer) < length:
             self._recv_buffer += self.video_socket.recv(4096)
         
-        payload = self._recv_buffer[:payload_size]
-        encoded = np.frombuffer(payload, dtype=np.uint8)
-        bgr = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+        msg = self._recv_buffer[:length]
 
-        self._recv_buffer = self._recv_buffer[payload_size:]
+        self._recv_buffer = self._recv_buffer[length:]
 
-        return bgr
+        return message.deserialize(msg)
+    
+    def receive_frame(self):
+        msg = self._receive_message()
+        if isinstance(msg, message.Image):
+            return msg.image
+        else:
+            raise NotImplementedError
     
     def advance(self):
-        self.video_socket.sendall("advance".encode("utf-8"))
+        self.video_socket.sendall(message.Advance())
