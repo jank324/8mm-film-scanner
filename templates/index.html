@@ -4,15 +4,21 @@
     <meta charset="UTF-8">
     <title>8mm Film Scanner</title>
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"
 </head>
 <body>
-    <h1>8mm Film Scanner</h1>
-    <div style="width: 100%;">
-        <img id="preview" style="width: 63%; height:52%; background-attachment: fixed;" class="center" src="{{ url_for('liveview') }}">
+    <div class="sidebar">
+        <button>Image Settings</button>
+        <button>Scan Setup</button>
+        <button>Diagnostics</button>
     </div>
-    <button id="scan_button">Scan</button>
-    <button id="advance_button">Advance</button>
-    <p id="counter_display" src="{{ url_for('counter') }}"></p>
+    <div class="main">
+        <img id="preview" class="liveview" src="{{ url_for('liveview') }}">
+        <button id="scan_button">Scan</button>
+        <button class="glow-on-hover" id="advance_button">Advance</button>
+        <button>Focus Zoom</button>
+        <p id="counter_display" src="{{ url_for('counter') }}"></p>
+    </div>
 </body>
 </html>
