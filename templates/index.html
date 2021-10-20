@@ -9,9 +9,11 @@
 </head>
 <body>
     <img id="preview" class="liveview" src="{{ url_for('liveview') }}">
-    <button class="button-green" id="scan_button">Scan</button>
-    <button class="button-red" role="button" id="advance_button">Advance</button>
-    <button class="button-red">Focus Zoom</button>
-    <p id="counter_display" src="{{ url_for('counter') }}"></p>
+    <div class="controls">
+        <button class="button-green" id="scan_button">Scan</button>
+        <button class="button-red" role="button" id="advance_button">Advance</button>
+        <button class="button-red">Focus Zoom</button>
+        <p id="counter_display" src="{{ url_for('counter') }}"></p>
+    </div>
 </body>
 </html>
