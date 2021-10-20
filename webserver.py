@@ -42,9 +42,6 @@ def liveview():
     return Response(generator(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 
-@app.route("/counter")
-def counter():
-    return "foobar"
 
 
 if __name__ == "__main__":
