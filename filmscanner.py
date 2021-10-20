@@ -382,3 +382,16 @@ class FilmScanner:
         file_handler.setFormatter(formatter)
 
         logger.addHandler(file_handler)
+    
+    def liveview(self):
+        buffer = BytesIO()
+        for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
+            # TODO: Hack!
+            self.camera.shutter_speed = int(1e6 * 1 / 2000)
+
+            buffer.truncate()
+            buffer.seek(0)
+            frame = buffer.read()
+            buffer.seek(0)
+
+            yield frame
