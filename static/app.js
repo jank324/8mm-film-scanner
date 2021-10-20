@@ -4,4 +4,8 @@ $(document).ready(function() {
         $.post("/advance")
     })
 
+    $("#focuszoom_button").click(function() {
+        $.post("/togglefocuszoom")
+    })
+
 })

@@ -5,6 +5,8 @@ from pathlib import Path
 from threading import Event
 import time
 
+import cv2
+import numpy as np
 from picamerax import PiCamera
 from pidng.core import RPICAM2DNG
 import pigpio
@@ -265,7 +267,7 @@ class FilmScanner:
         self.motor = StepperMotor(self.pi, 16, 21, 20)
         self.frame_sensor = HallEffectSensor(self.pi, 26)
 
-        self.camera = PiCamera(resolution=(1024,768))
+        self.camera = PiCamera(resolution=(800,600))
         self.camera.exposure_mode = "off"
         self.camera.analog_gain = 1
         self.camera.digital_gain = 1
@@ -276,6 +278,8 @@ class FilmScanner:
         self._dng_converter = RPICAM2DNG()
 
         self._stop_requested = False
+
+        self._live_view_zoom_toggle_requested = False
 
         self.last_steps = 0
 
@@ -385,13 +389,37 @@ class FilmScanner:
     
     def liveview(self):
         buffer = BytesIO()
-        for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
-            # TODO: Hack!
-            self.camera.shutter_speed = int(1e6 * 1 / 2000)
+        while True:
+            self.camera.resolution = (800, 600)
+            for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
+                # TODO: Hack!
+                self.camera.shutter_speed = int(1e6 * 1 / 2000)
 
-            buffer.truncate()
-            buffer.seek(0)
-            frame = buffer.read()
-            buffer.seek(0)
+                buffer.truncate()
+                buffer.seek(0)
+                frame = buffer.read()
+                buffer.seek(0)
 
-            yield frame
+                yield frame
+
+                if self._live_view_zoom_toggle_requested:
+                    break
+            
+            self._live_view_zoom_toggle_requested = False
+
+            self.camera.resolution = (4032, 3040)
+            bgr = np.empty((3040,4032,3), dtype=np.uint8)
+            for _ in self.camera.capture_continuous(bgr, format="bgr", use_video_port=True):
+                # TODO: Hack!
+                self.camera.shutter_speed = int(1e6 * 1 / 2000)
+
+                zoomed = bgr[1520-384:1520+384,2016-512:2016+512,:]
+                _, encoded = cv2.imencode(".jpg", zoomed)
+                frame = encoded.tobytes()
+
+                yield frame
+
+                if self._live_view_zoom_toggle_requested:
+                    break
+            
+            self._live_view_zoom_toggle_requested = False
