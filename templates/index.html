@@ -15,9 +15,9 @@
     </div>
     <div class="main">
         <img id="preview" class="liveview" src="{{ url_for('liveview') }}">
-        <button id="scan_button">Scan</button>
-        <button class="glow-on-hover" id="advance_button">Advance</button>
-        <button>Focus Zoom</button>
+        <button class="button-green" id="scan_button">Scan</button>
+        <button class="button-red" role="button" id="advance_button">Advance</button>
+        <button class="button-red">Focus Zoom</button>
         <p id="counter_display" src="{{ url_for('counter') }}"></p>
     </div>
 </body>
