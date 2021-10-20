@@ -26,21 +26,11 @@ def advance():
 @app.route("/liveview")
 def liveview():
 
-    def generator():
-        buffer = BytesIO()
-        for _ in scanner.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
-            # TODO: Hack!
-            scanner.camera.shutter_speed = int(1e6 * 1 / 2000)
-
-            buffer.truncate()
-            buffer.seek(0)
-            frame = buffer.read()
-            buffer.seek(0)
-
+    def liveview_stream():
+        for frame in scanner.liveview():
             yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n" 
 
-    return Response(generator(), mimetype="multipart/x-mixed-replace; boundry=frame")
-
+    return Response(liveview_stream(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 
 
