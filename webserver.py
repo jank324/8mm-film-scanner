@@ -33,6 +33,11 @@ def liveview():
     return Response(liveview_stream(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 
+@app.route("/togglefocuszoom", methods=["POST"])
+def toggle_focus_zoom():
+    scanner._live_view_zoom_toggle_requested = True
+    return ("", 204)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=False)
