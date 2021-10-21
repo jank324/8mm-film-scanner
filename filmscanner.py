@@ -332,33 +332,41 @@ class FilmScanner:
 
         return i + 1
 
-    def advance(self, n=1, until_stop_requested=False):
+    def advance(self):
+        logger.debug("Advancing one frame")
+
         t_threshold = 0.487 * 1.025
 
-        self._stop_requested = False
-        i = 0
-        while not self._stop_requested and (until_stop_requested or i < n):
-            self.motor.start(speed=300, acceleration=24)
+        self.motor.start(speed=300, acceleration=24)
 
-            time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
+        time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
 
-            frame_detected_event = Event()
-            frame_detected_event.clear()
+        frame_detected_event = Event()
+        frame_detected_event.clear()
 
-            self.frame_sensor.arm(callback=frame_detected_event.set)
+        self.frame_sensor.arm(callback=frame_detected_event.set)
 
-            was_frame_detected = frame_detected_event.wait(timeout=t_threshold*0.75)
+        was_frame_detected = frame_detected_event.wait(timeout=t_threshold*0.75)
 
-            self.motor.stop(deceleration=24)
-            self.frame_sensor.disarm()
+        self.motor.stop(deceleration=24)
+        self.frame_sensor.disarm()
 
-            if not was_frame_detected:
-                raise FilmScanner.AdvanceTimeoutError()
-
-            i += 1
-        
-        logger.debug(f"Advanced {i} frames")
-    
+        if not was_frame_detected:
+            raise FilmScanner.AdvanceTimeoutError()
+            
+    def fast_forward(self, n=None):
+        if n is None:
+            logger.debug("Fast-forwarding until stopped")
+            while not self._stop_requested:
+                self.advance()
+        else:
+            logger.debug(f"Fast-forwarding {n} frames")
+            for _ in range(n):
+                self.advance()
+                if self._stop_requested:
+                    logger.debug("Stopping fast-forwarding early")
+                    break
+            
     def capture_frame(self, filepath):
         self.camera.shutter_speed = int(1e6 * 1 / 2000)
             

@@ -25,7 +25,7 @@ def advance():
 
 @app.route("/fastforward", methods=["POST"])
 def fast_forward():
-    scanner.advance(until_stop_requested=True)
+    scanner.fast_forward()
     return ("", 204)
 
 
