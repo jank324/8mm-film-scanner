@@ -409,7 +409,7 @@ class FilmScanner:
 
             self.camera.resolution = (4032, 3040)
             bgr = np.empty((3040,4032,3), dtype=np.uint8)
-            for _ in self.camera.capture_continuous(bgr, format="bgr", use_video_port=True):
+            for _ in self.camera.capture_continuous(bgr, format="bgr", use_video_port=False):
                 # TODO: Hack!
                 self.camera.shutter_speed = int(1e6 * 1 / 2000)
 
