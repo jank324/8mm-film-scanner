@@ -332,10 +332,12 @@ class FilmScanner:
 
         return i + 1
 
-    def advance(self, n=1):
+    def advance(self, n=1, until_stop_requested=False):
         t_threshold = 0.487 * 1.025
 
-        for _ in range(n):
+        self._stop_requested = False
+        i = 0
+        while not self._stop_requested and (until_stop_requested or i < n):
             self.motor.start(speed=300, acceleration=24)
 
             time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
@@ -352,11 +354,10 @@ class FilmScanner:
 
             if not was_frame_detected:
                 raise FilmScanner.AdvanceTimeoutError()
-            
-            if self._stop_requested:
-                break
+
+            i += 1
         
-        logger.debug(f"Advanced {n} frames")
+        logger.debug(f"Advanced {i} frames")
     
     def capture_frame(self, filepath):
         self.camera.shutter_speed = int(1e6 * 1 / 2000)

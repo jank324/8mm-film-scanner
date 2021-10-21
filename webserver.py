@@ -23,6 +23,12 @@ def advance():
     return ("", 204)
 
 
+@app.route("/fastforward", methods=["POST"])
+def fast_forward():
+    scanner.advance(until_stop_requested=True)
+    return ("", 204)
+
+
 @app.route("/liveview")
 def liveview():
 
@@ -31,6 +37,12 @@ def liveview():
             yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n" 
 
     return Response(liveview_stream(), mimetype="multipart/x-mixed-replace; boundry=frame")
+
+
+@app.route("/stop", methods=["POST"])
+def stop():
+    scanner._stop_requested = True
+    return ("", 204)
 
 
 @app.route("/togglefocuszoom", methods=["POST"])
