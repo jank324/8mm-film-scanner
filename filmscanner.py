@@ -1,3 +1,4 @@
+from functools import partial
 from io import BytesIO
 import logging
 import os
@@ -46,9 +47,17 @@ class HallEffectSensor:
         
         self._pi.set_mode(self._input_pin, pigpio.INPUT)
         
-        self.is_armed = False
+        self._is_armed = False
     
-    def arm(self, callback):
+    def wait_for_trigger(self, timeout=None):
+        frame_detected_event = Event()
+        frame_detected_event.clear()
+
+        self._arm(user_callback=frame_detected_event.set)
+
+        return frame_detected_event.wait(timeout=timeout)
+    
+    def _arm(self, user_callback):
         """
         Setup the sensor to run a callback function whenever the Hall effect is detected.
 
@@ -58,16 +67,20 @@ class HallEffectSensor:
             Callback function that is called everytime the sensor detects the Hall effect. The
             function should receive no parameters nor return anything.
         """
-        assert not self.is_armed, "Cannot arm armed Hall Effect sensor!"
-        self.is_armed = True
-        self._callback = callback
-        self._pgpio_callback = self._pi.callback(self._input_pin, pigpio.RISING_EDGE, self._detect)
+        assert not self._is_armed, "Cannot arm armed Hall Effect sensor!"
+        self._is_armed = True
+        self._callback = partial(self._sensor_callback, user_callback)
+        self._pigpio_callback = self._pi.callback(self._input_pin, pigpio.RISING_EDGE, self._detect)
     
-    def disarm(self):
+    def _sensor_callback(self, user_callback):
+        self._disarm()
+        user_callback()
+    
+    def _disarm(self):
         """Stop calling the callback function when the Hall effect is detected."""
-        assert self.is_armed, "Can only disarm armed Hall Effect sensor!"
-        self._pgpio_callback.cancel()
-        self.is_armed = False
+        assert self._is_armed, "Can only disarm armed Hall Effect sensor!"
+        self._pigpio_callback.cancel()
+        self._is_armed = False
 
     def _detect(self, pin, level, tick):
         """Internal callback for `pgpio` which calls the sensor's callback function."""
@@ -338,18 +351,9 @@ class FilmScanner:
         t_threshold = 0.487 * 1.025
 
         self.motor.start(speed=300, acceleration=24)
-
         time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
-
-        frame_detected_event = Event()
-        frame_detected_event.clear()
-
-        self.frame_sensor.arm(callback=frame_detected_event.set)
-
-        was_frame_detected = frame_detected_event.wait(timeout=t_threshold*0.75)
-
+        was_frame_detected = self.frame_sensor.wait_for_trigger(timeout=t_threshold*0.75)
         self.motor.stop(deceleration=24)
-        self.frame_sensor.disarm()
 
         if not was_frame_detected:
             raise FilmScanner.AdvanceTimeoutError()
@@ -359,12 +363,14 @@ class FilmScanner:
             logger.debug("Fast-forwarding until stopped")
             while not self._stop_requested:
                 self.advance()
+            self._stop_requested = False
         else:
             logger.debug(f"Fast-forwarding {n} frames")
             for _ in range(n):
                 self.advance()
                 if self._stop_requested:
                     logger.debug("Stopping fast-forwarding early")
+                    self._stop_requested = False
                     break
             
     def capture_frame(self, filepath):
