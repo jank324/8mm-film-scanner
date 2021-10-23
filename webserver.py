@@ -1,8 +1,4 @@
-from io import BytesIO
-import time
-
-import cv2
-from flask import Flask, render_template, Response
+from flask import Flask, render_template
 
 from filmscanner import FilmScanner
 
@@ -17,38 +13,36 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/advance", methods=["POST"])
+@app.route("/advance", methods=("POST",))
 def advance():
     scanner.advance()
-    return ("", 204)
+    return "", 204
 
 
-@app.route("/fastforward", methods=["POST"])
+@app.route("/fastforward", methods=("POST",))
 def fast_forward():
     scanner.fast_forward()
-    return ("", 204)
+    return "", 204
 
 
 @app.route("/liveview")
 def liveview():
-
-    def liveview_stream():
+    def generate():
         for frame in scanner.liveview():
             yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n" 
+    return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
-    return Response(liveview_stream(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
-
-@app.route("/stop", methods=["POST"])
+@app.route("/stop", methods=("POST",))
 def stop():
     scanner._stop_requested = True
-    return ("", 204)
+    return "", 204
 
 
-@app.route("/togglefocuszoom", methods=["POST"])
+@app.route("/togglefocuszoom", methods=("POST",))
 def toggle_focus_zoom():
     scanner._live_view_zoom_toggle_requested = True
-    return ("", 204)
+    return "", 204
 
 
 if __name__ == "__main__":
