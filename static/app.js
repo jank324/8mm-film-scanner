@@ -22,4 +22,10 @@ $(document).ready(function() {
         $.post("/togglefocuszoom")
     })
 
+    counterSource = new EventSource("/counter")
+    counterSource.onmessage = function(e) {
+        console.log("Received message for counter")
+        $("#counter_label").text(e.data)
+    }
+
 })

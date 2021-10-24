@@ -1,3 +1,5 @@
+import time
+
 from flask import Flask, render_template
 
 from filmscanner import FilmScanner
@@ -17,6 +19,17 @@ def index():
 def advance():
     scanner.advance()
     return "", 204
+
+
+@app.route("/counter")
+def get_counter():
+    def generator():
+        counter = 0
+        while True:
+            time.sleep(0.2)
+            yield f"data: {counter}\n\n"
+            counter += 1
+    return app.response_class(generator(), content_type="text/event-stream")
 
 
 @app.route("/fastforward", methods=("POST",))
