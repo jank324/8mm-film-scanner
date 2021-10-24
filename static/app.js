@@ -34,6 +34,11 @@ $(document).ready(function() {
         data: {
             labels: [1, 2, 3, 4, 5, 6],
             datasets: [{
+                data: [21, 21, 19, 13, 21, 3],
+                backgroundColor: "rgba(180, 180, 180, 0.2)",
+                borderColor: "rgba(180, 180, 180, 1)",
+                borderWidth: 1
+            }, {
                 data: [12, 19, 3, 5, 2, 3],
                 backgroundColor: "rgba(255, 99, 132, 0.2)",
                 borderColor: "rgba(255, 99, 132, 1)",
