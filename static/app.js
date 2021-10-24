@@ -28,4 +28,28 @@ $(document).ready(function() {
         $("#counter_label").text(e.data)
     }
 
+    const ctx = document.getElementById('histogram').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: [1, 2, 3, 4, 5, 6],
+            datasets: [{
+                data: [12, 19, 3, 5, 2, 3],
+                backgroundColor: "rgba(255, 99, 132, 0.2)",
+                borderColor: "rgba(255, 99, 132, 1)",
+                borderWidth: 1
+            }, {
+                data: [7, 19, 5, 3, 12, 7],
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                borderColor: "rgba(75, 192, 192, 1)",
+                borderWidth: 1
+            }, {
+                data: [1, 1, 13, 12, 2, 3],
+                backgroundColor: "rgba(54, 162, 235, 0.2)",
+                borderColor: "rgba(54, 162, 235, 1)",
+                borderWidth: 1
+            }]
+        }
+    })
+
 })
