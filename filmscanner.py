@@ -316,32 +316,31 @@ class FilmScanner:
 
         logger.info(f"Start scanning frames {start_index} to {n_frames} into \"{output_directory}\"")
 
-        time.sleep(5)
-        t_start = time.time()
-        t_last = t_start
+        self.advance()
 
+        # self.camera.resolution = (4032, 3040)
+
+        time.sleep(5)
+
+        self.times = []
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.dng"
             filepath = os.path.join(output_directory, filename)
 
-            time.sleep(0.2)
+            # time.sleep(0.2)
 
             self.capture_frame(filepath)
 
-            t_now = time.time()
-            dt = t_now - t_last
-            fps = 1 / dt
-            logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps)")
-            t_last = t_now
+            logger.info(f"At sample {i} -> {self.times[-1]}")
             
-            self.advance()
+            # self.advance()
 
             if self._stop_requested:
                 break
-
-        t = t_now - t_start
-        fps = (i + 1) / t
-        logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
+        
+        import pickle
+        with open("times_all_capture_raw.pkl", "wb") as f:
+            pickle.dump(self.times, f)
 
         return i + 1
 
@@ -374,18 +373,32 @@ class FilmScanner:
                     break
             
     def capture_frame(self, filepath):
+        tf1 = time.time()
         self.camera.shutter_speed = int(1e6 * 1 / 2000)
             
         stream = BytesIO()
+        tc1 = time.time()
         self.camera.capture(stream, format="jpeg", bayer=True)
+        tc2 = time.time()
+        tc = tc2 - tc1
         
         stream.seek(0)
+        tdng1 = time.time()
         dng = self._dng_converter.convert(stream)
+        tdng2 = time.time()
+        tdng = tdng2 - tdng1
         
+        tw1 = time.time()
         with open(filepath, "wb") as file:
             file.write(dng)
+        tw2 = time.time()
+        tw = tw2 - tw1
 
         logger.debug(f"Saved {filepath}")
+        tf2 = time.time()
+        tf = tf2 - tf1
+        
+        self.times.append({"tf": tf, "tc": tc, "tdng": tdng, "tw": tw})
     
     def stop(self):
         self._stop_requested = True

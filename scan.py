@@ -24,7 +24,9 @@ if __name__ == "__main__":
         n_frames = scanner.scan(args.output, n_frames=args.nframes, start_index=args.start)
     except FilmScanner.AdvanceTimeoutError as e:
         notifier.send(f"ERROR: {e}")
+        pass
     else:
         notifier.send(f"Finished scanning {n_frames} frames!")
+        pass
     finally:
         del(scanner)
