@@ -321,7 +321,7 @@ class FilmScanner:
         t_last = t_start
 
         for i in range(start_index, n_frames):
-            filename = f"frame-{i:05d}.dng"
+            filename = f"frame-{i:05d}.jpg"
             filepath = os.path.join(output_directory, filename)
 
             time.sleep(0.2)
@@ -380,10 +380,9 @@ class FilmScanner:
         self.camera.capture(stream, format="jpeg", bayer=True)
         
         stream.seek(0)
-        dng = self._dng_converter.convert(stream)
         
         with open(filepath, "wb") as file:
-            file.write(dng)
+            file.write(stream.read())
 
         logger.debug(f"Saved {filepath}")
     
