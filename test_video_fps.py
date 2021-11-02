@@ -1,5 +1,7 @@
+from collections import deque
 import time
 
+import numpy as np
 from picamerax import PiCamera
 
 
@@ -8,13 +10,17 @@ class FPSMeter:
     def __init__(self):
         self.t1 = time.time()
         self.t2 = time.time()
+        self.fps_queue = deque(maxlen=30)
     
     def write(self, buf):
         if buf.startswith(b"\xff\xd8"):
             self.t2 = time.time()
             fps = 1 / (self.t2 - self.t1)
-            print(f"FPS = {fps}")
             self.t1 = self.t2
+
+            self.fps_queue.append(fps)
+            
+            print(f"FPS = {np.mean(self.fps_queue):.2f} - ({np.std(self.fps_queue):.2f})")
 
 
 def main():
