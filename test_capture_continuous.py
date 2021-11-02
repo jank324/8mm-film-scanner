@@ -1,32 +1,39 @@
+from collections import deque
 from io import BytesIO
 import time
 
-from filmscanner import FilmScanner
+import numpy as np
+from picamerax import PiCamera
 
 
-waited = 0
+def main():
+    with PiCamera() as camera:
+        camera.resolution = (4032, 3040)
+        camera.exposure_mode = "off"
+        camera.analog_gain = 1
+        camera.digital_gain = 1
+        camera.shutter_speed = int(1e6 * 1 / 2000)    # 1/2000s
+        camera.awb_mode = "tungsten"
 
-scanner = FilmScanner()
-scanner.camera.resolution = (1024, 768)
+        fps_queue = deque(maxlen=30)
 
-buffer = BytesIO()
-t1 = time.time()
-for _ in scanner.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
-    # TODO: Hack!
-    scanner.camera.shutter_speed = int(1e6 * 1 / 2000)
+        buffer = BytesIO()
+        t1 = time.time()
+        for _ in camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
+            # TODO: Hack!
+            # camera.shutter_speed = int(1e6 * 1 / 2000)
 
-    if waited == 6:
-        time.sleep(3)
-
-    buffer.truncate()
-    buffer.seek(0)
+            buffer.truncate()
+            buffer.seek(0)
     
-    t2 = time.time()
-    fps = 1 / (t2 - t1)
-    t1 = t2
+            t2 = time.time()
+            fps = 1 / (t2 - t1)
+            t1 = t2
 
-    print(f"Generated frame: camera_fps={scanner.camera.framerate}, true_fps={fps:.2f}")
+            fps_queue.append(fps)
+            
+            print(f"FPS = {np.mean(fps_queue):.2f} - ({np.std(fps_queue):.2f})")
 
-    buffer.seek(0)
 
-    waited += 1
+if __name__ == "__main__":
+    main()
