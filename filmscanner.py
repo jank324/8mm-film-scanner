@@ -1,4 +1,6 @@
+from datetime import timedelta
 from functools import partial
+from fractions import Fraction
 from io import BytesIO
 import logging
 import os
@@ -288,7 +290,14 @@ class FilmScanner:
         self.camera.awb_mode = "tungsten"
         time.sleep(2)
 
-        self._dng_converter = RPICAM2DNG()
+        # self.camera = PiCamera(resolution=(800,600))
+        # self.camera.analog_gain = 1
+        # self.camera.digital_gain = 1
+        # # self.camera.exposure_mode = "off"
+        # self.camera.shutter_speed = int(1e6 * 1 / 2000)    # 1/2000s
+        # self.camera.awb_mode = "off"
+        # self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
+        # time.sleep(2)
 
         self._stop_requested = False
 
@@ -316,6 +325,8 @@ class FilmScanner:
 
         logger.info(f"Start scanning frames {start_index} to {n_frames} into \"{output_directory}\"")
 
+        self.camera.resolution = (2400, 1800)
+
         time.sleep(5)
         t_start = time.time()
         t_last = t_start
@@ -331,7 +342,9 @@ class FilmScanner:
             t_now = time.time()
             dt = t_now - t_last
             fps = 1 / dt
-            logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps)")
+            remaining_seconds = int((n_frames - i) / fps)
+            remaining = timedelta(seconds=remaining_seconds)
+            logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps / {remaining} s remaining)")
             t_last = t_now
             
             self.advance()
@@ -374,15 +387,17 @@ class FilmScanner:
                     break
             
     def capture_frame(self, filepath):
-        self.camera.shutter_speed = int(1e6 * 1 / 2000)
-            
-        stream = BytesIO()
-        self.camera.capture(stream, format="jpeg", bayer=True)
-        
-        stream.seek(0)
-        
-        with open(filepath, "wb") as file:
-            file.write(stream.read())
+
+        for i in range(5):
+            self.camera.shutter_speed = int(1e6 * 1 / 2000 * 2**i)
+
+            for _ in range(1):
+                self.camera.capture("/dev/null", format="jpeg", use_video_port=True)
+
+            logger.info(f" -> Before frame {i} - 1/{int(1/(self.camera.exposure_speed/1e6))}")
+            # print(f"Gains : analog={self.camera.analog_gain}, digital={self.camera.digital_gain}, awb={self.camera.awb_gains}")
+            exppath = "".join(filepath.split(".")[:-1] + [f"-exp{i}."] + filepath.split(".")[-1:])
+            self.camera.capture(exppath, format="jpeg")
 
         logger.debug(f"Saved {filepath}")
     
