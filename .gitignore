@@ -5,6 +5,7 @@ __pycache__
 
 notification_config.yml
 
+lamptest_*
 lightroom
 resource
 stream_test
