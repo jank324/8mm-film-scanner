@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from functools import partial
 from fractions import Fraction
@@ -305,6 +306,8 @@ class FilmScanner:
 
         self.last_steps = 0
 
+        self._write_executor = ThreadPoolExecutor(max_workers=1)
+
         self.backlight.turn_on()
         self.motor.enable()
 
@@ -387,15 +390,21 @@ class FilmScanner:
                     break
             
     def capture_frame(self, filepath):
+        if hasattr(self, "_write_future"):
+            _ = self._write_future.result()
+
         self.camera.shutter_speed = int(1e6 * 1 / 250)
-            
+        
         stream = BytesIO()
         self.camera.capture(stream, format="jpeg", bayer=True)
         
+        self._write_future = self._write_executor.submit(self.save_frame, stream, filepath)
+    
+    def save_frame(self, stream, filepath):
         stream.seek(0)
         
-        with open(filepath, "wb") as file:
-            file.write(stream.read())
+        with open(filepath, "wb") as f:
+            f.write(stream.read())
 
         logger.debug(f"Saved {filepath}")
     
