@@ -5,3 +5,9 @@ sequentiql_3 : Scanned 50 frames in 82.73 seconds (0.60 fps)
 concurrent_1 : Scanned 40 frames in 64.16 seconds (0.62 fps)
 concurrent_2 : Scanned 50 frames in 77.59 seconds (0.64 fps)
 concurrent_3 : Scanned 50 frames in 79.09 seconds (0.63 fps)
+
+Keeping buffer alive (truncate after) :
+    Scanned 50 frames in 76.77 seconds (0.65 fps)
+    Scanned 50 frames in 78.65 seconds (0.64 fps)
+    Scanned 50 frames in 78.85 seconds (0.63 fps)
+    Scanned 50 frames in 77.20 seconds (0.65 fps)
