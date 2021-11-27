@@ -306,6 +306,7 @@ class FilmScanner:
 
         self.last_steps = 0
 
+        self._img_stream = BytesIO()
         self._write_executor = ThreadPoolExecutor(max_workers=1)
 
         self.backlight.turn_on()
@@ -395,16 +396,17 @@ class FilmScanner:
 
         self.camera.shutter_speed = int(1e6 * 1 / 250)
         
-        stream = BytesIO()
-        self.camera.capture(stream, format="jpeg", bayer=True)
+        self._img_stream.seek(0)
+        self.camera.capture(self._img_stream, format="jpeg", bayer=True)
+        self._img_stream.truncate()
         
-        self._write_future = self._write_executor.submit(self.save_frame, stream, filepath)
+        self._write_future = self._write_executor.submit(self.save_frame, filepath)
     
-    def save_frame(self, stream, filepath):
-        stream.seek(0)
+    def save_frame(self, filepath):
+        self._img_stream.seek(0)
         
         with open(filepath, "wb") as f:
-            f.write(stream.read())
+            f.write(self._img_stream.read())
 
         logger.debug(f"Saved {filepath}")
     
