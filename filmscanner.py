@@ -294,7 +294,7 @@ class FilmScanner:
         self.camera.analog_gain = 1
         self.camera.digital_gain = 1
         # self.camera.exposure_mode = "off"
-        self.camera.shutter_speed = int(1e6 * 1 / 2000)    # 1/2000s
+        self.camera.shutter_speed = int(1e6 * 1 / 250)    # 1/250
         self.camera.awb_mode = "off"
         self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
         time.sleep(2)
@@ -325,7 +325,7 @@ class FilmScanner:
 
         logger.info(f"Start scanning frames {start_index} to {n_frames} into \"{output_directory}\"")
 
-        self.camera.resolution = (2400, 1800)
+        self.camera.resolution = (400, 300)
 
         time.sleep(5)
         t_start = time.time()
@@ -387,17 +387,15 @@ class FilmScanner:
                     break
             
     def capture_frame(self, filepath):
-
-        for i in range(5):
-            self.camera.shutter_speed = int(1e6 * 1 / 2000 * 2**i)
-
-            for _ in range(1):
-                self.camera.capture("/dev/null", format="jpeg", use_video_port=True)
-
-            logger.info(f" -> Before frame {i} - 1/{int(1/(self.camera.exposure_speed/1e6))}")
-            # print(f"Gains : analog={self.camera.analog_gain}, digital={self.camera.digital_gain}, awb={self.camera.awb_gains}")
-            exppath = "".join(filepath.split(".")[:-1] + [f"-exp{i}."] + filepath.split(".")[-1:])
-            self.camera.capture(exppath, format="jpeg")
+        self.camera.shutter_speed = int(1e6 * 1 / 250)
+            
+        stream = BytesIO()
+        self.camera.capture(stream, format="jpeg", bayer=True)
+        
+        stream.seek(0)
+        
+        with open(filepath, "wb") as file:
+            file.write(stream.read())
 
         logger.debug(f"Saved {filepath}")
     
@@ -422,7 +420,7 @@ class FilmScanner:
             self.camera.resolution = (800, 600)
             for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
                 # TODO: Hack!
-                self.camera.shutter_speed = int(1e6 * 1 / 2000)
+                self.camera.shutter_speed = int(1e6 * 1 / 250)
 
                 buffer.truncate()
                 buffer.seek(0)
@@ -440,7 +438,7 @@ class FilmScanner:
             bgr = np.empty((3040,4032,3), dtype=np.uint8)
             for _ in self.camera.capture_continuous(bgr, format="bgr", use_video_port=False):
                 # TODO: Hack!
-                self.camera.shutter_speed = int(1e6 * 1 / 2000)
+                self.camera.shutter_speed = int(1e6 * 1 / 250)
 
                 zoomed = bgr[1520-384:1520+384,2016-512:2016+512,:]
                 _, encoded = cv2.imencode(".jpg", zoomed)
