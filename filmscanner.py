@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from functools import partial
@@ -12,7 +13,6 @@ import time
 import cv2
 import numpy as np
 from picamerax import PiCamera
-from pidng.core import RPICAM2DNG
 import pigpio
 
 
@@ -58,7 +58,11 @@ class HallEffectSensor:
 
         self._arm(user_callback=frame_detected_event.set)
 
-        return frame_detected_event.wait(timeout=timeout)
+        has_detected = frame_detected_event.wait(timeout=timeout)
+        if self._is_armed:
+            self._disarm()
+
+        return has_detected
     
     def _arm(self, user_callback):
         """
@@ -165,7 +169,7 @@ class StepperMotor:
         self.pi.set_mode(self.step_pin, pigpio.OUTPUT)
 
         self.disable()
-        self.pi.write(self.direction_pin, 0)    # Set direction counter-clockwise
+        self.direction = 0  # Set direction counter-clockwise
         self.speed = 0
     
     def __del__(self):
@@ -180,6 +184,15 @@ class StepperMotor:
         """Disable the stepper motor (and its holding force as well as ability to step)."""
         self.pi.write(self.enable_pin, 1)
         self.is_enabled = False
+    
+    @property
+    def direction(self):
+        return self._direction
+
+    @direction.setter
+    def direction(self, value):
+        self._direction = value
+        self.pi.write(self.direction_pin, value)
 
     def start(self, speed=300, acceleration=24):
         """
@@ -230,6 +243,8 @@ class StepperMotor:
         for `stay` steps.
         """
         frequencies = [f for f in self._PWM_FREQUENCIES if f <= target_frequency]
+        if not frequencies:
+            frequencies = [self._PWM_FREQUENCIES[0]]
 
         ramp = [(speed, int(speed/abs(acceleration))) for speed in frequencies[:-1]]
         if stay > 0:
@@ -362,7 +377,7 @@ class FilmScanner:
 
         return i + 1
 
-    def advance(self):
+    def advance(self, recover=True):
         logger.debug("Advancing one frame")
 
         t_threshold = 0.487 * 1.025
@@ -373,7 +388,41 @@ class FilmScanner:
         self.motor.stop(deceleration=24)
 
         if not was_frame_detected:
-            raise FilmScanner.AdvanceTimeoutError()
+            logger.error("Frame sensor was not reached in time")
+            fixed = False
+            if recover:
+                fixed = self.recover()
+            if not fixed:
+                raise FilmScanner.AdvanceTimeoutError()
+    
+    def recover(self):
+        attempts = 0
+        pause = 1
+        while True:
+            logger.warning(f"Attempting frame sensor recovery (attempt={attempts}, pause={pause})")
+
+            self.motor.direction = 1
+            self.motor.enable()
+
+            self.motor.start(speed=1, acceleration=1)
+            self.frame_sensor.wait_for_trigger(timeout=1.0)
+            self.motor.stop(deceleration=1)
+
+            time.sleep(1)
+
+            self.motor.direction = 0
+
+            try:
+                self.advance(recover=False)
+            except FilmScanner.AdvanceTimeoutError:
+                if True: # attempts < 5:
+                    attempts += 1
+                    time.sleep(pause)
+                    pause *= 2
+                else:
+                    return False
+            else:
+                return True
             
     def fast_forward(self, n=None):
         if n is None:
