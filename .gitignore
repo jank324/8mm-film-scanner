@@ -5,13 +5,10 @@ __pycache__
 
 notification_config.yml
 
-lamptest_*
+experiments
 lightroom
 resource
-stream_test
-stuff
 test_capture
-video
 
 *.fcpbundle
 *.fcpxml
