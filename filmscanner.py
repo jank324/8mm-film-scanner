@@ -118,16 +118,16 @@ class Light:
 
         self.pi.set_mode(self.switch_pin, pigpio.OUTPUT)
         
-        self.turn_on()
+        self.turn_off()
     
     def turn_on(self):
         """Turn the light on."""
-        self.pi.write(self.switch_pin, 1)
+        self.pi.write(self.switch_pin, 0)
         self.is_on = True
     
     def turn_off(self):
         """Turn the light off."""
-        self.pi.write(self.switch_pin, 0)
+        self.pi.write(self.switch_pin, 1)
         self.is_on = False
 
 
