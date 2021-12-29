@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from functools import partial
@@ -480,7 +479,7 @@ class FilmScanner:
             self.camera.resolution = (800, 600)
             for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
                 # TODO: Hack!
-                self.camera.shutter_speed = int(1e6 * 1 / 250)
+                self.camera.shutter_speed = int(1e6 * 1 / 100)
 
                 buffer.truncate()
                 buffer.seek(0)
@@ -498,7 +497,7 @@ class FilmScanner:
             bgr = np.empty((3040,4032,3), dtype=np.uint8)
             for _ in self.camera.capture_continuous(bgr, format="bgr", use_video_port=False):
                 # TODO: Hack!
-                self.camera.shutter_speed = int(1e6 * 1 / 250)
+                self.camera.shutter_speed = int(1e6 * 1 / 100)
 
                 zoomed = bgr[1520-384:1520+384,2016-512:2016+512,:]
                 _, encoded = cv2.imencode(".jpg", zoomed)
