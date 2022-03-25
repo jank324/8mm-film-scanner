@@ -5,11 +5,19 @@ __pycache__
 
 notification_config.yml
 
+case_fix_advance_12_lumi
+case_fix_advance_13_lumi
 experiments
 lightroom
+movement_test
 resource
+testhalladjustcase3-1000
 test_capture
 
 *.fcpbundle
 *.fcpxml
 *.png
+
+case_fix_advance_12_lumi.m4v
+case_fix_advance_13_lumi.m4v
+testhalladjustcase3.m4v
