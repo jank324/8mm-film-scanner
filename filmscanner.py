@@ -9,12 +9,8 @@ from pathlib import Path
 from threading import Event
 import time
 
-import cv2
-import numpy as np
 from picamerax import PiCamera
 import pigpio
-
-import utils
 
 
 # Setup logging (to console)
@@ -350,9 +346,6 @@ class FilmScanner:
         t_start = time.time()
         t_last = t_start
 
-        advance_times = []
-        cpu_temperatures = []
-
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.jpg"
             filepath = os.path.join(output_directory, filename)
@@ -368,17 +361,6 @@ class FilmScanner:
             remaining = timedelta(seconds=remaining_seconds)
             logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps / {remaining} s remaining)")
             t_last = t_now
-            
-            ta1 = time.time()
-            self.advance(recover=False)
-            ta2 = time.time()
-            tad = ta2 - ta1
-            advance_times.append(tad)
-            logger.info(f"Took {tad} s to advance")
-
-            temperature = utils.measure_cpu_temperature()
-            cpu_temperatures.append(temperature)
-            logger.info(f"CPU temperature is {temperature}°C")
 
             if self._stop_requested:
                 break
@@ -386,14 +368,6 @@ class FilmScanner:
         t = t_now - t_start
         fps = (i + 1) / t
         logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
-
-        import pickle
-        data_file_name = f"advance_times_and_cpu_temperatures_{int(time.time())}.pkl"
-        data_file_path = os.path.join(output_directory, data_file_name)
-        with open(data_file_path, "wb") as f:
-            logger.info(f"Writing advance time file {data_file_path}")
-            data = {"advance_times": advance_times, "cpu_temperatures": cpu_temperatures}
-            pickle.dump(data, f)
 
         return i + 1
 
