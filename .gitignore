@@ -5,11 +5,14 @@ __pycache__
 
 notification_config.yml
 
-experiments
 lightroom
-resource
-test_capture
 
 *.fcpbundle
 *.fcpxml
+*.jpg
+*.log
+*.m4v
+*.pdf
+*.pkl
 *.png
+*.webp
