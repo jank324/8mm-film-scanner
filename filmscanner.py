@@ -14,6 +14,8 @@ import numpy as np
 from picamerax import PiCamera
 import pigpio
 
+import utils
+
 
 # Setup logging (to console)
 logger = logging.getLogger(__name__)
@@ -324,7 +326,6 @@ class FilmScanner:
         self._write_executor = ThreadPoolExecutor(max_workers=1)
 
         self.backlight.turn_on()
-        self.motor.enable()
 
     def __del__(self):
         self.backlight.turn_off()
@@ -349,6 +350,9 @@ class FilmScanner:
         t_start = time.time()
         t_last = t_start
 
+        advance_times = []
+        cpu_temperatures = []
+
         for i in range(start_index, n_frames):
             filename = f"frame-{i:05d}.jpg"
             filepath = os.path.join(output_directory, filename)
@@ -365,7 +369,16 @@ class FilmScanner:
             logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps / {remaining} s remaining)")
             t_last = t_now
             
-            self.advance()
+            ta1 = time.time()
+            self.advance(recover=False)
+            ta2 = time.time()
+            tad = ta2 - ta1
+            advance_times.append(tad)
+            logger.info(f"Took {tad} s to advance")
+
+            temperature = utils.measure_cpu_temperature()
+            cpu_temperatures.append(temperature)
+            logger.info(f"CPU temperature is {temperature}°C")
 
             if self._stop_requested:
                 break
@@ -374,6 +387,14 @@ class FilmScanner:
         fps = (i + 1) / t
         logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
 
+        import pickle
+        data_file_name = f"advance_times_and_cpu_temperatures_{int(time.time())}.pkl"
+        data_file_path = os.path.join(output_directory, data_file_name)
+        with open(data_file_path, "wb") as f:
+            logger.info(f"Writing advance time file {data_file_path}")
+            data = {"advance_times": advance_times, "cpu_temperatures": cpu_temperatures}
+            pickle.dump(data, f)
+
         return i + 1
 
     def advance(self, recover=True):
@@ -381,10 +402,12 @@ class FilmScanner:
 
         t_threshold = 0.487 * 1.025
 
+        self.motor.enable()
         self.motor.start(speed=300, acceleration=24)
         time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
         was_frame_detected = self.frame_sensor.wait_for_trigger(timeout=t_threshold*0.75)
         self.motor.stop(deceleration=24)
+        self.motor.disable()
 
         if not was_frame_detected:
             logger.error("Frame sensor was not reached in time")
@@ -401,11 +424,12 @@ class FilmScanner:
             logger.warning(f"Attempting frame sensor recovery (attempt={attempts}, pause={pause})")
 
             self.motor.direction = 1
+            
             self.motor.enable()
-
             self.motor.start(speed=1, acceleration=1)
             self.frame_sensor.wait_for_trigger(timeout=1.0)
             self.motor.stop(deceleration=1)
+            self.motor.disable()
 
             time.sleep(1)
 
@@ -475,37 +499,28 @@ class FilmScanner:
     
     def liveview(self):
         buffer = BytesIO()
-        while True:
-            self.camera.resolution = (800, 600)
-            for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
-                # TODO: Hack!
-                self.camera.shutter_speed = int(1e6 * 1 / 100)
 
-                buffer.truncate()
-                buffer.seek(0)
-                frame = buffer.read()
-                buffer.seek(0)
+        self.camera.resolution = (800, 600)
+        is_zoomed = False
+        
+        for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
+            # TODO: Hack!
+            self.camera.shutter_speed = int(1e6 * 1 / 100)
 
-                yield frame
+            if self._live_view_zoom_toggle_requested:
+                if not is_zoomed:
+                    is_zoomed = True
+                    self.camera.zoom = (0.37, 0.37, 0.25, 0.25)
+                else:
+                    is_zoomed = False
+                    self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
+                self._live_view_zoom_toggle_requested = False
 
-                if self._live_view_zoom_toggle_requested:
-                    break
-            
-            self._live_view_zoom_toggle_requested = False
+            buffer.truncate()
+            buffer.seek(0)
+            frame = buffer.read()
+            buffer.seek(0)
 
-            self.camera.resolution = (4032, 3040)
-            bgr = np.empty((3040,4032,3), dtype=np.uint8)
-            for _ in self.camera.capture_continuous(bgr, format="bgr", use_video_port=False):
-                # TODO: Hack!
-                self.camera.shutter_speed = int(1e6 * 1 / 100)
-
-                zoomed = bgr[1520-384:1520+384,2016-512:2016+512,:]
-                _, encoded = cv2.imencode(".jpg", zoomed)
-                frame = encoded.tobytes()
-
-                yield frame
-
-                if self._live_view_zoom_toggle_requested:
-                    break
-            
-            self._live_view_zoom_toggle_requested = False
+            yield frame
+        
+        self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
