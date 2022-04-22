@@ -50,6 +50,15 @@ def stop():
     return "", 204
 
 
+@app.route("/togglelight", methods=("POST",))
+def toggle_light():
+    if scanner.backlight.is_on:
+        scanner.backlight.turn_off()
+    else:
+        scanner.backlight.turn_on()
+    return "", 204
+
+
 @app.route("/togglefocuszoom", methods=("POST",))
 def toggle_focus_zoom():
     scanner._live_view_zoom_toggle_requested = True
