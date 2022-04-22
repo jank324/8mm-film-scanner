@@ -1,18 +1,16 @@
 import time
 
-from flask import Flask, render_template
+from flask import Flask
+from flask_cors import CORS
 
 from filmscanner import FilmScanner
 
 
 app = Flask(__name__)
+cors = CORS(app)
+
 scanner = FilmScanner()
 scanner.camera.resolution = (800, 600)
-
-
-@app.route("/")
-def index():
-    return render_template("index.html")
 
 
 @app.route("/advance", methods=("POST",))
@@ -38,7 +36,7 @@ def fast_forward():
     return "", 204
 
 
-@app.route("/liveview")
+@app.route("/preview")
 def liveview():
     def generate():
         for frame in scanner.liveview():
