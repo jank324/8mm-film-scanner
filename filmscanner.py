@@ -127,6 +127,13 @@ class Light:
         self.pi.write(self.switch_pin, 1)
         self.is_on = False
 
+    def toggle(self):
+        """Toggle the light between on and off."""
+        if self.is_on:
+            self.turn_off()
+        else:
+            self.turn_on()
+
 
 class StepperMotor:
     """
