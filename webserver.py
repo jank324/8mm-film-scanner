@@ -19,20 +19,12 @@ def advance():
     return "", 204
 
 
-@app.route("/counter")
-def get_counter():
-    def generator():
-        counter = 0
-        while True:
-            time.sleep(0.2)
-            yield f"data: {counter}\n\n"
-            counter += 1
-    return app.response_class(generator(), content_type="text/event-stream")
-
-
 @app.route("/fastforward", methods=("POST",))
 def fast_forward():
-    scanner.fast_forward()
+    if not scanner.is_fast_forwarding:
+        scanner.fast_forward()
+    else:
+        scanner._stop_requested = True
     return "", 204
 
 
@@ -44,13 +36,7 @@ def liveview():
     return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 
-@app.route("/stop", methods=("POST",))
-def stop():
-    scanner._stop_requested = True
-    return "", 204
-
-
-@app.route("/togglelight", methods=("POST",))
+@app.route("/light", methods=("POST",))
 def toggle_light():
     if scanner.backlight.is_on:
         scanner.backlight.turn_off()
@@ -59,7 +45,7 @@ def toggle_light():
     return "", 204
 
 
-@app.route("/togglefocuszoom", methods=("POST",))
+@app.route("/focuszoom", methods=("POST",))
 def toggle_focus_zoom():
     scanner._live_view_zoom_toggle_requested = True
     return "", 204
