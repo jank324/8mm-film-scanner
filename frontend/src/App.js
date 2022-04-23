@@ -53,12 +53,20 @@ const ButtonGrid = (props) => {
 const Toggle = (props) => {
 
   const [enabled, setEnabled] = useState(true)
-  const [on, turnOn] = useState(true)
+  const [on, setOn] = useState(true)
+
+  useEffect(() => {
+    const sse = new EventSource(props.target)
+    sse.onmessage = e => setOn(e.data)
+    sse.onerror = e => sse.close()  // TODO: Do something more intelligent
+
+    return () => sse.close()
+  }, [])
 
   const toggle = () => axios.post(props.target)
 
   return (
-    <button className="aspect-square bg-slate-300" onClick={toggle} disabled={!enabled}>{props.children}</button>
+    <button className="aspect-square bg-slate-300" onClick={toggle} disabled={!enabled}>{props.children} - {on}</button>
   )
 }
 
