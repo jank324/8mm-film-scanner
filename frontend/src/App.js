@@ -1,17 +1,15 @@
-import './App.css';
-
-import {useState} from "react"
+import React, { useState, useEffect } from "react"
 import axios from "axios"
 
+import './App.css';
 
-function flask(route) {
-  return "http://192.168.178.48:5000" + route
-}
+
+const flask = route => "http://192.168.178.48:5000" + route
 
 
 function App() {
   return (
-    <div className="app">
+    <div className="flex">
       <Preview />
       <Controls />
     </div>
@@ -19,81 +17,49 @@ function App() {
 }
 
 
-function Preview() {
+const Preview = () => {
   return (
-      <img className="preview" src={flask("/preview")}></img>
-  )
-}
-
-
-function Controls() {
-
-  return (
-    <div className="controls">
-      <AdvanceButton />
-      <FastForwardButton />
-      <ToggleLightButton />
-      <FocusZoomButton />
+    <div className="h-screen grow flex justify-center bg-black">
+      <img className="h-screen" src={flask("/preview")}></img>
     </div>
   )
 }
 
 
-function AdvanceButton() {
-
-  function trigger() {
-      axios.post(flask("/advance"))
-  }
+const Controls = (props) => {
 
   return (
-      <button onClick={trigger}>Advance</button>
+    <div className="m-0 flex flex-col w-80">
+      <ButtonGrid>
+        <Toggle target={flask("/light")}>Light</Toggle>
+        <Toggle target={flask("/advance")}>Advance</Toggle>
+        <Toggle target={flask("/fastforward")}>Fast-Forward</Toggle>
+        <Toggle target={flask("/focuszoom")}>Zoom</Toggle>
+      </ButtonGrid>
+    </div>
   )
 }
 
 
-function FastForwardButton() {
-
-  var isFastForwarding = false
-
-  function trigger() {
-      console.log(isFastForwarding)
-      if (!isFastForwarding) {
-          axios.post(flask("/fastforward"))
-          isFastForwarding = true
-      } else {
-        axios.post(flask("/stop"))
-          isFastForwarding = false
-      }
-  }
-
+const ButtonGrid = (props) => {
   return (
-      <button onClick={trigger}>Fast-Forward</button>
+    <div className="grid grid-cols-4 gap-2 m-2">
+      {props.children}
+    </div>
   )
 }
 
 
-function ToggleLightButton() {
+const Toggle = (props) => {
 
-  function trigger() {
-    axios.post(flask("/togglelight"))
-  }
+  const [enabled, setEnabled] = useState(true)
+  const [on, turnOn] = useState(true)
 
-  return (
-    <button onClick={trigger}>Light</button>
-  )
-}
-
-
-function FocusZoomButton() {
-
-  function trigger() {
-      axios.post(flask("/togglefocuszoom"))
-  }
+  const toggle = () => axios.post(props.target)
 
   return (
-      <button onClick={trigger}>Focus Zoom</button>
+    <button className="aspect-square bg-slate-300" onClick={toggle} disabled={!enabled}>{props.children}</button>
   )
 }
-
 
 export default App;
