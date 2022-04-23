@@ -1,6 +1,4 @@
-import time
-
-from flask import Flask
+from flask import Flask, Response, request
 from flask_cors import CORS
 
 from filmscanner import FilmScanner
@@ -13,18 +11,30 @@ scanner = FilmScanner()
 scanner.camera.resolution = (800, 600)
 
 
-@app.route("/advance", methods=("POST",))
+@app.route("/advance", methods=("GET","POST"))
 def advance():
-    scanner.advance()
+    if request.method == "GET":
+        def get_data():
+            while True:
+                yield f"data: {scanner.is_actively_advancing} \n\n"
+        return Response(get_data(), mimetype="text/event-stream")
+    elif request.method == "POST":
+        scanner.advance()
     return "", 204
 
 
-@app.route("/fastforward", methods=("POST",))
+@app.route("/fastforward", methods=("GET","POST"))
 def fast_forward():
-    if not scanner.is_fast_forwarding:
-        scanner.fast_forward()
-    else:
-        scanner.stop_requested = True
+    if request.method == "GET":
+        def get_data():
+            while True:
+                yield f"data: {scanner.is_fast_forwarding} \n\n"
+        return Response(get_data(), mimetype="text/event-stream")
+    elif request.method == "POST":
+        if not scanner.is_fast_forwarding:
+            scanner.fast_forward()
+        else:
+            scanner.stop_requested = True
     return "", 204
 
 
@@ -36,18 +46,27 @@ def liveview():
     return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 
-@app.route("/light", methods=("POST",))
+@app.route("/light", methods=("GET","POST"))
 def toggle_light():
-    if scanner.backlight.is_on:
-        scanner.backlight.turn_off()
-    else:
-        scanner.backlight.turn_on()
+    if request.method == "GET":
+        def get_data():
+            while True:
+                yield f"data: {scanner.backlight.is_on} \n\n"
+        return Response(get_data(), mimetype="text/event-stream")
+    elif request.method == "POST":
+        scanner.backlight.toggle()
     return "", 204
 
 
-@app.route("/focuszoom", methods=("POST",))
+@app.route("/focuszoom", methods=("GET","POST"))
 def toggle_focus_zoom():
-    scanner.live_view_zoom_toggle_requested = True
+    if request.method == "GET":
+        def get_data():
+            while True:
+                yield f"data: {scanner.is_zoomed} \n\n"
+        return Response(get_data(), mimetype="text/event-stream")
+    elif request.method == "POST":
+        scanner.live_view_zoom_toggle_requested = True
     return "", 204
 
 

@@ -319,8 +319,14 @@ class FilmScanner:
         self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
         time.sleep(2)
 
+        self.is_advancing = False
+        self.is_fast_forwarding = False
+        self.is_scanning = False
+
         self.stop_requested = False
         self.live_view_zoom_toggle_requested = False
+
+        self.is_zoomed = False
 
         self.last_steps = 0
 
@@ -339,7 +345,25 @@ class FilmScanner:
         
         self.pi.stop()
     
+    @property
+    def is_actively_advancing(self):
+        return self.is_advancing and not (self.is_fast_forwarding or self.is_scanning)
+    
+    @property
+    def is_lamp_toggle_allowed(self):
+        return not self.is_scanning
+    
+    @property
+    def is_advance_allowed(self):
+        return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
+    
+    @property
+    def is_fast_forward_allowed(self):
+        return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
+    
     def scan(self, output_directory, n_frames=3900, start_index=0):
+        self.is_scanning = True
+
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
         self.setup_logging_to_file(output_directory)
@@ -375,9 +399,13 @@ class FilmScanner:
         fps = (i + 1) / t
         logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
 
+        self.is_scanning = False
+
         return i + 1
 
     def advance(self, recover=True):
+        self.is_advancing = True
+
         logger.debug("Advancing one frame")
 
         t_threshold = 0.487 * 1.025
@@ -396,6 +424,8 @@ class FilmScanner:
                 fixed = self.recover()
             if not fixed:
                 raise FilmScanner.AdvanceTimeoutError()
+        
+        self.is_advancing = False
     
     def recover(self):
         attempts = 0
@@ -428,6 +458,8 @@ class FilmScanner:
                 return True
             
     def fast_forward(self, n=None):
+        self.is_fast_forwarding = True
+
         if n is None:
             logger.debug("Fast-forwarding until stopped")
             while not self.stop_requested:
@@ -441,6 +473,8 @@ class FilmScanner:
                     logger.debug("Stopping fast-forwarding early")
                     self.stop_requested = False
                     break
+        
+        self.is_fast_forwarding = False
             
     def capture_frame(self, filepath):
         if hasattr(self, "_write_future"):
@@ -481,18 +515,17 @@ class FilmScanner:
         buffer = BytesIO()
 
         self.camera.resolution = (800, 600)
-        is_zoomed = False
         
         for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
             # TODO: Hack!
             self.camera.shutter_speed = int(1e6 * 1 / 100)
 
             if self.live_view_zoom_toggle_requested:
-                if not is_zoomed:
-                    is_zoomed = True
+                if not self.is_zoomed:
+                    self.is_zoomed = True
                     self.camera.zoom = (0.37, 0.37, 0.25, 0.25)
                 else:
-                    is_zoomed = False
+                    self.is_zoomed = False
                     self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
                 self.live_view_zoom_toggle_requested = False
 
