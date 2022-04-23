@@ -42,26 +42,26 @@ class HallEffectSensor:
     """
 
     def __init__(self, pi, input_pin):
-        self._pi = pi
-        self._input_pin = input_pin
+        self.pi = pi
+        self.input_pin = input_pin
         
-        self._pi.set_mode(self._input_pin, pigpio.INPUT)
+        self.pi.set_mode(self.input_pin, pigpio.INPUT)
         
-        self._is_armed = False
+        self.is_armed = False
     
     def wait_for_trigger(self, timeout=None):
         frame_detected_event = Event()
         frame_detected_event.clear()
 
-        self._arm(user_callback=frame_detected_event.set)
+        self.arm(user_callback=frame_detected_event.set)
 
         has_detected = frame_detected_event.wait(timeout=timeout)
-        if self._is_armed:
-            self._disarm()
+        if self.is_armed:
+            self.disarm()
 
         return has_detected
     
-    def _arm(self, user_callback):
+    def arm(self, user_callback):
         """
         Setup the sensor to run a callback function whenever the Hall effect is detected.
 
@@ -71,25 +71,25 @@ class HallEffectSensor:
             Callback function that is called everytime the sensor detects the Hall effect. The
             function should receive no parameters nor return anything.
         """
-        assert not self._is_armed, "Cannot arm armed Hall Effect sensor!"
-        self._is_armed = True
-        self._callback = partial(self._sensor_callback, user_callback)
-        self._pigpio_callback = self._pi.callback(self._input_pin, pigpio.RISING_EDGE, self._detect)
+        assert not self.is_armed, "Cannot arm armed Hall Effect sensor!"
+        self.is_armed = True
+        self.callback = partial(self.sensor_callback, user_callback)
+        self.pigpio_callback = self.pi.callback(self.input_pin, pigpio.RISING_EDGE, self.detect)
     
-    def _sensor_callback(self, user_callback):
-        self._disarm()
+    def sensor_callback(self, user_callback):
+        self.disarm()
         user_callback()
     
-    def _disarm(self):
+    def disarm(self):
         """Stop calling the callback function when the Hall effect is detected."""
-        assert self._is_armed, "Can only disarm armed Hall Effect sensor!"
-        self._pigpio_callback.cancel()
-        self._is_armed = False
+        assert self.is_armed, "Can only disarm armed Hall Effect sensor!"
+        self.pigpio_callback.cancel()
+        self.is_armed = False
 
-    def _detect(self, pin, level, tick):
+    def detect(self, pin, level, tick):
         """Internal callback for `pgpio` which calls the sensor's callback function."""
         logger.debug("Hall effect sensor detected")
-        self._callback()
+        self.callback()
 
 
 class Light:
@@ -126,7 +126,7 @@ class Light:
         """Turn the light off."""
         self.pi.write(self.switch_pin, 1)
         self.is_on = False
-
+    
     def toggle(self):
         """Toggle the light between on and off."""
         if self.is_on:
@@ -159,8 +159,8 @@ class StepperMotor:
         Current speed of the motor in RPM.
     """
 
-    _STEPS_PER_ROUND = 200
-    _PWM_FREQUENCIES = [320, 500, 800, 1000, 1600, 2000]
+    STEPS_PER_ROUND = 200
+    PWM_FREQUENCIES = [320, 500, 800, 1000, 1600, 2000]
 
     def __init__(self, pi, enable_pin, direction_pin, step_pin):
         self.pi = pi
@@ -212,13 +212,13 @@ class StepperMotor:
 
         assert self.is_enabled, "Cannot start a disabled stepper motor!"
 
-        pwm_frequency = self._rpm2hz(speed)
-        pwm_acceleration = self._rpm2hz(acceleration)
+        pwm_frequency = self.rpm2hz(speed)
+        pwm_acceleration = self.rpm2hz(acceleration)
 
         self.speed = speed
 
-        ramp = self._make_ramp(pwm_frequency, pwm_acceleration, stay=10000)
-        self._send_ramp(ramp)
+        ramp = self.make_ramp(pwm_frequency, pwm_acceleration, stay=10000)
+        self.send_ramp(ramp)
 
     def stop(self, deceleration=24):
         """
@@ -229,26 +229,26 @@ class StepperMotor:
         deceleration : int, optional
             Deceleration with which to stop the motor in `rounds / (minute * second)`.
         """
-        pwm_frequency = self._rpm2hz(self.speed)
-        pwm_deceleration = self._rpm2hz(deceleration)
+        pwm_frequency = self.rpm2hz(self.speed)
+        pwm_deceleration = self.rpm2hz(deceleration)
 
         self.speed = 0
 
-        ramp = self._make_ramp(pwm_frequency, -pwm_deceleration)
-        self._send_ramp(ramp)
+        ramp = self.make_ramp(pwm_frequency, -pwm_deceleration)
+        self.send_ramp(ramp)
     
-    def _rpm2hz(self, rpm):
+    def rpm2hz(self, rpm):
         """Convert RPM to PWM frequency in Hz for this particular stepper motor."""
-        return self._STEPS_PER_ROUND * rpm / 60
+        return self.STEPS_PER_ROUND * rpm / 60
     
-    def _make_ramp(self, target_frequency, acceleration, stay=0):
+    def make_ramp(self, target_frequency, acceleration, stay=0):
         """
         Make list of `(frequency, step)` pairs to ramp up the motor and stay at the target speed
         for `stay` steps.
         """
-        frequencies = [f for f in self._PWM_FREQUENCIES if f <= target_frequency]
+        frequencies = [f for f in self.PWM_FREQUENCIES if f <= target_frequency]
         if not frequencies:
-            frequencies = [self._PWM_FREQUENCIES[0]]
+            frequencies = [self.PWM_FREQUENCIES[0]]
 
         ramp = [(speed, int(speed/abs(acceleration))) for speed in frequencies[:-1]]
         if stay > 0:
@@ -256,7 +256,7 @@ class StepperMotor:
         
         return ramp if acceleration > 0 else list(reversed(ramp))
     
-    def _send_ramp(self, ramp):
+    def send_ramp(self, ramp):
         """Send wave chain that describes list of `(frequency, step)` pairs to step pin."""
         self.pi.wave_clear()
         length = len(ramp)
@@ -319,14 +319,13 @@ class FilmScanner:
         self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
         time.sleep(2)
 
-        self._stop_requested = False
-
-        self._live_view_zoom_toggle_requested = False
+        self.stop_requested = False
+        self.live_view_zoom_toggle_requested = False
 
         self.last_steps = 0
 
-        self._img_stream = BytesIO()
-        self._write_executor = ThreadPoolExecutor(max_workers=1)
+        self.img_stream = BytesIO()
+        self.write_executor = ThreadPoolExecutor(max_workers=1)
 
         self.backlight.turn_on()
 
@@ -343,7 +342,7 @@ class FilmScanner:
     def scan(self, output_directory, n_frames=3900, start_index=0):
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-        self._setup_logging_to_file(output_directory)
+        self.setup_logging_to_file(output_directory)
 
         logger.info(f"Start scanning frames {start_index} to {n_frames} into \"{output_directory}\"")
 
@@ -369,7 +368,7 @@ class FilmScanner:
             logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps / {remaining} s remaining)")
             t_last = t_now
 
-            if self._stop_requested:
+            if self.stop_requested:
                 break
 
         t = t_now - t_start
@@ -431,43 +430,43 @@ class FilmScanner:
     def fast_forward(self, n=None):
         if n is None:
             logger.debug("Fast-forwarding until stopped")
-            while not self._stop_requested:
+            while not self.stop_requested:
                 self.advance()
-            self._stop_requested = False
+            self.stop_requested = False
         else:
             logger.debug(f"Fast-forwarding {n} frames")
             for _ in range(n):
                 self.advance()
-                if self._stop_requested:
+                if self.stop_requested:
                     logger.debug("Stopping fast-forwarding early")
-                    self._stop_requested = False
+                    self.stop_requested = False
                     break
             
     def capture_frame(self, filepath):
         if hasattr(self, "_write_future"):
-            _ = self._write_future.result()
+            _ = self.write_future.result()
 
         self.camera.shutter_speed = int(1e6 * 1 / 250)
         
-        self._img_stream.seek(0)
-        self.camera.capture(self._img_stream, format="jpeg", bayer=True)
-        self._img_stream.truncate()
+        self.img_stream.seek(0)
+        self.camera.capture(self.img_stream, format="jpeg", bayer=True)
+        self.img_stream.truncate()
         
-        self._write_future = self._write_executor.submit(self.save_frame, filepath)
+        self.write_future = self.write_executor.submit(self.save_frame, filepath)
     
     def save_frame(self, filepath):
-        self._img_stream.seek(0)
+        self.img_stream.seek(0)
         
         with open(filepath, "wb") as f:
-            f.write(self._img_stream.read())
+            f.write(self.img_stream.read())
 
         logger.debug(f"Saved {filepath}")
     
     def stop(self):
-        self._stop_requested = True
+        self.stop_requested = True
         logger.info("Stop requested")
     
-    def _setup_logging_to_file(self, directory):
+    def setup_logging_to_file(self, directory):
         logpath = os.path.join(directory, "scanner.log")
 
         file_handler = logging.FileHandler(logpath)
@@ -488,14 +487,14 @@ class FilmScanner:
             # TODO: Hack!
             self.camera.shutter_speed = int(1e6 * 1 / 100)
 
-            if self._live_view_zoom_toggle_requested:
+            if self.live_view_zoom_toggle_requested:
                 if not is_zoomed:
                     is_zoomed = True
                     self.camera.zoom = (0.37, 0.37, 0.25, 0.25)
                 else:
                     is_zoomed = False
                     self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
-                self._live_view_zoom_toggle_requested = False
+                self.live_view_zoom_toggle_requested = False
 
             buffer.truncate()
             buffer.seek(0)

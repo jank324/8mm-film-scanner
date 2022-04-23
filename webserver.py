@@ -24,7 +24,7 @@ def fast_forward():
     if not scanner.is_fast_forwarding:
         scanner.fast_forward()
     else:
-        scanner._stop_requested = True
+        scanner.stop_requested = True
     return "", 204
 
 
@@ -47,7 +47,7 @@ def toggle_light():
 
 @app.route("/focuszoom", methods=("POST",))
 def toggle_focus_zoom():
-    scanner._live_view_zoom_toggle_requested = True
+    scanner.live_view_zoom_toggle_requested = True
     return "", 204
 
 
