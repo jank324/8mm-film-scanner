@@ -31,8 +31,6 @@ class HallEffectSensor:
 
     Parameters
     ----------
-    pi : pigpio.pi
-        Raspberry Pi that the stepper motor is connected to.
     input_pin : int
         Broadcom number of the GPIO header pin receiving a digital signal from the sensor.
     
@@ -43,10 +41,10 @@ class HallEffectSensor:
         the Hall effect is detected.
     """
 
-    def __init__(self, pi, input_pin):
-        self.pi = pi
+    def __init__(self, input_pin):
         self.input_pin = input_pin
         
+        self.pi = pigpio.pi()
         self.pi.set_mode(self.input_pin, pigpio.INPUT)
         
         self.is_armed = False
@@ -100,8 +98,6 @@ class Light:
 
     Parameters
     ----------
-    pi : pigpio.pi
-        Raspberry Pi that the stepper motor is connected to.
     switch_pin : int
         Broadcom number of the GPIO header pin used to turn the light on and off.
     
@@ -111,13 +107,13 @@ class Light:
         Flag representing the light's state, `True` when the light is on and `False` when it is off.
     """
     
-    def __init__(self, pi, switch_pin, callback=Callback()):
-        self.pi = pi
+    def __init__(self, switch_pin, callback=Callback()):
         self.switch_pin = switch_pin
         self.callback = CallbackList(callback) if isinstance(callback, list) else callback
 
         self.callback.setup(self)
 
+        self.pi = pigpio.pi()
         self.pi.set_mode(self.switch_pin, pigpio.OUTPUT)
         
         self.turn_off()
@@ -148,8 +144,6 @@ class StepperMotor:
 
     Parameters
     ----------
-    pi : pigpio.pi
-        Raspberry Pi that the stepper motor is connected to.
     enable_pin : int
         Broadcom number of the GPIO header pin connected to the stepper driver's `SLEEP` input.
     direction_pin : int
@@ -169,12 +163,12 @@ class StepperMotor:
     STEPS_PER_ROUND = 200
     PWM_FREQUENCIES = [320, 500, 800, 1000, 1600, 2000]
 
-    def __init__(self, pi, enable_pin, direction_pin, step_pin):
-        self.pi = pi
+    def __init__(self, enable_pin, direction_pin, step_pin):
         self.enable_pin = enable_pin
         self.direction_pin = direction_pin
         self.step_pin = step_pin
 
+        self.pi = pigpio.pi()
         self.pi.set_mode(self.enable_pin, pigpio.OUTPUT)
         self.pi.set_mode(self.direction_pin, pigpio.OUTPUT)
         self.pi.set_mode(self.step_pin, pigpio.OUTPUT)
@@ -308,9 +302,9 @@ class FilmScanner:
 
         self.pi = pigpio.pi()
 
-        self.backlight = Light(self.pi, 6, callback=backlight_callback)
-        self.motor = StepperMotor(self.pi, 16, 21, 20)
-        self.frame_sensor = HallEffectSensor(self.pi, 26)
+        self.backlight = Light(6, callback=backlight_callback)
+        self.motor = StepperMotor(16, 21, 20)
+        self.frame_sensor = HallEffectSensor(26)
 
         # self.camera = PiCamera(resolution=(800,600))
         # self.camera.exposure_mode = "off"
