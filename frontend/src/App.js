@@ -8,6 +8,7 @@ const flask = route => "http://192.168.178.48:5000" + route
 
 
 function App() {
+
   return (
     <div className="flex">
       <Preview />
@@ -57,7 +58,8 @@ const Toggle = (props) => {
 
   useEffect(() => {
     const sse = new EventSource(props.target)
-    sse.onmessage = e => setOn(e.data)
+    sse.addEventListener("enabled", e => setEnabled(e.data))
+    sse.addEventListener("on", e => setOn(e.data))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
 
     return () => sse.close()
