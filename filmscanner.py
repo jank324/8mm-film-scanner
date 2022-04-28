@@ -12,6 +12,8 @@ import time
 from picamerax import PiCamera
 import pigpio
 
+from utils import Callback, CallbackList
+
 
 # Setup logging (to console)
 logger = logging.getLogger(__name__)
@@ -109,9 +111,12 @@ class Light:
         Flag representing the light's state, `True` when the light is on and `False` when it is off.
     """
     
-    def __init__(self, pi, switch_pin):
+    def __init__(self, pi, switch_pin, callback=Callback()):
         self.pi = pi
         self.switch_pin = switch_pin
+        self.callback = CallbackList(callback) if isinstance(callback, list) else callback
+
+        self.callback.setup(self)
 
         self.pi.set_mode(self.switch_pin, pigpio.OUTPUT)
         
@@ -121,11 +126,13 @@ class Light:
         """Turn the light on."""
         self.pi.write(self.switch_pin, 0)
         self.is_on = True
+        self.callback.on_light_on()
     
     def turn_off(self):
         """Turn the light off."""
         self.pi.write(self.switch_pin, 1)
         self.is_on = False
+        self.callback.on_light_off()
     
     def toggle(self):
         """Toggle the light between on and off."""
@@ -295,10 +302,13 @@ class FilmScanner:
             super().__init__("Frame sensor not reached in time. It was either missed, or the motor "
                              "got stuck.")
 
-    def __init__(self):
+    def __init__(self, callback=Callback(), backlight_callback=Callback()):
+        self.callback = CallbackList(callback) if isinstance(callback, list) else callback
+        self.callback.setup(self)
+
         self.pi = pigpio.pi()
 
-        self.backlight = Light(self.pi, 6)
+        self.backlight = Light(self.pi, 6, callback=backlight_callback)
         self.motor = StepperMotor(self.pi, 16, 21, 20)
         self.frame_sensor = HallEffectSensor(self.pi, 26)
 
@@ -345,24 +355,9 @@ class FilmScanner:
         
         self.pi.stop()
     
-    @property
-    def is_actively_advancing(self):
-        return self.is_advancing and not (self.is_fast_forwarding or self.is_scanning)
-    
-    @property
-    def is_lamp_toggle_allowed(self):
-        return not self.is_scanning
-    
-    @property
-    def is_advance_allowed(self):
-        return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
-    
-    @property
-    def is_fast_forward_allowed(self):
-        return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
-    
     def scan(self, output_directory, n_frames=3900, start_index=0):
         self.is_scanning = True
+        self.callback.on_scan_start()
 
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
@@ -400,11 +395,13 @@ class FilmScanner:
         logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
 
         self.is_scanning = False
+        self.callback.on_scan_end()
 
         return i + 1
 
     def advance(self, recover=True):
         self.is_advancing = True
+        self.callback.on_advance_start()
 
         logger.debug("Advancing one frame")
 
@@ -426,6 +423,7 @@ class FilmScanner:
                 raise FilmScanner.AdvanceTimeoutError()
         
         self.is_advancing = False
+        self.callback.on_advance_end()
     
     def recover(self):
         attempts = 0
@@ -459,6 +457,7 @@ class FilmScanner:
             
     def fast_forward(self, n=None):
         self.is_fast_forwarding = True
+        self.callback.on_fast_forward_start()
 
         if n is None:
             logger.debug("Fast-forwarding until stopped")
@@ -475,6 +474,7 @@ class FilmScanner:
                     break
         
         self.is_fast_forwarding = False
+        self.callback.on_fast_forward_end()
             
     def capture_frame(self, filepath):
         if hasattr(self, "_write_future"):
@@ -524,9 +524,11 @@ class FilmScanner:
                 if not self.is_zoomed:
                     self.is_zoomed = True
                     self.camera.zoom = (0.37, 0.37, 0.25, 0.25)
+                    self.callback.on_zoom_in()
                 else:
                     self.is_zoomed = False
                     self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
+                    self.callback.on_zoom_out()
                 self.live_view_zoom_toggle_requested = False
 
             buffer.truncate()
