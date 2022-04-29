@@ -54,10 +54,15 @@ const ButtonGrid = (props) => {
 const Toggle = (props) => {
 
   const [enabled, setEnabled] = useState(true)
-  const [on, setOn] = useState(true)
+  const [on, setOn] = useState(false)
 
   useEffect(() => {
-    const sse = new EventSource(props.target)
+    axios.get(props.target).then(response => {
+      setEnabled(response.data.enabled)
+      setOn(response.data.on)
+    })
+
+    const sse = new EventSource(props.target + "-stream")
     sse.addEventListener("enabled", e => setEnabled(e.data))
     sse.addEventListener("on", e => setOn(e.data))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
