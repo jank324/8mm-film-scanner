@@ -306,14 +306,6 @@ class FilmScanner:
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
 
-        # self.camera = PiCamera(resolution=(800,600))
-        # self.camera.exposure_mode = "off"
-        # self.camera.analog_gain = 1
-        # self.camera.digital_gain = 1
-        # self.camera.shutter_speed = int(1e6 * 1 / 2000)    # 1/2000s
-        # self.camera.awb_mode = "tungsten"
-        # time.sleep(2)
-
         self.camera = PiCamera(resolution=(800,600))
         self.camera.analog_gain = 1
         self.camera.digital_gain = 1
