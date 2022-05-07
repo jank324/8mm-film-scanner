@@ -62,12 +62,22 @@ def fast_forward_stream():
     return Response(fast_forward_manager.messenger.subscribe(), mimetype="text/event-stream")
 
 
-@app.route("/preview")
-def liveview():
-    def generate():
-        for frame in scanner.preview():
-            yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n" 
-    return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundry=frame")
+@app.route("/focuszoom", methods=("GET","POST"))
+def toggle_focus_zoom():
+    if request.method == "GET":
+        return {
+            "on": scanner.is_zoomed,
+            "enabled": not scanner.is_scanning
+        }
+    elif request.method == "POST":
+        scanner.live_view_zoom_toggle_requested = True
+        return "", 204
+    return "", 400
+
+
+@app.route("/focuszoom-stream")
+def focuszoom_stream():
+    return Response(zoom_toggle_manager.messenger.subscribe(), mimetype="text/event-stream")
 
 
 @app.route("/light", methods=("GET","POST"))
@@ -89,22 +99,12 @@ def light_stream():
     return Response(light_toggle_manager.messenger.subscribe(), mimetype="text/event-stream")
 
 
-@app.route("/focuszoom", methods=("GET","POST"))
-def toggle_focus_zoom():
-    if request.method == "GET":
-        return {
-            "on": scanner.is_zoomed,
-            "enabled": not scanner.is_scanning
-        }
-    elif request.method == "POST":
-        scanner.live_view_zoom_toggle_requested = True
-        return "", 204
-    return "", 400
-
-
-@app.route("/focuszoom-stream")
-def focuszoom_stream():
-    return Response(zoom_toggle_manager.messenger.subscribe(), mimetype="text/event-stream")
+@app.route("/preview")
+def liveview():
+    def generate():
+        for frame in scanner.preview():
+            yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n" 
+    return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 
 if __name__ == "__main__":
