@@ -62,6 +62,9 @@ const Toggle = (props) => {
   const [enabled, setEnabled] = useState(true)
   const [on, setOn] = useState(false)
 
+  const offStyle = "bg-blue-500 hover:bg-blue-700"
+  const onStyle = "bg-yellow-500 hover:bg-yellow-700"
+
   useEffect(() => {
     axios.get(props.target).then(response => {
       setEnabled(response.data.enabled)
@@ -69,8 +72,8 @@ const Toggle = (props) => {
     })
 
     const sse = new EventSource(props.target + "-stream")
-    sse.addEventListener("enabled", e => setEnabled(e.data))
-    sse.addEventListener("on", e => setOn(e.data))
+    sse.addEventListener("enabled", e => setEnabled(e.data == "True"))
+    sse.addEventListener("on", e => setOn(e.data == "True"))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
 
     return () => sse.close()
@@ -79,7 +82,7 @@ const Toggle = (props) => {
   const toggle = () => axios.post(props.target)
 
   return (
-    <button className="aspect-square bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-red-500" onClick={toggle} disabled={!(enabled === "true")}>{props.children} - {on} / {enabled}</button>
+    <button className={"aspect-square " + (on ? onStyle : offStyle) + " text-white font-bold py-2 px-4 rounded disabled:bg-red-500"} onClick={toggle} disabled={!enabled}>{props.children} - {on.toString()} / {enabled.toString()}</button>
   )
 }
 
