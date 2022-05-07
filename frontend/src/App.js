@@ -27,7 +27,7 @@ const Preview = () => {
 }
 
 
-const Controls = (props) => {
+const Controls = () => {
 
   return (
     <div className="m-0 flex flex-col w-80">
@@ -37,6 +37,12 @@ const Controls = (props) => {
         <Toggle target={flask("/fastforward")}>Fast-Forward</Toggle>
         <Toggle target={flask("/focuszoom")}>Zoom</Toggle>
       </ButtonGrid>
+      <label>Save Frames To</label>
+      <input type="text" className="bg-green-200"/>
+      <label># Frames</label>
+      <input type="text" className="bg-green-200"/>
+      <button className="bg-slate-300">Scan</button>
+      <p>progress_bar</p>
     </div>
   )
 }
