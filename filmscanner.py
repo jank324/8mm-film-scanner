@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import partial
 from fractions import Fraction
 from io import BytesIO
@@ -12,7 +12,7 @@ import time
 from picamerax import PiCamera
 import pigpio
 
-from utils import Callback, CallbackList
+from utils import Callback, CallbackList, Viewer
 
 
 # Setup logging (to console)
@@ -331,6 +331,13 @@ class FilmScanner:
 
         self.backlight.turn_on()
 
+        self.is_liveview_active = False
+        self.liveview_executor = ThreadPoolExecutor(max_workers=1)
+        self.viewers = []
+        self.liveview_stop_requested = False
+        with open("placeholder_image.jpg", "rb") as f:
+            self.preview_frame = f.read()
+
     def __del__(self):
         self.backlight.turn_off()
         self.motor.disable()
@@ -497,6 +504,36 @@ class FilmScanner:
 
         logger.addHandler(file_handler)
     
+    @property
+    def preview_frame(self):
+        return self._preview_frame
+    
+    @preview_frame.setter
+    def preview_frame(self, value):
+        self._preview_frame = value
+
+        self.prune_viewers()
+        self.notify_viewers()
+    
+    def prune_viewers(self):
+        now = datetime.now()
+        self.viewers = [viewer for viewer in self.viewers if now - viewer.last_access < timedelta(seconds=10)]
+        if not self.viewers and self.is_liveview_active:
+            # TODO This could cause a race condition if a new viewer is added here (?)
+            self.stop_liveview()
+
+    def notify_viewers(self):
+        for viewer in self.viewers:
+            viewer.notify()
+    
+    def start_liveview(self):
+        self.is_liveview_active = True
+        self.liveview_stop_requested = False
+        self.liveview_executor.submit(self.liveview)
+    
+    def stop_liveview(self):
+        self.liveview_stop_requested = True
+    
     def liveview(self):
         buffer = BytesIO()
 
@@ -522,6 +559,19 @@ class FilmScanner:
             frame = buffer.read()
             buffer.seek(0)
 
-            yield frame
+            self.preview_frame = frame
+
+            if self.liveview_stop_requested:
+                break
         
-        self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
+        self.is_liveview_active = False
+            
+    def preview(self):
+        # Activate liveview when not yet active (and not currently scanning)
+        if not self.is_liveview_active and not self.is_scanning:
+            self.start_liveview()
+
+        viewer = Viewer(self)
+        self.viewers.append(viewer)
+
+        return viewer.view()

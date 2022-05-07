@@ -1,4 +1,6 @@
+from datetime import datetime
 import queue
+from threading import Event
 
 
 def format_sse(data, event=None):
@@ -212,3 +214,22 @@ class ZoomToggleManager(Callback):
     
     def on_scan_end(self):
         self.messenger.send("enabled", True)
+
+
+class Viewer:
+
+    def __init__(self, scanner):
+        self.scanner = scanner
+
+        self.event = Event()
+        self.last_access = datetime.now()
+    
+    def notify(self):
+        self.event.set()
+    
+    def view(self):
+        while True:
+            self.event.wait()
+            yield self.scanner.preview_frame
+            self.event.clear()
+            self.last_access = datetime.now()
