@@ -23,12 +23,12 @@ scanner.camera.resolution = (800, 600)
 def advance():
     if request.method == "GET":
         return {
-            "on": str(scanner.is_advancing and not (scanner.is_fast_forwarding or scanner.is_scanning)).lower(),
-            "enabled": str(not any([
+            "on": scanner.is_advancing and not (scanner.is_fast_forwarding or scanner.is_scanning),
+            "enabled": not any([
                 scanner.is_advancing,
                 scanner.is_fast_forwarding,
                 scanner.is_scanning
-            ])).lower()
+            ])
         }
     elif request.method == "POST":
         scanner.advance()
@@ -45,8 +45,8 @@ def advance_stream():
 def fast_forward():
     if request.method == "GET":
         return {
-            "on": str(scanner.is_fast_forwarding).lower(),
-            "enabled": str(not (scanner.is_advancing or scanner.is_scanning)).lower()
+            "on": scanner.is_fast_forwarding,
+            "enabled": not (scanner.is_advancing or scanner.is_scanning)
         }
     elif request.method == "POST":
         if not scanner.is_fast_forwarding:
@@ -74,8 +74,8 @@ def liveview():
 def toggle_light():
     if request.method == "GET":
         return {
-            "on": str(scanner.backlight.is_on).lower(),
-            "enabled": str(not scanner.is_scanning).lower()
+            "on": scanner.backlight.is_on,
+            "enabled": not scanner.is_scanning
         }
     elif request.method == "POST":
         if not scanner.is_scanning:
@@ -93,8 +93,8 @@ def light_stream():
 def toggle_focus_zoom():
     if request.method == "GET":
         return {
-            "on": str(scanner.is_zoomed).lower(),
-            "enabled": str(not scanner.is_scanning).lower()
+            "on": scanner.is_zoomed,
+            "enabled": not scanner.is_scanning
         }
     elif request.method == "POST":
         scanner.live_view_zoom_toggle_requested = True
