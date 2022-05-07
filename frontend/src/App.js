@@ -79,7 +79,7 @@ const Toggle = (props) => {
   const toggle = () => axios.post(props.target)
 
   return (
-    <button className="aspect-square bg-slate-300" onClick={toggle} disabled={!enabled}>{props.children} - {on}</button>
+    <button className="aspect-square bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-red-500" onClick={toggle} disabled={!(enabled === "true")}>{props.children} - {on} / {enabled}</button>
   )
 }
 
