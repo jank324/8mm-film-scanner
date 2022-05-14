@@ -54,7 +54,7 @@ def advance():
 
 @app.route("/advance-stream")
 def advance_stream():
-    return Response(advance_toggle_callback.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(advance_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 @app.route("/fastforward", methods=("GET","POST"))
@@ -75,7 +75,7 @@ def fast_forward():
 
 @app.route("/fastforward-stream")
 def fast_forward_stream():
-    return Response(fast_forward_toggle_callback.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(fast_forward_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 @app.route("/focuszoom", methods=("GET","POST"))
@@ -93,7 +93,7 @@ def toggle_focus_zoom():
 
 @app.route("/focuszoom-stream")
 def focuszoom_stream():
-    return Response(zoom_toggle_callback.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(zoom_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 @app.route("/light", methods=("GET","POST"))
@@ -112,7 +112,7 @@ def toggle_light():
 
 @app.route("/light-stream")
 def light_stream():
-    return Response(light_toggle_callback.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(light_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 @app.route("/poweroff", methods=("POST",))
@@ -148,7 +148,7 @@ def scan():
 
 @app.route("/scan-stream")
 def scan_stream():
-    return Response(scan_controls_callback.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(scan_controls_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":

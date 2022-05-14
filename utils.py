@@ -190,11 +190,28 @@ class CallbackList(BaseCallback):
             callback.on_zoom_out()
 
 
-class LightToggleCallback(BaseCallback):
+class SSESendingCallback(BaseCallback):
+    """
+    Callback that reacts to events on the `FilmScanner` object by sending server-sent events which
+    can be subscribed to.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.messenger = SSEMessenger()
+    
+    def subscribe_to_sse(self):
+        """
+        Subsribed to the server-sent events sent by this callback.
+        """
+        return self.messenger.subscribe()
+
+
+class LightToggleCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' light toggle.
     """
-    # TODO Split into two callbacks or fix when its called
+
     def __init__(self):
         self.messenger = SSEMessenger()
 
@@ -211,7 +228,7 @@ class LightToggleCallback(BaseCallback):
         self.messenger.send("enabled", False)
 
 
-class AdvanceToggleCallback(BaseCallback):
+class AdvanceToggleCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' advance toggle.
     """
@@ -242,7 +259,7 @@ class AdvanceToggleCallback(BaseCallback):
         self.messenger.send("enabled", True)
 
 
-class FastForwardToggleCallback(BaseCallback):
+class FastForwardToggleCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' fast-forward toggle.
     """
@@ -271,7 +288,7 @@ class FastForwardToggleCallback(BaseCallback):
         self.messenger.send("enabled", True)
 
 
-class ZoomToggleCallback(BaseCallback):
+class ZoomToggleCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' zoom toggle.
     """
@@ -292,7 +309,7 @@ class ZoomToggleCallback(BaseCallback):
         self.messenger.send("enabled", True)
 
 
-class ScanControlsCallback(BaseCallback):
+class ScanControlsCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' scan control panel.
     """
