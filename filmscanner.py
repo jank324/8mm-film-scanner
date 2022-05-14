@@ -387,6 +387,8 @@ class FilmScanner:
         self.output_directory = output_directory
         self.n_frames = n_frames
 
+        self.backlight.turn_on()
+
         self.callback.on_scan_start()
 
         if self.is_liveview_active:
