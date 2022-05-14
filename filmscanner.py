@@ -319,6 +319,7 @@ class FilmScanner:
         self.is_fast_forwarding = False
         self.is_scanning = False
 
+        self.scan_stopped_event = Event()
         self.scan_stop_requested = False
         self.live_view_zoom_toggle_requested = False
 
@@ -369,8 +370,10 @@ class FilmScanner:
         )
     
     def stop_scan(self):
-        logger.info("Scan stop requested")
+        logger.info("Stopping scan")
+        self.scan_stopped_event.clear()
         self.scan_stop_requested = True
+        self.scan_stopped_event.wait()
     
     def scan(self, output_directory, n_frames=3900, start_index=0):
         logger.info("Setting up scan")
@@ -379,7 +382,6 @@ class FilmScanner:
 
         if self.is_liveview_active:
             self.stop_liveview()
-            time.sleep(1)   # TODO Wait using event
 
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
@@ -416,6 +418,8 @@ class FilmScanner:
 
         self.is_scanning = False
         self.callback.on_scan_end()
+
+        self.scan_stopped_event.set()
 
         # TODO Remove logger
 
