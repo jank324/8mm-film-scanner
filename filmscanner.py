@@ -160,7 +160,7 @@ class FilmScanner:
 
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-        self.setup_logging_to_file(output_directory)
+        self.start_logging_to_output_directory()
 
         self.camera.resolution = (400, 300)
 
@@ -199,7 +199,7 @@ class FilmScanner:
 
         self.scan_stopped_event.set()
 
-        # TODO Remove logger
+        self.stop_logging_to_output_directory()
 
         if self.viewers:
             self.start_liveview()
@@ -390,24 +390,31 @@ class FilmScanner:
         else:
             self.turn_on_backlight()
     
-    def setup_logging_to_file(self, directory):
+    def start_logging_to_output_directory(self):
         """
-        Setup hander for logger that outputs to a `scanner.log` in the given directory.
+        Start logging to `scan.log` file in the current output directory.
         
         Parameters
         ----------
         directory : str
-            Directory to place the `scanner.log` file in.
+            Directory to place the `scan.log` file in.
         """
-        logpath = os.path.join(directory, "scanner.log")
+        logpath = os.path.join(self.output_directory, "scan.log")
 
-        file_handler = logging.FileHandler(logpath)
-        file_handler.setLevel(logging.INFO)
+        self.scan_logging_handler = logging.FileHandler(logpath)
+        self.scan_logging_handler.setLevel(logging.INFO)
 
         formatter = logging.Formatter("%(asctime)s - %(message)s")
-        file_handler.setFormatter(formatter)
+        self.scan_logging_handler.setFormatter(formatter)
 
-        logger.addHandler(file_handler)
+        logger.addHandler(self.scan_logging_handler)
+    
+    def stop_logging_to_output_directory(self):
+        """
+        Stop logging to `scan.log` file in the current output directory.
+        """
+        if hasattr(self, "scan_logging_handler"):
+            logger.removeHandler(self.scan_logging_handler)
     
     @property
     def preview_frame(self):
