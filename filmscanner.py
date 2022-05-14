@@ -319,6 +319,7 @@ class FilmScanner:
         self.is_fast_forwarding = False
         self.is_scanning = False
 
+        self.scan_started_event = Event()
         self.scan_stopped_event = Event()
         self.scan_stop_requested = False
         self.live_view_zoom_toggle_requested = False
@@ -336,6 +337,7 @@ class FilmScanner:
         self.liveview_executor = ThreadPoolExecutor(max_workers=1)
         self.viewers = []
         self.liveview_stop_requested = False
+        self.liveview_started_event = Event()
         self.liveview_stopped_event = Event()
         with open("placeholder_image.jpg", "rb") as f:
             self.preview_frame = f.read()
@@ -362,12 +364,14 @@ class FilmScanner:
         logger.info(f"Starting scan (output_directory={output_directory} / frames={n_frames} / start_index={start_index})")
         self.scan_stop_requested = False
         self.is_scanning = True
+        self.scan_started_event.clear()
         self.scan_executor.submit(
             self.debug_scan,
             output_directory=output_directory,
             n_frames=n_frames,
             start_index=start_index
         )
+        self.scan_started_event.wait()
     
     def stop_scan(self):
         logger.info("Stopping scan")
@@ -382,6 +386,8 @@ class FilmScanner:
             print(f"AN ERROR HAS OCURRED: {e}")
     
     def scan(self, output_directory, n_frames=3900, start_index=0):
+        self.scan_started_event.set()
+        
         logger.info("Setting up scan")
 
         self.output_directory = output_directory
@@ -582,7 +588,9 @@ class FilmScanner:
         logger.info("Starting liveview")
         self.is_liveview_active = True
         self.liveview_stop_requested = False
+        self.liveview_started_event.clear()
         self.liveview_executor.submit(self.liveview)
+        self.liveview_started_event.wait()
     
     def stop_liveview(self):
         logger.info("Stopping liveview")
@@ -591,6 +599,8 @@ class FilmScanner:
         self.liveview_stopped_event.wait()
     
     def liveview(self):
+        self.liveview_started_event.set()
+
         buffer = BytesIO()
 
         self.camera.resolution = (800, 600)
