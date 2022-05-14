@@ -81,13 +81,17 @@ class HallEffectSensor:
         user_callback()
     
     def disarm(self):
-        """Stop calling the callback function when the Hall effect is detected."""
+        """
+        Stop calling the callback function when the Hall effect is detected.
+        """
         assert self.is_armed, "Can only disarm armed Hall Effect sensor!"
         self.pigpio_callback.cancel()
         self.is_armed = False
 
     def detect(self, pin, level, tick):
-        """Internal callback for `pgpio` which calls the sensor's callback function."""
+        """
+        Internal callback for `pgpio` which calls the sensor's callback function.
+        """
         logger.debug("Hall effect sensor detected")
         self.callback()
 
@@ -119,19 +123,25 @@ class Light:
         self.turn_off()
     
     def turn_on(self):
-        """Turn the light on."""
+        """
+        Turn the light on.
+        """
         self.pi.write(self.switch_pin, 0)
         self.is_on = True
         self.callback.on_light_on()
     
     def turn_off(self):
-        """Turn the light off."""
+        """
+        Turn the light off.
+        """
         self.pi.write(self.switch_pin, 1)
         self.is_on = False
         self.callback.on_light_off()
     
     def toggle(self):
-        """Toggle the light between on and off."""
+        """
+        Toggle the light between on and off.
+        """
         if self.is_on:
             self.turn_off()
         else:
@@ -181,12 +191,16 @@ class StepperMotor:
         self.pi.wave_clear()
     
     def enable(self):
-        """Enable the stepper motor (and its holding force as well as ability to step)."""
+        """
+        Enable the stepper motor (and its holding force as well as ability to step).
+        """
         self.pi.write(self.enable_pin, 0)
         self.is_enabled = True
     
     def disable(self):
-        """Disable the stepper motor (and its holding force as well as ability to step)."""
+        """
+        Disable the stepper motor (and its holding force as well as ability to step).
+        """
         self.pi.write(self.enable_pin, 1)
         self.is_enabled = False
     
@@ -239,7 +253,9 @@ class StepperMotor:
         self.send_ramp(ramp)
     
     def rpm2hz(self, rpm):
-        """Convert RPM to PWM frequency in Hz for this particular stepper motor."""
+        """
+        Convert RPM to PWM frequency in Hz for this particular stepper motor.
+        """
         return self.STEPS_PER_ROUND * rpm / 60
     
     def make_ramp(self, target_frequency, acceleration, stay=0):
@@ -258,7 +274,9 @@ class StepperMotor:
         return ramp if acceleration > 0 else list(reversed(ramp))
     
     def send_ramp(self, ramp):
-        """Send wave chain that describes list of `(frequency, step)` pairs to step pin."""
+        """
+        Send wave chain that describes list of `(frequency, step)` pairs to step pin.
+        """
         self.pi.wave_clear()
         length = len(ramp)
         wid = [-1] * length
@@ -360,7 +378,10 @@ class FilmScanner:
         
         self.pi.stop()
     
-    def start_scan(self, output_directory, n_frames=3900, start_index=0):
+    def start_scan(self, output_directory, n_frames, start_index=0):
+        """
+        Start a scan. The arguments are the same as those of `scan`.
+        """
         logger.info(f"Starting scan (output_directory={output_directory} / frames={n_frames} / start_index={start_index})")
         self.scan_stop_requested = False
         self.is_scanning = True
@@ -374,20 +395,44 @@ class FilmScanner:
         self.scan_started_event.wait()
     
     def stop_scan(self):
+        """
+        Stop a scan prematurely. When called, the scanner will stop once the current frame finished
+        scanning. This method returns only when the scan has actually been stopped.
+        """
         logger.info("Stopping scan")
         self.scan_stopped_event.clear()
         self.scan_stop_requested = True
         self.scan_stopped_event.wait()
     
     def debug_scan(self, output_directory, n_frames=3900, start_index=0):
+        """
+        The same as `scan`, but exceptions are caught and printed to `stdout`.
+        """
         try:
             self.scan(output_directory, n_frames, start_index)
         except Exception as e:
             print(f"AN ERROR HAS OCURRED: {e}")
     
     def scan(self, output_directory, n_frames=3900, start_index=0):
+        """
+        Scan a film reel frame-by-frame.
+
+        Parameters
+        ----------
+        output_directory : string
+            Directory that frames will be saved to. If the given directory does not exist, it will
+            be created automatically.
+        n_frames : int
+            Number of frames on the reel. Try to figure out how much frames are in the reel you wish
+            to scan and then add some frames for safety. A 15m (50 foot) reel has about 3600 frames,
+            so to be save it it recommned to scan 3800 frames. Note that the actual number of frames scanned
+            is `n_frames - start_index`.
+        start_index: int, optional
+            Frame index at which to start scanning if you are not scanning from the beginning.
+            Reduces the number of frames scanning.
+        """
         self.scan_started_event.set()
-        
+
         logger.info("Setting up scan")
 
         self.output_directory = output_directory
@@ -449,14 +494,30 @@ class FilmScanner:
         return i + 1
     
     def wait_for_previous_save(self):
+        """
+        If a frame is currently being saved, blocks until that save operation has finished.
+        """
         # Wait for previous image to be saved if there was one
         if hasattr(self, "write_future"):
             _ = self.write_future.result()
 
     def submit_save_frame(self, frame, filepath):
+        """
+        Submit a frame for saving. Returns immediately while the frame is saved concurrently. Use
+        `wait for previous save` to block until saving is finished. The arguments are the same as
+        those of `save_frame`.
+        """
         self.write_future = self.write_executor.submit(self.save_frame, frame, filepath)
 
     def advance(self, recover=True):
+        """
+        Advance film scanner by one frame.
+
+        Parameters
+        ----------
+        recover : bool
+            Set `true` to attempt to recevor the scanner when an error occurs during the advance.
+        """
         self.is_advancing = True
         self.callback.on_advance_start()
 
@@ -483,6 +544,9 @@ class FilmScanner:
         self.callback.on_advance_end()
     
     def recover(self):
+        """
+        Attempt to recover the frame advance after an error has occurred.
+        """
         attempts = 0
         pause = 1
         while True:
@@ -513,6 +577,14 @@ class FilmScanner:
                 return True
             
     def fast_forward(self, n=None):
+        """
+        Fast-forward a given number of frames or until stopped.
+
+        Parameters
+        ----------
+        n : int
+            Number of frames to advance. If set to `None`, fast-forward until stopped.
+        """
         self.is_fast_forwarding = True
         self.callback.on_fast_forward_start()
 
@@ -535,6 +607,14 @@ class FilmScanner:
         self.callback.on_fast_forward_end()
             
     def capture_frame(self):
+        """
+        Capture the current frame.
+
+        Returns
+        -------
+        frame : bytes
+            JPEG encoded image with raw bayer data appended.
+        """
         self.camera.shutter_speed = int(1e6 * 1 / 250)
         
         buffer = BytesIO()
@@ -545,13 +625,31 @@ class FilmScanner:
 
         return frame
     
-    def save_frame(self, frame, filepath):  
+    def save_frame(self, frame, filepath):
+        """
+        Save a frame to a the given path.
+
+        Parameters
+        ----------
+        frame : bytes
+            Frame to save encoded as bytes.
+        filepath : str
+            Path to save the frame to.
+        """  
         with open(filepath, "wb") as f:
             f.write(frame)
 
         logger.debug(f"Saved {filepath}")
     
     def setup_logging_to_file(self, directory):
+        """
+        Setup hander for logger that outputs to a `scanner.log` in the given directory.
+        
+        Parameters
+        ----------
+        directory : str
+            Directory to place the `scanner.log` file in.
+        """
         logpath = os.path.join(directory, "scanner.log")
 
         file_handler = logging.FileHandler(logpath)
@@ -574,6 +672,9 @@ class FilmScanner:
         self.notify_viewers()
     
     def prune_viewers(self):
+        """
+        Remove viewers that did not retreive the frame for longer than a threshold time.
+        """
         now = datetime.now()
         self.viewers = [viewer for viewer in self.viewers if now - viewer.last_access < timedelta(minutes=1)]
         if not self.viewers and self.is_liveview_active:
@@ -581,10 +682,16 @@ class FilmScanner:
             self.stop_liveview()
 
     def notify_viewers(self):
+        """
+        Notify viewers that a new frame is available.
+        """
         for viewer in self.viewers:
             viewer.notify()
     
     def start_liveview(self):
+        """
+        Start a liveview to fill the preview frames.
+        """
         logger.info("Starting liveview")
         self.is_liveview_active = True
         self.liveview_stop_requested = False
@@ -593,12 +700,18 @@ class FilmScanner:
         self.liveview_started_event.wait()
     
     def stop_liveview(self):
+        """
+        Stop the liveview from writing the preview frames.
+        """
         logger.info("Stopping liveview")
         self.liveview_stopped_event.clear()
         self.liveview_stop_requested = True
         self.liveview_stopped_event.wait()
     
     def liveview(self):
+        """
+        Livewview function writing preview frames.
+        """
         self.liveview_started_event.set()
 
         buffer = BytesIO()
@@ -634,6 +747,14 @@ class FilmScanner:
         self.liveview_stopped_event.set()
             
     def preview(self):
+        """
+        Add a preview viewer and get its view.
+
+        Returns
+        -------
+        view : generator
+            Generator that yields preview frames when they become available.
+        """
         # Activate liveview when not yet active (and not currently scanning)
         if not self.is_liveview_active and not self.is_scanning:
             self.start_liveview()
@@ -644,6 +765,9 @@ class FilmScanner:
         return viewer.view()
     
     def poweroff(self):
+        """
+        Turn the sanner off.
+        """
         if self.is_scanning:
             self.stop_scan()
         if self.is_liveview_active:

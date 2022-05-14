@@ -4,6 +4,13 @@ from threading import Event
 
 
 def format_sse(data, event=None):
+    """
+    Format `data` as a server-sent Event on the topic `event`.
+
+    Returns
+    -------
+    message : str
+    """
     message = f"data: {data}\n\n"
     if event is not None:
         message = f"event: {event}\n{message}"
@@ -11,11 +18,22 @@ def format_sse(data, event=None):
 
 
 class SSEMessenger:
+    """
+    Messenger object that allows sending server-sent events to subscribed clients.
+    """
 
     def __init__(self):
         self.subscribers = []
 
     def subscribe(self):
+        """
+        Subscribe to events sent by this messenger.
+
+        Returns
+        -------
+         : generator
+            Generator that yields server-sent events when they are sent.
+        """
         q = queue.Queue(maxsize=5)
         self.subscribers.append(q)
 
@@ -27,6 +45,9 @@ class SSEMessenger:
         return generator()
 
     def send(self, event, data):
+        """
+        Send `data` to subscribers on the `event` topic.
+        """
         message = format_sse(data, event=event)
         for i in reversed(range(len(self.subscribers))):
             try:
@@ -36,6 +57,11 @@ class SSEMessenger:
     
 
 class Callback:
+    """
+    Base class of callbacks for `FilmScanner` objects. Inherit from this class and overwrite one of
+    its methods to react to the corresponding event. Access the `FilmScanner` class a callback is
+    connected to via `self.scanner`.
+    """
 
     def __init__(self):
         self.scanner = None
@@ -44,37 +70,75 @@ class Callback:
         self.scanner = scanner
     
     def on_advance_start(self):
+        """
+        Called before the scanner advances a frame.
+        """
         pass
 
     def on_advance_end(self):
+        """
+        Called after the scanner has advances a frame.
+        """
         pass
 
     def on_fast_forward_start(self):
+        """
+        Called before the scanner starts fast-forwarding.
+        """
         pass
 
     def on_fast_forward_end(self):
+        """
+        Called after the scanner finished fast-forwarding.
+        """
         pass
 
     def on_light_on(self):
+        """
+        Called after the light is turned on.
+        """
         pass
 
     def on_light_off(self):
+        """
+        Called after the light is turned off.
+        """
         pass
 
     def on_scan_start(self):
+        """
+        Called after a scan starts.
+        """
         pass
 
     def on_scan_end(self):
+        """
+        Called after a scan ended.
+        """
         pass
 
     def on_zoom_in(self):
+        """
+        Called after the camera zoomed in.
+        """
         pass
 
     def on_zoom_out(self):
+        """
+        Called after the camera zoomed out.
+        """
         pass
 
 
 class CallbackList(Callback):
+    """
+    Helper class to accumulate multiple callbacks for `FilmScanner` in one object.
+
+    Parameters
+    ----------
+    callbacks : list
+        List of callbacks, each of which is called when the callback events occur.
+    """
 
     def __init__(self, callbacks):
         self.callbacks = callbacks
@@ -127,7 +191,10 @@ class CallbackList(Callback):
 
 
 class LightToggleManager(Callback):
-
+    """
+    Callback to handle state of the clients' light toggle.
+    """
+    # TODO Split into two callbacks or fix when its called
     def __init__(self):
         self.messenger = SSEMessenger()
 
@@ -145,6 +212,9 @@ class LightToggleManager(Callback):
 
 
 class AdvanceTriggerManager(Callback):
+    """
+    Callback to handle state of the clients' advance toggle.
+    """
 
     def __init__(self):
         self.messenger = SSEMessenger()
@@ -173,6 +243,9 @@ class AdvanceTriggerManager(Callback):
 
 
 class FastForwardToggleManager(Callback):
+    """
+    Callback to handle state of the clients' fast-forward toggle.
+    """
 
     def __init__(self):
         self.messenger = SSEMessenger()
@@ -199,6 +272,9 @@ class FastForwardToggleManager(Callback):
 
 
 class ZoomToggleManager(Callback):
+    """
+    Callback to handle state of the clients' zoom toggle.
+    """
 
     def __init__(self):
         self.messenger = SSEMessenger()
@@ -217,6 +293,9 @@ class ZoomToggleManager(Callback):
 
 
 class ScanStateManager(Callback):
+    """
+    Callback to handle state of the clients' scan control panel.
+    """
 
     def __init__(self):
         self.messenger = SSEMessenger()
@@ -231,6 +310,9 @@ class ScanStateManager(Callback):
 
 
 class Viewer:
+    """
+    Helper class to pass frames to a previewing client when they become available.
+    """
 
     def __init__(self, scanner):
         self.scanner = scanner
@@ -239,9 +321,16 @@ class Viewer:
         self.last_access = datetime.now()
     
     def notify(self):
+        """
+        Notify this viewer that a new frame is available.
+        """
         self.event.set()
     
     def view(self):
+        """
+        Generator that yields preview frames when this viewer is notified (that a new one is
+        available).
+        """"
         while True:
             self.event.wait()
             yield self.scanner.preview_frame

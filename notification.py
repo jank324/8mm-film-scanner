@@ -33,6 +33,7 @@ class EmailNotifier:
 
 
 class MailCallback(Callback):
+    """Callback for sending an e-mail notification when a scan finished."""
 
     def __init__(self):
         self.notifier = EmailNotifier()
