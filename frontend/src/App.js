@@ -10,7 +10,7 @@ const flask = route => "http://192.168.178.48:5000" + route
 function App() {
 
   return (
-    <div className="flex">
+    <div className="flex flex-wrap">
       <Preview />
       <Controls />
     </div>
@@ -29,6 +29,35 @@ const Preview = () => {
 
 const Controls = () => {
 
+  const [isScanning, setIsScanning] = useState(true)
+  const [path, setPath] = useState("")
+  const [frames, setFrames] = useState(3800)
+
+  useEffect(() => {
+    axios.get(flask("/scan")).then(response => {
+      setIsScanning(response.data.isScanning)
+      setPath(response.data.path)
+      setFrames(response.data.frames)
+    })
+
+    const sse = new EventSource(flask("/scan-stream"))
+    sse.addEventListener("isScanning", e => setIsScanning(e.data == "True"))
+    sse.addEventListener("path", e => setPath(e.data))
+    sse.addEventListener("frames", e => setFrames(parseInt(e.data)))
+    sse.onerror = e => sse.close()  // TODO: Do something more intelligent
+
+    return () => sse.close()
+  }, [])
+
+  const startScanStyle = "bg-blue-500 hover:bg-blue-700"
+  const stopScanStyle = "bg-red-500 hover:bg-red-700"
+
+  const startScan = () => axios.post(flask("/scan"), {path: path, frames: frames})
+  const poweroff = () => axios.post(flask("/poweroff"))
+
+  const onPathChange = event => setPath(event.target.value)
+  const onFramesChange = event => setFrames(event.target.value)
+
   return (
     <div className="m-0 flex flex-col w-80">
       <ButtonGrid>
@@ -38,11 +67,12 @@ const Controls = () => {
         <Toggle target={flask("/focuszoom")}>Zoom</Toggle>
       </ButtonGrid>
       <label>Save Frames To</label>
-      <input type="text" className="bg-green-200"/>
+      <input type="text" value={path} className="bg-green-200" disabled={isScanning} onChange={onPathChange}/>
       <label># Frames</label>
-      <input type="text" className="bg-green-200"/>
-      <button className="bg-slate-300">Scan</button>
-      <p>progress_bar</p>
+      <input type="text" value={frames} className="bg-green-200" disabled={isScanning} onChange={onFramesChange}/>
+      <p>progress_bar that becomes visible</p>
+      <button className={(isScanning ? stopScanStyle : startScanStyle) + " text-white font-bold py-2 px-4 rounded"} onClick={startScan}>{isScanning ? "Stop" : "Scan"}</button>
+      <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500" onClick={poweroff} disabled={isScanning}> ________poweroff</button>
     </div>
   )
 }
