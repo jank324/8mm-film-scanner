@@ -378,6 +378,9 @@ class FilmScanner:
     def scan(self, output_directory, n_frames=3900, start_index=0):
         logger.info("Setting up scan")
 
+        self.output_directory = output_directory
+        self.n_frames = n_frames
+
         self.callback.on_scan_start()
 
         if self.is_liveview_active:

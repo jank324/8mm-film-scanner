@@ -223,6 +223,8 @@ class ScanStateManager(Callback):
     
     def on_scan_start(self):
         self.messenger.send("isScanning", True)
+        self.messenger.send("path", self.scanner.output_directory)
+        self.messenger.send("frames", self.scanner.n_frames)
     
     def on_scan_end(self):
         self.messenger.send("isScanning", False)
