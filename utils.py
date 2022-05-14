@@ -141,6 +141,7 @@ class CallbackList(BaseCallback):
     """
 
     def __init__(self, callbacks):
+        super().__init__()
         self.callbacks = callbacks
 
         self.scanner = None
@@ -212,9 +213,6 @@ class LightToggleCallback(SSESendingCallback):
     Callback to handle state of the clients' light toggle.
     """
 
-    def __init__(self):
-        self.messenger = SSEMessenger()
-
     def on_backlight_on(self):
         self.messenger.send("on", True)
     
@@ -232,9 +230,6 @@ class AdvanceToggleCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' advance toggle.
     """
-
-    def __init__(self):
-        self.messenger = SSEMessenger()
 
     def on_advance_start(self):
         if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
@@ -263,9 +258,6 @@ class FastForwardToggleCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' fast-forward toggle.
     """
-
-    def __init__(self):
-        self.messenger = SSEMessenger()
     
     def on_advance_start(self):
         if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
@@ -292,9 +284,6 @@ class ZoomToggleCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' zoom toggle.
     """
-
-    def __init__(self):
-        self.messenger = SSEMessenger()
     
     def on_zoom_in(self):
         self.messenger.send("on", True)
@@ -313,9 +302,6 @@ class ScanControlsCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' scan control panel.
     """
-
-    def __init__(self):
-        self.messenger = SSEMessenger()
     
     def on_scan_start(self):
         self.messenger.send("isScanning", True)
