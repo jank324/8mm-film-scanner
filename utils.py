@@ -93,15 +93,15 @@ class Callback:
         """
         pass
 
-    def on_light_on(self):
+    def on_backlight_on(self):
         """
-        Called after the light is turned on.
+        Called after the scanner's backlight is turned on.
         """
         pass
 
-    def on_light_off(self):
+    def on_backlight_off(self):
         """
-        Called after the light is turned off.
+        Called after the scanner's backlight is turned off.
         """
         pass
 
@@ -165,13 +165,13 @@ class CallbackList(Callback):
         for callback in self.callbacks:
             callback.on_fast_forward_end()
 
-    def on_light_on(self):
+    def on_backlight_on(self):
         for callback in self.callbacks:
-            callback.on_light_on()
+            callback.on_backlight_on()
 
-    def on_light_off(self):
+    def on_backlight_off(self):
         for callback in self.callbacks:
-            callback.on_light_off()
+            callback.on_backlight_off()
 
     def on_scan_start(self):
         for callback in self.callbacks:
@@ -198,10 +198,10 @@ class LightToggleManager(Callback):
     def __init__(self):
         self.messenger = SSEMessenger()
 
-    def on_light_on(self):
+    def on_backlight_on(self):
         self.messenger.send("on", True)
     
-    def on_light_off(self):
+    def on_backlight_off(self):
         self.messenger.send("on", False)
     
     def on_scan_start(self):
@@ -330,7 +330,7 @@ class Viewer:
         """
         Generator that yields preview frames when this viewer is notified (that a new one is
         available).
-        """"
+        """
         while True:
             self.event.wait()
             yield self.scanner.preview_frame

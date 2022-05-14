@@ -111,11 +111,8 @@ class Light:
         Flag representing the light's state, `True` when the light is on and `False` when it is off.
     """
     
-    def __init__(self, switch_pin, callback=Callback()):
+    def __init__(self, switch_pin):
         self.switch_pin = switch_pin
-        self.callback = CallbackList(callback) if isinstance(callback, list) else callback
-
-        self.callback.setup(self)
 
         self.pi = pigpio.pi()
         self.pi.set_mode(self.switch_pin, pigpio.OUTPUT)
@@ -128,7 +125,6 @@ class Light:
         """
         self.pi.write(self.switch_pin, 0)
         self.is_on = True
-        self.callback.on_light_on()
     
     def turn_off(self):
         """
@@ -136,7 +132,6 @@ class Light:
         """
         self.pi.write(self.switch_pin, 1)
         self.is_on = False
-        self.callback.on_light_off()
     
     def toggle(self):
         """
@@ -314,13 +309,13 @@ class FilmScanner:
             super().__init__("Frame sensor not reached in time. It was either missed, or the motor "
                              "got stuck.")
 
-    def __init__(self, callback=Callback(), backlight_callback=Callback()):
+    def __init__(self, callback=Callback()):
         self.callback = CallbackList(callback) if isinstance(callback, list) else callback
         self.callback.setup(self)
 
         self.pi = pigpio.pi()
 
-        self.backlight = Light(6, callback=backlight_callback)
+        self.backlight = Light(6)
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
 
@@ -349,7 +344,7 @@ class FilmScanner:
         self.img_stream = BytesIO()
         self.write_executor = ThreadPoolExecutor(max_workers=1)
 
-        self.backlight.turn_on()
+        self.turn_on_backlight()
 
         self.is_liveview_active = False
         self.liveview_executor = ThreadPoolExecutor(max_workers=1)
@@ -369,7 +364,7 @@ class FilmScanner:
         self.scanned_frames = 0
 
     def __del__(self):
-        self.backlight.turn_off()
+        self.turn_off_backlight()
         self.motor.disable()
 
         self.camera.close()
@@ -438,7 +433,7 @@ class FilmScanner:
         self.output_directory = output_directory
         self.n_frames = n_frames
 
-        self.backlight.turn_on()
+        self.turn_on_backlight()
 
         self.callback.on_scan_start()
 
@@ -640,6 +635,42 @@ class FilmScanner:
             f.write(frame)
 
         logger.debug(f"Saved {filepath}")
+    
+    @property
+    def is_backlight_on(self):
+        return self.backlight.is_on
+    
+    def turn_on_backlight(self):
+        """
+        Turn on the scanner's backlight.
+
+        NOTE: Call this method instead of calling the backlight directly in order to make sure that
+        the callback is called.
+        """
+        self.backlight.turn_on()
+        self.callback.on_backlight_on()
+    
+    def turn_off_backlight(self):
+        """
+        Turn off the scanner's backlight.
+
+        NOTE: Call this method instead of calling the backlight directly in order to make sure that
+        the callback is called.
+        """
+        self.backlight.turn_off()
+        self.callback.on_backlight_off()
+    
+    def toggle_backlight(self):
+        """
+        Toggle the scanner's backlight.
+
+        NOTE: Call this method instead of calling the backlight directly in order to make sure that
+        the callback is called.
+        """
+        if self.backlight.is_on:
+            self.turn_off_backlight()
+        else:
+            self.turn_on_backlight()
     
     def setup_logging_to_file(self, directory):
         """

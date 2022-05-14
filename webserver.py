@@ -19,12 +19,12 @@ zoom_toggle_manager = ZoomToggleManager()
 scanner = FilmScanner(
     callback=[
         advance_trigger_manager,
+        light_toggle_manager,
         fast_forward_manager,
         mail_callback,
         scan_state_manager,
         zoom_toggle_manager
-    ],
-    backlight_callback=light_toggle_manager
+    ]
 )
 scanner.camera.resolution = (800, 600)
 
@@ -94,12 +94,12 @@ def focuszoom_stream():
 def toggle_light():
     if request.method == "GET":
         return {
-            "on": scanner.backlight.is_on,
+            "on": scanner.is_backlight_on,
             "enabled": not scanner.is_scanning
         }
     elif request.method == "POST":
         if not scanner.is_scanning:
-            scanner.backlight.toggle()
+            scanner.toggle_backlight()
         return "", 204
     return "", 400
 
