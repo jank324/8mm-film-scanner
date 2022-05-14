@@ -25,6 +25,517 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 
+class FilmScanner:
+
+    def __init__(self, callback=BaseCallback()):
+        self.callback = CallbackList(callback) if isinstance(callback, list) else callback
+        self.callback.setup(self)
+
+        self.pi = pigpio.pi()
+
+        self.backlight = Light(6)
+        self.motor = StepperMotor(16, 21, 20)
+        self.frame_sensor = HallEffectSensor(26)
+
+        self.camera = PiCamera(resolution=(800,600))
+        self.camera.analog_gain = 1
+        self.camera.digital_gain = 1
+        # self.camera.exposure_mode = "off"
+        self.camera.shutter_speed = int(1e6 * 1 / 250)    # 1/250
+        self.camera.awb_mode = "off"
+        self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
+        time.sleep(2)
+
+        self.is_advancing = False
+        self.is_fast_forwarding = False
+        self.is_scanning = False
+
+        self.scan_started_event = Event()
+        self.scan_stopped_event = Event()
+        self.scan_stop_requested = False
+        self.live_view_zoom_toggle_requested = False
+
+        self.is_zoomed = False
+
+        self.last_steps = 0
+
+        self.img_stream = BytesIO()
+        self.write_executor = ThreadPoolExecutor(max_workers=1)
+
+        self.turn_on_backlight()
+
+        self.is_liveview_active = False
+        self.liveview_executor = ThreadPoolExecutor(max_workers=1)
+        self.viewers = []
+        self.liveview_stop_requested = False
+        self.liveview_started_event = Event()
+        self.liveview_stopped_event = Event()
+        with open("placeholder_image.jpg", "rb") as f:
+            self.preview_frame = f.read()
+        
+        self.zoom_toggled_event = Event()
+        self.fast_forward_stopped_event = Event()
+        
+        self.scan_executor = ThreadPoolExecutor(max_workers=1)
+        self.output_directory = "/media/pi/PortableSSD/test"
+        self.n_frames = 3842
+        self.scanned_frames = 0
+
+    def __del__(self):
+        self.turn_off_backlight()
+        self.motor.disable()
+
+        self.camera.close()
+
+        del(self.motor)
+        
+        self.pi.stop()
+    
+    def start_scan(self, output_directory, n_frames, start_index=0):
+        """
+        Start a scan. The arguments are the same as those of `scan`.
+        """
+        logger.info(f"Starting scan (output_directory={output_directory} / frames={n_frames} / start_index={start_index})")
+        self.scan_stop_requested = False
+        self.is_scanning = True
+        self.scan_started_event.clear()
+        self.scan_executor.submit(
+            self.debug_scan,
+            output_directory=output_directory,
+            n_frames=n_frames,
+            start_index=start_index
+        )
+        self.scan_started_event.wait()
+    
+    def stop_scan(self):
+        """
+        Stop a scan prematurely. When called, the scanner will stop once the current frame finished
+        scanning. This method returns only when the scan has actually been stopped.
+        """
+        logger.info("Stopping scan")
+        self.scan_stopped_event.clear()
+        self.scan_stop_requested = True
+        self.scan_stopped_event.wait()
+    
+    def debug_scan(self, output_directory, n_frames=3900, start_index=0):
+        """
+        The same as `scan`, but exceptions are caught and printed to `stdout`.
+        """
+        try:
+            self.scan(output_directory, n_frames, start_index)
+        except Exception as e:
+            print(f"AN ERROR HAS OCURRED: {e}")
+    
+    def scan(self, output_directory, n_frames=3900, start_index=0):
+        """
+        Scan a film reel frame-by-frame.
+
+        Parameters
+        ----------
+        output_directory : string
+            Directory that frames will be saved to. If the given directory does not exist, it will
+            be created automatically.
+        n_frames : int
+            Number of frames on the reel. Try to figure out how much frames are in the reel you wish
+            to scan and then add some frames for safety. A 15m (50 foot) reel has about 3600 frames,
+            so to be save it it recommned to scan 3800 frames. Note that the actual number of frames scanned
+            is `n_frames - start_index`.
+        start_index: int, optional
+            Frame index at which to start scanning if you are not scanning from the beginning.
+            Reduces the number of frames scanning.
+        """
+        self.scan_started_event.set()
+
+        logger.info("Setting up scan")
+
+        self.output_directory = output_directory
+        self.n_frames = n_frames
+
+        self.turn_on_backlight()
+
+        self.callback.on_scan_start()
+
+        if self.is_liveview_active:
+            self.stop_liveview()
+
+        Path(output_directory).mkdir(parents=True, exist_ok=True)
+
+        self.setup_logging_to_file(output_directory)
+
+        self.camera.resolution = (400, 300)
+
+        time.sleep(5)
+        t_start = time.time()
+        t_last = t_start
+
+        for i in range(start_index, n_frames):
+            filename = f"frame-{i:05d}.jpg"
+            filepath = os.path.join(output_directory, filename)
+
+            time.sleep(0.2)
+
+            frame = self.capture_frame()
+            self.wait_for_previous_save()
+            self.submit_save_frame(frame, filepath)
+            self.preview_frame = frame
+
+            t_now = time.time()
+            dt = t_now - t_last
+            fps = 1 / dt
+            remaining_seconds = int((n_frames - i) / fps)
+            remaining = timedelta(seconds=remaining_seconds)
+            logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps / {remaining} s remaining)")
+            t_last = t_now
+
+            if self.scan_stop_requested:
+                break
+
+        t = t_now - t_start
+        fps = (i + 1) / t
+        logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
+
+        self.is_scanning = False
+        self.callback.on_scan_end()
+
+        self.scan_stopped_event.set()
+
+        # TODO Remove logger
+
+        if self.viewers:
+            self.start_liveview()
+
+        return i + 1
+    
+    def wait_for_previous_save(self):
+        """
+        If a frame is currently being saved, blocks until that save operation has finished.
+        """
+        # Wait for previous image to be saved if there was one
+        if hasattr(self, "write_future"):
+            _ = self.write_future.result()
+
+    def submit_save_frame(self, frame, filepath):
+        """
+        Submit a frame for saving. Returns immediately while the frame is saved concurrently. Use
+        `wait for previous save` to block until saving is finished. The arguments are the same as
+        those of `save_frame`.
+        """
+        self.write_future = self.write_executor.submit(self.save_frame, frame, filepath)
+
+    def advance(self, recover=True):
+        """
+        Advance film scanner by one frame.
+
+        Parameters
+        ----------
+        recover : bool
+            Set `true` to attempt to recevor the scanner when an error occurs during the advance.
+        """
+        self.is_advancing = True
+        self.callback.on_advance_start()
+
+        logger.debug("Advancing one frame")
+
+        t_threshold = 0.487 * 1.025
+
+        self.motor.enable()
+        self.motor.start(speed=300, acceleration=24)
+        time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
+        was_frame_detected = self.frame_sensor.wait_for_trigger(timeout=t_threshold*0.75)
+        self.motor.stop(deceleration=24)
+        self.motor.disable()
+
+        if not was_frame_detected:
+            logger.error("Frame sensor was not reached in time")
+            fixed = False
+            if recover:
+                fixed = self.recover()
+            if not fixed:
+                raise AdvanceTimeoutError()
+        
+        self.is_advancing = False
+        self.callback.on_advance_end()
+    
+    def recover(self):
+        """
+        Attempt to recover the frame advance after an error has occurred.
+        """
+        attempts = 0
+        pause = 1
+        while True:
+            logger.warning(f"Attempting frame sensor recovery (attempt={attempts}, pause={pause})")
+
+            self.motor.direction = 1
+            
+            self.motor.enable()
+            self.motor.start(speed=1, acceleration=1)
+            self.frame_sensor.wait_for_trigger(timeout=1.0)
+            self.motor.stop(deceleration=1)
+            self.motor.disable()
+
+            time.sleep(1)
+
+            self.motor.direction = 0
+
+            try:
+                self.advance(recover=False)
+            except AdvanceTimeoutError:
+                if True: # attempts < 5:
+                    attempts += 1
+                    time.sleep(pause)
+                    pause *= 2
+                else:
+                    return False
+            else:
+                return True
+            
+    def fast_forward(self, n=None):
+        """
+        Fast-forward a given number of frames or until stopped.
+
+        Parameters
+        ----------
+        n : int
+            Number of frames to advance. If set to `None`, fast-forward until stopped.
+        """
+        self.is_fast_forwarding = True
+        self.callback.on_fast_forward_start()
+
+        if n is None:
+            logger.debug("Fast-forwarding until stopped")
+            while not self.scan_stop_requested:
+                self.advance()
+            self.scan_stop_requested = False
+        else:
+            logger.debug(f"Fast-forwarding {n} frames")
+            for _ in range(n):
+                self.advance()
+                if self.scan_stop_requested:
+                    logger.debug("Stopping fast-forwarding early")
+                    self.scan_stop_requested = False
+                    break
+        
+        self.is_fast_forwarding = False
+        self.fast_forward_stopped_event.set()
+        self.callback.on_fast_forward_end()
+            
+    def capture_frame(self):
+        """
+        Capture the current frame.
+
+        Returns
+        -------
+        frame : bytes
+            JPEG encoded image with raw bayer data appended.
+        """
+        self.camera.shutter_speed = int(1e6 * 1 / 250)
+        
+        buffer = BytesIO()
+        self.camera.capture(buffer, format="jpeg", bayer=True)
+
+        buffer.seek(0)
+        frame = buffer.read()
+
+        return frame
+    
+    def save_frame(self, frame, filepath):
+        """
+        Save a frame to a the given path.
+
+        Parameters
+        ----------
+        frame : bytes
+            Frame to save encoded as bytes.
+        filepath : str
+            Path to save the frame to.
+        """  
+        with open(filepath, "wb") as f:
+            f.write(frame)
+
+        logger.debug(f"Saved {filepath}")
+    
+    @property
+    def is_backlight_on(self):
+        return self.backlight.is_on
+    
+    def turn_on_backlight(self):
+        """
+        Turn on the scanner's backlight.
+
+        NOTE: Call this method instead of calling the backlight directly in order to make sure that
+        the callback is called.
+        """
+        self.backlight.turn_on()
+        self.callback.on_backlight_on()
+    
+    def turn_off_backlight(self):
+        """
+        Turn off the scanner's backlight.
+
+        NOTE: Call this method instead of calling the backlight directly in order to make sure that
+        the callback is called.
+        """
+        self.backlight.turn_off()
+        self.callback.on_backlight_off()
+    
+    def toggle_backlight(self):
+        """
+        Toggle the scanner's backlight.
+
+        NOTE: Call this method instead of calling the backlight directly in order to make sure that
+        the callback is called.
+        """
+        if self.backlight.is_on:
+            self.turn_off_backlight()
+        else:
+            self.turn_on_backlight()
+    
+    def setup_logging_to_file(self, directory):
+        """
+        Setup hander for logger that outputs to a `scanner.log` in the given directory.
+        
+        Parameters
+        ----------
+        directory : str
+            Directory to place the `scanner.log` file in.
+        """
+        logpath = os.path.join(directory, "scanner.log")
+
+        file_handler = logging.FileHandler(logpath)
+        file_handler.setLevel(logging.INFO)
+
+        formatter = logging.Formatter("%(asctime)s - %(message)s")
+        file_handler.setFormatter(formatter)
+
+        logger.addHandler(file_handler)
+    
+    @property
+    def preview_frame(self):
+        return self._preview_frame
+    
+    @preview_frame.setter
+    def preview_frame(self, value):
+        self._preview_frame = value
+
+        self.prune_viewers()
+        self.notify_viewers()
+    
+    def prune_viewers(self):
+        """
+        Remove viewers that did not retreive the frame for longer than a threshold time.
+        """
+        now = datetime.now()
+        self.viewers = [viewer for viewer in self.viewers if now - viewer.last_access < timedelta(minutes=1)]
+        if not self.viewers and self.is_liveview_active:
+            # TODO This could cause a race condition if a new viewer is added here (?)
+            self.stop_liveview()
+
+    def notify_viewers(self):
+        """
+        Notify viewers that a new frame is available.
+        """
+        for viewer in self.viewers:
+            viewer.notify()
+    
+    def start_liveview(self):
+        """
+        Start a liveview to fill the preview frames.
+        """
+        logger.info("Starting liveview")
+        self.is_liveview_active = True
+        self.liveview_stop_requested = False
+        self.liveview_started_event.clear()
+        self.liveview_executor.submit(self.liveview)
+        self.liveview_started_event.wait()
+    
+    def stop_liveview(self):
+        """
+        Stop the liveview from writing the preview frames.
+        """
+        logger.info("Stopping liveview")
+        self.liveview_stopped_event.clear()
+        self.liveview_stop_requested = True
+        self.liveview_stopped_event.wait()
+    
+    def liveview(self):
+        """
+        Livewview function writing preview frames.
+        """
+        self.liveview_started_event.set()
+
+        buffer = BytesIO()
+
+        self.camera.resolution = (800, 600)
+        
+        for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
+            # TODO: Hack!
+            self.camera.shutter_speed = int(1e6 * 1 / 100)
+
+            if self.live_view_zoom_toggle_requested:
+                if not self.is_zoomed:
+                    self.is_zoomed = True
+                    self.camera.zoom = (0.37, 0.37, 0.25, 0.25)
+                    self.callback.on_zoom_in()
+                else:
+                    self.is_zoomed = False
+                    self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
+                    self.callback.on_zoom_out()
+                self.live_view_zoom_toggle_requested = False
+
+            buffer.truncate()
+            buffer.seek(0)
+            frame = buffer.read()
+            buffer.seek(0)
+
+            self.preview_frame = frame
+
+            if self.liveview_stop_requested:
+                break
+        
+        self.is_liveview_active = False
+        self.liveview_stopped_event.set()
+            
+    def preview(self):
+        """
+        Add a preview viewer and get its view.
+
+        Returns
+        -------
+        view : generator
+            Generator that yields preview frames when they become available.
+        """
+        # Activate liveview when not yet active (and not currently scanning)
+        if not self.is_liveview_active and not self.is_scanning:
+            self.start_liveview()
+
+        viewer = Viewer(self)
+        self.viewers.append(viewer)
+
+        return viewer.view()
+    
+    def poweroff(self):
+        """
+        Turn the sanner off.
+        """
+        if self.is_scanning:
+            self.stop_scan()
+        if self.is_liveview_active:
+            self.stop_liveview()
+        
+        os.system("sudo poweroff")
+
+
+class AdvanceTimeoutError(Exception):
+    """
+    Raised when the the frame sensor was not reached within some threshold time. This may have
+    one of two possible causes: (A) The magnet passed the Hall effect sensor undetected. (B) The
+    motor skipped steps, for example because it got stuck.
+    """
+    def __init__(self):
+        super().__init__(
+            "Frame sensor not reached in time. It was either missed, or the motor got stuck.")
+
+
 class HallEffectSensor:
     """
     Hall effect sensor interfaced via `pigpio`.
@@ -295,513 +806,3 @@ class StepperMotor:
             chain += [255, 0, wid[i], 255, 1, x, y]
         
         self.pi.wave_chain(chain)   # Transmit chain of wave forms
-
-
-class FilmScanner:
-
-    class AdvanceTimeoutError(Exception):
-        """
-        Raised when the the frame sensor was not reached within some threshold time. This may have
-        one of two possible causes: (A) The magnet passed the Hall effect sensor undetected. (B) The
-        motor skipped steps, for example because it got stuck.
-        """
-        def __init__(self):
-            super().__init__("Frame sensor not reached in time. It was either missed, or the motor "
-                             "got stuck.")
-
-    def __init__(self, callback=BaseCallback()):
-        self.callback = CallbackList(callback) if isinstance(callback, list) else callback
-        self.callback.setup(self)
-
-        self.pi = pigpio.pi()
-
-        self.backlight = Light(6)
-        self.motor = StepperMotor(16, 21, 20)
-        self.frame_sensor = HallEffectSensor(26)
-
-        self.camera = PiCamera(resolution=(800,600))
-        self.camera.analog_gain = 1
-        self.camera.digital_gain = 1
-        # self.camera.exposure_mode = "off"
-        self.camera.shutter_speed = int(1e6 * 1 / 250)    # 1/250
-        self.camera.awb_mode = "off"
-        self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
-        time.sleep(2)
-
-        self.is_advancing = False
-        self.is_fast_forwarding = False
-        self.is_scanning = False
-
-        self.scan_started_event = Event()
-        self.scan_stopped_event = Event()
-        self.scan_stop_requested = False
-        self.live_view_zoom_toggle_requested = False
-
-        self.is_zoomed = False
-
-        self.last_steps = 0
-
-        self.img_stream = BytesIO()
-        self.write_executor = ThreadPoolExecutor(max_workers=1)
-
-        self.turn_on_backlight()
-
-        self.is_liveview_active = False
-        self.liveview_executor = ThreadPoolExecutor(max_workers=1)
-        self.viewers = []
-        self.liveview_stop_requested = False
-        self.liveview_started_event = Event()
-        self.liveview_stopped_event = Event()
-        with open("placeholder_image.jpg", "rb") as f:
-            self.preview_frame = f.read()
-        
-        self.zoom_toggled_event = Event()
-        self.fast_forward_stopped_event = Event()
-        
-        self.scan_executor = ThreadPoolExecutor(max_workers=1)
-        self.output_directory = "/media/pi/PortableSSD/test"
-        self.n_frames = 3842
-        self.scanned_frames = 0
-
-    def __del__(self):
-        self.turn_off_backlight()
-        self.motor.disable()
-
-        self.camera.close()
-
-        del(self.motor)
-        
-        self.pi.stop()
-    
-    def start_scan(self, output_directory, n_frames, start_index=0):
-        """
-        Start a scan. The arguments are the same as those of `scan`.
-        """
-        logger.info(f"Starting scan (output_directory={output_directory} / frames={n_frames} / start_index={start_index})")
-        self.scan_stop_requested = False
-        self.is_scanning = True
-        self.scan_started_event.clear()
-        self.scan_executor.submit(
-            self.debug_scan,
-            output_directory=output_directory,
-            n_frames=n_frames,
-            start_index=start_index
-        )
-        self.scan_started_event.wait()
-    
-    def stop_scan(self):
-        """
-        Stop a scan prematurely. When called, the scanner will stop once the current frame finished
-        scanning. This method returns only when the scan has actually been stopped.
-        """
-        logger.info("Stopping scan")
-        self.scan_stopped_event.clear()
-        self.scan_stop_requested = True
-        self.scan_stopped_event.wait()
-    
-    def debug_scan(self, output_directory, n_frames=3900, start_index=0):
-        """
-        The same as `scan`, but exceptions are caught and printed to `stdout`.
-        """
-        try:
-            self.scan(output_directory, n_frames, start_index)
-        except Exception as e:
-            print(f"AN ERROR HAS OCURRED: {e}")
-    
-    def scan(self, output_directory, n_frames=3900, start_index=0):
-        """
-        Scan a film reel frame-by-frame.
-
-        Parameters
-        ----------
-        output_directory : string
-            Directory that frames will be saved to. If the given directory does not exist, it will
-            be created automatically.
-        n_frames : int
-            Number of frames on the reel. Try to figure out how much frames are in the reel you wish
-            to scan and then add some frames for safety. A 15m (50 foot) reel has about 3600 frames,
-            so to be save it it recommned to scan 3800 frames. Note that the actual number of frames scanned
-            is `n_frames - start_index`.
-        start_index: int, optional
-            Frame index at which to start scanning if you are not scanning from the beginning.
-            Reduces the number of frames scanning.
-        """
-        self.scan_started_event.set()
-
-        logger.info("Setting up scan")
-
-        self.output_directory = output_directory
-        self.n_frames = n_frames
-
-        self.turn_on_backlight()
-
-        self.callback.on_scan_start()
-
-        if self.is_liveview_active:
-            self.stop_liveview()
-
-        Path(output_directory).mkdir(parents=True, exist_ok=True)
-
-        self.setup_logging_to_file(output_directory)
-
-        self.camera.resolution = (400, 300)
-
-        time.sleep(5)
-        t_start = time.time()
-        t_last = t_start
-
-        for i in range(start_index, n_frames):
-            filename = f"frame-{i:05d}.jpg"
-            filepath = os.path.join(output_directory, filename)
-
-            time.sleep(0.2)
-
-            frame = self.capture_frame()
-            self.wait_for_previous_save()
-            self.submit_save_frame(frame, filepath)
-            self.preview_frame = frame
-
-            t_now = time.time()
-            dt = t_now - t_last
-            fps = 1 / dt
-            remaining_seconds = int((n_frames - i) / fps)
-            remaining = timedelta(seconds=remaining_seconds)
-            logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps / {remaining} s remaining)")
-            t_last = t_now
-
-            if self.scan_stop_requested:
-                break
-
-        t = t_now - t_start
-        fps = (i + 1) / t
-        logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
-
-        self.is_scanning = False
-        self.callback.on_scan_end()
-
-        self.scan_stopped_event.set()
-
-        # TODO Remove logger
-
-        if self.viewers:
-            self.start_liveview()
-
-        return i + 1
-    
-    def wait_for_previous_save(self):
-        """
-        If a frame is currently being saved, blocks until that save operation has finished.
-        """
-        # Wait for previous image to be saved if there was one
-        if hasattr(self, "write_future"):
-            _ = self.write_future.result()
-
-    def submit_save_frame(self, frame, filepath):
-        """
-        Submit a frame for saving. Returns immediately while the frame is saved concurrently. Use
-        `wait for previous save` to block until saving is finished. The arguments are the same as
-        those of `save_frame`.
-        """
-        self.write_future = self.write_executor.submit(self.save_frame, frame, filepath)
-
-    def advance(self, recover=True):
-        """
-        Advance film scanner by one frame.
-
-        Parameters
-        ----------
-        recover : bool
-            Set `true` to attempt to recevor the scanner when an error occurs during the advance.
-        """
-        self.is_advancing = True
-        self.callback.on_advance_start()
-
-        logger.debug("Advancing one frame")
-
-        t_threshold = 0.487 * 1.025
-
-        self.motor.enable()
-        self.motor.start(speed=300, acceleration=24)
-        time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
-        was_frame_detected = self.frame_sensor.wait_for_trigger(timeout=t_threshold*0.75)
-        self.motor.stop(deceleration=24)
-        self.motor.disable()
-
-        if not was_frame_detected:
-            logger.error("Frame sensor was not reached in time")
-            fixed = False
-            if recover:
-                fixed = self.recover()
-            if not fixed:
-                raise FilmScanner.AdvanceTimeoutError()
-        
-        self.is_advancing = False
-        self.callback.on_advance_end()
-    
-    def recover(self):
-        """
-        Attempt to recover the frame advance after an error has occurred.
-        """
-        attempts = 0
-        pause = 1
-        while True:
-            logger.warning(f"Attempting frame sensor recovery (attempt={attempts}, pause={pause})")
-
-            self.motor.direction = 1
-            
-            self.motor.enable()
-            self.motor.start(speed=1, acceleration=1)
-            self.frame_sensor.wait_for_trigger(timeout=1.0)
-            self.motor.stop(deceleration=1)
-            self.motor.disable()
-
-            time.sleep(1)
-
-            self.motor.direction = 0
-
-            try:
-                self.advance(recover=False)
-            except FilmScanner.AdvanceTimeoutError:
-                if True: # attempts < 5:
-                    attempts += 1
-                    time.sleep(pause)
-                    pause *= 2
-                else:
-                    return False
-            else:
-                return True
-            
-    def fast_forward(self, n=None):
-        """
-        Fast-forward a given number of frames or until stopped.
-
-        Parameters
-        ----------
-        n : int
-            Number of frames to advance. If set to `None`, fast-forward until stopped.
-        """
-        self.is_fast_forwarding = True
-        self.callback.on_fast_forward_start()
-
-        if n is None:
-            logger.debug("Fast-forwarding until stopped")
-            while not self.scan_stop_requested:
-                self.advance()
-            self.scan_stop_requested = False
-        else:
-            logger.debug(f"Fast-forwarding {n} frames")
-            for _ in range(n):
-                self.advance()
-                if self.scan_stop_requested:
-                    logger.debug("Stopping fast-forwarding early")
-                    self.scan_stop_requested = False
-                    break
-        
-        self.is_fast_forwarding = False
-        self.fast_forward_stopped_event.set()
-        self.callback.on_fast_forward_end()
-            
-    def capture_frame(self):
-        """
-        Capture the current frame.
-
-        Returns
-        -------
-        frame : bytes
-            JPEG encoded image with raw bayer data appended.
-        """
-        self.camera.shutter_speed = int(1e6 * 1 / 250)
-        
-        buffer = BytesIO()
-        self.camera.capture(buffer, format="jpeg", bayer=True)
-
-        buffer.seek(0)
-        frame = buffer.read()
-
-        return frame
-    
-    def save_frame(self, frame, filepath):
-        """
-        Save a frame to a the given path.
-
-        Parameters
-        ----------
-        frame : bytes
-            Frame to save encoded as bytes.
-        filepath : str
-            Path to save the frame to.
-        """  
-        with open(filepath, "wb") as f:
-            f.write(frame)
-
-        logger.debug(f"Saved {filepath}")
-    
-    @property
-    def is_backlight_on(self):
-        return self.backlight.is_on
-    
-    def turn_on_backlight(self):
-        """
-        Turn on the scanner's backlight.
-
-        NOTE: Call this method instead of calling the backlight directly in order to make sure that
-        the callback is called.
-        """
-        self.backlight.turn_on()
-        self.callback.on_backlight_on()
-    
-    def turn_off_backlight(self):
-        """
-        Turn off the scanner's backlight.
-
-        NOTE: Call this method instead of calling the backlight directly in order to make sure that
-        the callback is called.
-        """
-        self.backlight.turn_off()
-        self.callback.on_backlight_off()
-    
-    def toggle_backlight(self):
-        """
-        Toggle the scanner's backlight.
-
-        NOTE: Call this method instead of calling the backlight directly in order to make sure that
-        the callback is called.
-        """
-        if self.backlight.is_on:
-            self.turn_off_backlight()
-        else:
-            self.turn_on_backlight()
-    
-    def setup_logging_to_file(self, directory):
-        """
-        Setup hander for logger that outputs to a `scanner.log` in the given directory.
-        
-        Parameters
-        ----------
-        directory : str
-            Directory to place the `scanner.log` file in.
-        """
-        logpath = os.path.join(directory, "scanner.log")
-
-        file_handler = logging.FileHandler(logpath)
-        file_handler.setLevel(logging.INFO)
-
-        formatter = logging.Formatter("%(asctime)s - %(message)s")
-        file_handler.setFormatter(formatter)
-
-        logger.addHandler(file_handler)
-    
-    @property
-    def preview_frame(self):
-        return self._preview_frame
-    
-    @preview_frame.setter
-    def preview_frame(self, value):
-        self._preview_frame = value
-
-        self.prune_viewers()
-        self.notify_viewers()
-    
-    def prune_viewers(self):
-        """
-        Remove viewers that did not retreive the frame for longer than a threshold time.
-        """
-        now = datetime.now()
-        self.viewers = [viewer for viewer in self.viewers if now - viewer.last_access < timedelta(minutes=1)]
-        if not self.viewers and self.is_liveview_active:
-            # TODO This could cause a race condition if a new viewer is added here (?)
-            self.stop_liveview()
-
-    def notify_viewers(self):
-        """
-        Notify viewers that a new frame is available.
-        """
-        for viewer in self.viewers:
-            viewer.notify()
-    
-    def start_liveview(self):
-        """
-        Start a liveview to fill the preview frames.
-        """
-        logger.info("Starting liveview")
-        self.is_liveview_active = True
-        self.liveview_stop_requested = False
-        self.liveview_started_event.clear()
-        self.liveview_executor.submit(self.liveview)
-        self.liveview_started_event.wait()
-    
-    def stop_liveview(self):
-        """
-        Stop the liveview from writing the preview frames.
-        """
-        logger.info("Stopping liveview")
-        self.liveview_stopped_event.clear()
-        self.liveview_stop_requested = True
-        self.liveview_stopped_event.wait()
-    
-    def liveview(self):
-        """
-        Livewview function writing preview frames.
-        """
-        self.liveview_started_event.set()
-
-        buffer = BytesIO()
-
-        self.camera.resolution = (800, 600)
-        
-        for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
-            # TODO: Hack!
-            self.camera.shutter_speed = int(1e6 * 1 / 100)
-
-            if self.live_view_zoom_toggle_requested:
-                if not self.is_zoomed:
-                    self.is_zoomed = True
-                    self.camera.zoom = (0.37, 0.37, 0.25, 0.25)
-                    self.callback.on_zoom_in()
-                else:
-                    self.is_zoomed = False
-                    self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
-                    self.callback.on_zoom_out()
-                self.live_view_zoom_toggle_requested = False
-
-            buffer.truncate()
-            buffer.seek(0)
-            frame = buffer.read()
-            buffer.seek(0)
-
-            self.preview_frame = frame
-
-            if self.liveview_stop_requested:
-                break
-        
-        self.is_liveview_active = False
-        self.liveview_stopped_event.set()
-            
-    def preview(self):
-        """
-        Add a preview viewer and get its view.
-
-        Returns
-        -------
-        view : generator
-            Generator that yields preview frames when they become available.
-        """
-        # Activate liveview when not yet active (and not currently scanning)
-        if not self.is_liveview_active and not self.is_scanning:
-            self.start_liveview()
-
-        viewer = Viewer(self)
-        self.viewers.append(viewer)
-
-        return viewer.view()
-    
-    def poweroff(self):
-        """
-        Turn the sanner off.
-        """
-        if self.is_scanning:
-            self.stop_scan()
-        if self.is_liveview_active:
-            self.stop_liveview()
-        
-        os.system("sudo poweroff")
