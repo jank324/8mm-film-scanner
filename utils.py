@@ -216,6 +216,18 @@ class ZoomToggleManager(Callback):
         self.messenger.send("enabled", True)
 
 
+class ScanStateManager(Callback):
+
+    def __init__(self):
+        self.messenger = SSEMessenger()
+    
+    def on_scan_start(self):
+        self.messenger.send("isScanning", True)
+    
+    def on_scan_end(self):
+        self.messenger.send("isScanning", False)
+
+
 class Viewer:
 
     def __init__(self, scanner):

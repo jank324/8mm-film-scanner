@@ -17,7 +17,7 @@ if __name__ == "__main__":
     notifier = EmailNotifier()
 
     def cleanup_and_close(sig, frame):
-        scanner.stop()
+        scanner.stop_scan()
     signal.signal(signal.SIGINT, cleanup_and_close)
 
     try:

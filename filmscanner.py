@@ -319,7 +319,7 @@ class FilmScanner:
         self.is_fast_forwarding = False
         self.is_scanning = False
 
-        self.stop_requested = False
+        self.scan_stop_requested = False
         self.live_view_zoom_toggle_requested = False
 
         self.is_zoomed = False
@@ -335,8 +335,17 @@ class FilmScanner:
         self.liveview_executor = ThreadPoolExecutor(max_workers=1)
         self.viewers = []
         self.liveview_stop_requested = False
+        self.liveview_stopped_event = Event()
         with open("placeholder_image.jpg", "rb") as f:
             self.preview_frame = f.read()
+        
+        self.zoom_toggled_event = Event()
+        self.fast_forward_stopped_event = Event()
+        
+        self.scan_executor = ThreadPoolExecutor(max_workers=1)
+        self.output_directory = "/media/pi/PortableSSD/test"
+        self.n_frames = 3842
+        self.scanned_frames = 0
 
     def __del__(self):
         self.backlight.turn_off()
@@ -348,15 +357,33 @@ class FilmScanner:
         
         self.pi.stop()
     
-    def scan(self, output_directory, n_frames=3900, start_index=0):
+    def start_scan(self, output_directory, n_frames=3900, start_index=0):
+        logger.info(f"Starting scan (output_directory={output_directory} / frames={n_frames} / start_index={start_index})")
+        self.scan_stop_requested = False
         self.is_scanning = True
+        self.scan_executor.submit(
+            self.scan,
+            output_directory=output_directory,
+            n_frames=n_frames,
+            start_index=start_index
+        )
+    
+    def stop_scan(self):
+        logger.info("Scan stop requested")
+        self.scan_stop_requested = True
+    
+    def scan(self, output_directory, n_frames=3900, start_index=0):
+        logger.info("Setting up scan")
+
         self.callback.on_scan_start()
+
+        if self.is_liveview_active:
+            self.stop_liveview()
+            time.sleep(1)   # TODO Wait using event
 
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
         self.setup_logging_to_file(output_directory)
-
-        logger.info(f"Start scanning frames {start_index} to {n_frames} into \"{output_directory}\"")
 
         self.camera.resolution = (400, 300)
 
@@ -380,7 +407,7 @@ class FilmScanner:
             logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps / {remaining} s remaining)")
             t_last = t_now
 
-            if self.stop_requested:
+            if self.scan_stop_requested:
                 break
 
         t = t_now - t_start
@@ -389,6 +416,11 @@ class FilmScanner:
 
         self.is_scanning = False
         self.callback.on_scan_end()
+
+        # TODO Remove logger
+
+        if self.viewers:
+            self.start_liveview()
 
         return i + 1
 
@@ -454,19 +486,20 @@ class FilmScanner:
 
         if n is None:
             logger.debug("Fast-forwarding until stopped")
-            while not self.stop_requested:
+            while not self.scan_stop_requested:
                 self.advance()
-            self.stop_requested = False
+            self.scan_stop_requested = False
         else:
             logger.debug(f"Fast-forwarding {n} frames")
             for _ in range(n):
                 self.advance()
-                if self.stop_requested:
+                if self.scan_stop_requested:
                     logger.debug("Stopping fast-forwarding early")
-                    self.stop_requested = False
+                    self.scan_stop_requested = False
                     break
         
         self.is_fast_forwarding = False
+        self.fast_forward_stopped_event.set()
         self.callback.on_fast_forward_end()
             
     def capture_frame(self, filepath):
@@ -478,6 +511,11 @@ class FilmScanner:
         self.img_stream.seek(0)
         self.camera.capture(self.img_stream, format="jpeg", bayer=True)
         self.img_stream.truncate()
+
+        # Setting preview frame
+        self.img_stream.seek(0)
+        self.preview_frame = self.img_stream.read()
+        self.img_stream.seek(0)
         
         self.write_future = self.write_executor.submit(self.save_frame, filepath)
     
@@ -488,10 +526,6 @@ class FilmScanner:
             f.write(self.img_stream.read())
 
         logger.debug(f"Saved {filepath}")
-    
-    def stop(self):
-        self.stop_requested = True
-        logger.info("Stop requested")
     
     def setup_logging_to_file(self, directory):
         logpath = os.path.join(directory, "scanner.log")
@@ -517,7 +551,7 @@ class FilmScanner:
     
     def prune_viewers(self):
         now = datetime.now()
-        self.viewers = [viewer for viewer in self.viewers if now - viewer.last_access < timedelta(seconds=10)]
+        self.viewers = [viewer for viewer in self.viewers if now - viewer.last_access < timedelta(minutes=1)]
         if not self.viewers and self.is_liveview_active:
             # TODO This could cause a race condition if a new viewer is added here (?)
             self.stop_liveview()
@@ -527,12 +561,16 @@ class FilmScanner:
             viewer.notify()
     
     def start_liveview(self):
+        logger.info("Starting liveview")
         self.is_liveview_active = True
         self.liveview_stop_requested = False
         self.liveview_executor.submit(self.liveview)
     
     def stop_liveview(self):
+        logger.info("Stopping liveview")
+        self.liveview_stopped_event.clear()
         self.liveview_stop_requested = True
+        self.liveview_stopped_event.wait()
     
     def liveview(self):
         buffer = BytesIO()
@@ -565,6 +603,7 @@ class FilmScanner:
                 break
         
         self.is_liveview_active = False
+        self.liveview_stopped_event.set()
             
     def preview(self):
         # Activate liveview when not yet active (and not currently scanning)
@@ -575,3 +614,11 @@ class FilmScanner:
         self.viewers.append(viewer)
 
         return viewer.view()
+    
+    def poweroff(self):
+        if self.is_scanning:
+            self.stop_scan()
+        if self.is_liveview_active:
+            self.stop_liveview()
+        
+        os.system("sudo poweroff")
