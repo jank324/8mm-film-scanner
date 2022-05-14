@@ -3,27 +3,33 @@ from flask_cors import CORS
 
 from filmscanner import FilmScanner
 from notification import MailCallback
-from utils import AdvanceTriggerManager, FastForwardToggleManager, LightToggleManager, ScanStateManager, ZoomToggleManager
+from utils import (
+    AdvanceToggleCallback,
+    FastForwardToggleCallback,
+    LightToggleCallback,
+    ScanControlsCallback,
+    ZoomToggleCallback
+)
 
 
 app = Flask(__name__)
 cors = CORS(app)
 
-advance_trigger_manager = AdvanceTriggerManager()
-fast_forward_manager = FastForwardToggleManager()
-light_toggle_manager = LightToggleManager()
+advance_toggle_callback = AdvanceToggleCallback()
+fast_forward_toggle_callback = FastForwardToggleCallback()
+light_toggle_callback = LightToggleCallback()
 mail_callback = MailCallback()
-scan_state_manager = ScanStateManager()
-zoom_toggle_manager = ZoomToggleManager()
+scan_controls_callback = ScanControlsCallback()
+zoom_toggle_callback = ZoomToggleCallback()
 
 scanner = FilmScanner(
     callback=[
-        advance_trigger_manager,
-        light_toggle_manager,
-        fast_forward_manager,
+        advance_toggle_callback,
+        light_toggle_callback,
+        fast_forward_toggle_callback,
         mail_callback,
-        scan_state_manager,
-        zoom_toggle_manager
+        scan_controls_callback,
+        zoom_toggle_callback
     ]
 )
 scanner.camera.resolution = (800, 600)
@@ -48,7 +54,7 @@ def advance():
 
 @app.route("/advance-stream")
 def advance_stream():
-    return Response(advance_trigger_manager.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(advance_toggle_callback.messenger.subscribe(), mimetype="text/event-stream")
 
 
 @app.route("/fastforward", methods=("GET","POST"))
@@ -69,7 +75,7 @@ def fast_forward():
 
 @app.route("/fastforward-stream")
 def fast_forward_stream():
-    return Response(fast_forward_manager.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(fast_forward_toggle_callback.messenger.subscribe(), mimetype="text/event-stream")
 
 
 @app.route("/focuszoom", methods=("GET","POST"))
@@ -87,7 +93,7 @@ def toggle_focus_zoom():
 
 @app.route("/focuszoom-stream")
 def focuszoom_stream():
-    return Response(zoom_toggle_manager.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(zoom_toggle_callback.messenger.subscribe(), mimetype="text/event-stream")
 
 
 @app.route("/light", methods=("GET","POST"))
@@ -106,7 +112,7 @@ def toggle_light():
 
 @app.route("/light-stream")
 def light_stream():
-    return Response(light_toggle_manager.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(light_toggle_callback.messenger.subscribe(), mimetype="text/event-stream")
 
 
 @app.route("/poweroff", methods=("POST",))
@@ -142,7 +148,7 @@ def scan():
 
 @app.route("/scan-stream")
 def scan_stream():
-    return Response(scan_state_manager.messenger.subscribe(), mimetype="text/event-stream")
+    return Response(scan_controls_callback.messenger.subscribe(), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":

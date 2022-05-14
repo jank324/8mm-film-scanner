@@ -12,7 +12,7 @@ import time
 from picamerax import PiCamera
 import pigpio
 
-from utils import Callback, CallbackList, Viewer
+from utils import BaseCallback, CallbackList, Viewer
 
 
 # Setup logging (to console)
@@ -309,7 +309,7 @@ class FilmScanner:
             super().__init__("Frame sensor not reached in time. It was either missed, or the motor "
                              "got stuck.")
 
-    def __init__(self, callback=Callback()):
+    def __init__(self, callback=BaseCallback()):
         self.callback = CallbackList(callback) if isinstance(callback, list) else callback
         self.callback.setup(self)
 

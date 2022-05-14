@@ -56,7 +56,7 @@ class SSEMessenger:
                 del self.subscribers[i]
     
 
-class Callback:
+class BaseCallback:
     """
     Base class of callbacks for `FilmScanner` objects. Inherit from this class and overwrite one of
     its methods to react to the corresponding event. Access the `FilmScanner` class a callback is
@@ -130,7 +130,7 @@ class Callback:
         pass
 
 
-class CallbackList(Callback):
+class CallbackList(BaseCallback):
     """
     Helper class to accumulate multiple callbacks for `FilmScanner` in one object.
 
@@ -190,7 +190,7 @@ class CallbackList(Callback):
             callback.on_zoom_out()
 
 
-class LightToggleManager(Callback):
+class LightToggleCallback(BaseCallback):
     """
     Callback to handle state of the clients' light toggle.
     """
@@ -211,7 +211,7 @@ class LightToggleManager(Callback):
         self.messenger.send("enabled", False)
 
 
-class AdvanceTriggerManager(Callback):
+class AdvanceToggleCallback(BaseCallback):
     """
     Callback to handle state of the clients' advance toggle.
     """
@@ -242,7 +242,7 @@ class AdvanceTriggerManager(Callback):
         self.messenger.send("enabled", True)
 
 
-class FastForwardToggleManager(Callback):
+class FastForwardToggleCallback(BaseCallback):
     """
     Callback to handle state of the clients' fast-forward toggle.
     """
@@ -271,7 +271,7 @@ class FastForwardToggleManager(Callback):
         self.messenger.send("enabled", True)
 
 
-class ZoomToggleManager(Callback):
+class ZoomToggleCallback(BaseCallback):
     """
     Callback to handle state of the clients' zoom toggle.
     """
@@ -292,7 +292,7 @@ class ZoomToggleManager(Callback):
         self.messenger.send("enabled", True)
 
 
-class ScanStateManager(Callback):
+class ScanControlsCallback(BaseCallback):
     """
     Callback to handle state of the clients' scan control panel.
     """

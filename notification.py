@@ -2,7 +2,7 @@ import smtplib
 from email.message import EmailMessage
 import yaml
 
-from utils import Callback
+from utils import BaseCallback
 
 
 class EmailNotifier:
@@ -32,7 +32,7 @@ class EmailNotifier:
         server.quit()
 
 
-class MailCallback(Callback):
+class MailCallback(BaseCallback):
     """Callback for sending an e-mail notification when a scan finished."""
 
     def __init__(self):
