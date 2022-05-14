@@ -363,7 +363,7 @@ class FilmScanner:
         self.scan_stop_requested = False
         self.is_scanning = True
         self.scan_executor.submit(
-            self.scan,
+            self.debug_scan,
             output_directory=output_directory,
             n_frames=n_frames,
             start_index=start_index
@@ -374,6 +374,12 @@ class FilmScanner:
         self.scan_stopped_event.clear()
         self.scan_stop_requested = True
         self.scan_stopped_event.wait()
+    
+    def debug_scan(self, output_directory, n_frames=3900, start_index=0):
+        try:
+            self.scan(output_directory, n_frames, start_index)
+        except Exception as e:
+            print(f"AN ERROR HAS OCURRED: {e}")
     
     def scan(self, output_directory, n_frames=3900, start_index=0):
         logger.info("Setting up scan")
@@ -402,7 +408,10 @@ class FilmScanner:
 
             time.sleep(0.2)
 
-            self.capture_frame(filepath)
+            frame = self.capture_frame()
+            self.wait_for_previous_save()
+            self.submit_save_frame(frame, filepath)
+            self.preview_frame = frame
 
             t_now = time.time()
             dt = t_now - t_last
@@ -430,6 +439,14 @@ class FilmScanner:
             self.start_liveview()
 
         return i + 1
+    
+    def wait_for_previous_save(self):
+        # Wait for previous image to be saved if there was one
+        if hasattr(self, "write_future"):
+            _ = self.write_future.result()
+
+    def submit_save_frame(self, frame, filepath):
+        self.write_future = self.write_executor.submit(self.save_frame, frame, filepath)
 
     def advance(self, recover=True):
         self.is_advancing = True
@@ -509,28 +526,20 @@ class FilmScanner:
         self.fast_forward_stopped_event.set()
         self.callback.on_fast_forward_end()
             
-    def capture_frame(self, filepath):
-        if hasattr(self, "_write_future"):
-            _ = self.write_future.result()
-
+    def capture_frame(self):
         self.camera.shutter_speed = int(1e6 * 1 / 250)
         
-        self.img_stream.seek(0)
-        self.camera.capture(self.img_stream, format="jpeg", bayer=True)
-        self.img_stream.truncate()
+        buffer = BytesIO()
+        self.camera.capture(buffer, format="jpeg", bayer=True)
 
-        # Setting preview frame
-        self.img_stream.seek(0)
-        self.preview_frame = self.img_stream.read()
-        self.img_stream.seek(0)
-        
-        self.write_future = self.write_executor.submit(self.save_frame, filepath)
+        buffer.seek(0)
+        frame = buffer.read()
+
+        return frame
     
-    def save_frame(self, filepath):
-        self.img_stream.seek(0)
-        
+    def save_frame(self, frame, filepath):  
         with open(filepath, "wb") as f:
-            f.write(self.img_stream.read())
+            f.write(frame)
 
         logger.debug(f"Saved {filepath}")
     
