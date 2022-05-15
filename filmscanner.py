@@ -169,7 +169,7 @@ class FilmScanner:
         t_last = t_start
 
         for i in range(start_index, n_frames):
-            self.current_frame_number = i + 1
+            self.current_frame_index = i
 
             filename = f"frame-{i:05d}.jpg"
             filepath = os.path.join(output_directory, filename)

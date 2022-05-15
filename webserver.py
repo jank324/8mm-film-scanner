@@ -133,14 +133,17 @@ def preview():
 def scan():
     if request.method == "GET":
         return {
-            "isScanning": scanner.is_scanning,
-            "path": scanner.output_directory,
-            "frames": scanner.n_frames,
-            "progress": scanner.current_frame_number if scanner.is_scanning else 0
+            "is_scanning": scanner.is_scanning,
+            "output_directory": scanner.output_directory,
+            "n_frames": scanner.n_frames,
+            "current_frame_index": scanner.current_frame_index if scanner.is_scanning else 0
         }
     elif request.method == "POST":
         if not scanner.is_scanning:
-            scanner.start_scan(request.get_json()["path"], n_frames=int(request.get_json()["frames"]))
+            scanner.start_scan(
+                output_directory=request.get_json()["output_directory"],
+                n_frames=int(request.get_json()["n_frames"])
+            )
         else:
             scanner.stop_scan()
         return "", 204

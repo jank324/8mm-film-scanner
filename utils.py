@@ -314,16 +314,16 @@ class ScanControlsCallback(SSESendingCallback):
     """
 
     def on_frame_capture(self):
-        self.messenger.send("progress", self.scanner.current_frame_number)
+        self.messenger.send("current_frame_index", self.scanner.current_frame_index)
     
     def on_scan_start(self):
-        self.messenger.send("isScanning", True)
-        self.messenger.send("path", self.scanner.output_directory)
-        self.messenger.send("frames", self.scanner.n_frames)
+        self.messenger.send("is_scanning", True)
+        self.messenger.send("output_directory", self.scanner.output_directory)
+        self.messenger.send("n_frames", self.scanner.n_frames)
     
     def on_scan_end(self):
-        self.messenger.send("isScanning", False)
-        self.messenger.send("progress", 0)
+        self.messenger.send("is_scanning", False)
+        self.messenger.send("current_frame_index", 0)
 
 
 class Viewer:
