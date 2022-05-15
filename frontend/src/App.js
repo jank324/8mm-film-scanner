@@ -30,22 +30,22 @@ const Preview = () => {
 const Controls = () => {
 
   const [isScanning, setIsScanning] = useState(true)
-  const [path, setPath] = useState("")
-  const [frames, setFrames] = useState(3800)
-  const [progress, setProgress] = useState(0)
+  const [outputDirectory, setOutputDirectory] = useState("")
+  const [nFrames, setNFrames] = useState(3800)
+  const [currentFrameIndex, setCurrentFrameIndex] = useState(0)
 
   useEffect(() => {
     axios.get(flask("/scan")).then(response => {
-      setIsScanning(response.data.isScanning)
-      setPath(response.data.path)
-      setFrames(response.data.frames)
+      setIsScanning(response.data.is_scanning)
+      setOutputDirectory(response.data.output_directory)
+      setNFrames(response.data.n_frames)
     })
 
     const sse = new EventSource(flask("/scan-stream"))
-    sse.addEventListener("isScanning", e => setIsScanning(e.data === "True"))
-    sse.addEventListener("path", e => setPath(e.data))
-    sse.addEventListener("frames", e => setFrames(parseInt(e.data)))
-    sse.addEventListener("progress", e => setProgress(parseInt(e.data)))
+    sse.addEventListener("is_scanning", e => setIsScanning(e.data === "True"))
+    sse.addEventListener("output_directory", e => setOutputDirectory(e.data))
+    sse.addEventListener("n_frames", e => setNFrames(parseInt(e.data)))
+    sse.addEventListener("current_frame_index", e => setCurrentFrameIndex(parseInt(e.data)))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
 
     return () => sse.close()
@@ -54,11 +54,11 @@ const Controls = () => {
   const startScanStyle = "bg-blue-500 hover:bg-blue-700"
   const stopScanStyle = "bg-red-500 hover:bg-red-700"
 
-  const startScan = () => axios.post(flask("/scan"), {path: path, frames: frames})
+  const startScan = () => axios.post(flask("/scan"), {output_directory: outputDirectory, n_frames: nFrames})
   const poweroff = () => axios.post(flask("/poweroff"))
 
-  const onPathChange = event => setPath(event.target.value)
-  const onFramesChange = event => setFrames(event.target.value)
+  const onOutputDirectoryChange = event => setOutputDirectory(event.target.value)
+  const onNFramesChange = event => setNFrames(event.target.value)
 
   return (
     <div className="m-0 flex flex-col w-80">
@@ -69,10 +69,10 @@ const Controls = () => {
         <Toggle target={flask("/focuszoom")}>Zoom</Toggle>
       </ButtonGrid>
       <label>Save Frames To</label>
-      <input type="text" value={path} className="bg-green-200" disabled={isScanning} onChange={onPathChange}/>
+      <input type="text" value={outputDirectory} className="bg-green-200" disabled={isScanning} onChange={onOutputDirectoryChange}/>
       <label># Frames</label>
-      <input type="text" value={frames} className="bg-green-200" disabled={isScanning} onChange={onFramesChange}/>
-      <ProgressBar now={progress} max={frames}/>
+      <input type="text" value={nFrames} className="bg-green-200" disabled={isScanning} onChange={onNFramesChange}/>
+      <ProgressBar now={currentFrameIndex + isScanning} max={nFrames}/>
       <button className={(isScanning ? stopScanStyle : startScanStyle) + " text-white font-bold py-2 px-4 rounded"} onClick={startScan}>{isScanning ? "Stop" : "Scan"}</button>
       <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500" onClick={poweroff} disabled={isScanning}> ________poweroff</button>
     </div>
