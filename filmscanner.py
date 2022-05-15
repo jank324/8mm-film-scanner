@@ -33,7 +33,7 @@ class FilmScanner:
 
         self.pi = pigpio.pi()
 
-        self.backlight = Light(6)
+        self.light = Light(6)
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
 
@@ -62,7 +62,7 @@ class FilmScanner:
         self.img_stream = BytesIO()
         self.write_executor = ThreadPoolExecutor(max_workers=1)
 
-        self.turn_on_backlight()
+        self.turn_on_light()
 
         self.is_liveview_active = False
         self.liveview_executor = ThreadPoolExecutor(max_workers=1)
@@ -82,7 +82,7 @@ class FilmScanner:
         self.scanned_frames = 0
 
     def __del__(self):
-        self.turn_off_backlight()
+        self.turn_off_light()
         self.motor.disable()
 
         self.camera.close()
@@ -151,7 +151,7 @@ class FilmScanner:
         self.output_directory = output_directory
         self.n_frames = n_frames
 
-        self.turn_on_backlight()
+        self.turn_on_light()
 
         self.callback.on_scan_start()
 
@@ -358,40 +358,40 @@ class FilmScanner:
         logger.debug(f"Saved {filepath}")
     
     @property
-    def is_backlight_on(self):
-        return self.backlight.is_on
+    def is_light_on(self):
+        return self.light.is_on
     
-    def turn_on_backlight(self):
+    def turn_on_light(self):
         """
-        Turn on the scanner's backlight.
+        Turn on the scanner's light.
 
-        NOTE: Call this method instead of calling the backlight directly in order to make sure that
+        NOTE: Call this method instead of calling the light object directly in order to make sure
+        that the callback is called.
+        """
+        self.light.turn_on()
+        self.callback.on_light_on()
+    
+    def turn_off_light(self):
+        """
+        Turn off the scanner's light.
+
+        NOTE: Call this method instead of calling the light object directly in order to make sure
+        that the callback is called.
+        """
+        self.light.turn_off()
+        self.callback.on_light_off()
+    
+    def toggle_light(self):
+        """
+        Toggle the scanner's light.
+
+        NOTE: Call this method instead of calling the light directly in order to make sure that
         the callback is called.
         """
-        self.backlight.turn_on()
-        self.callback.on_backlight_on()
-    
-    def turn_off_backlight(self):
-        """
-        Turn off the scanner's backlight.
-
-        NOTE: Call this method instead of calling the backlight directly in order to make sure that
-        the callback is called.
-        """
-        self.backlight.turn_off()
-        self.callback.on_backlight_off()
-    
-    def toggle_backlight(self):
-        """
-        Toggle the scanner's backlight.
-
-        NOTE: Call this method instead of calling the backlight directly in order to make sure that
-        the callback is called.
-        """
-        if self.backlight.is_on:
-            self.turn_off_backlight()
+        if self.light.is_on:
+            self.turn_off_light()
         else:
-            self.turn_on_backlight()
+            self.turn_on_light()
     
     def start_logging_to_output_directory(self):
         """

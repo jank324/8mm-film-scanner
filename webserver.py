@@ -100,12 +100,12 @@ def focuszoom_stream():
 def toggle_light():
     if request.method == "GET":
         return {
-            "on": scanner.is_backlight_on,
+            "on": scanner.is_light_on,
             "enabled": not scanner.is_scanning
         }
     elif request.method == "POST":
         if not scanner.is_scanning:
-            scanner.toggle_backlight()
+            scanner.toggle_light()
         return "", 204
     return "", 400
 

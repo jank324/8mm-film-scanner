@@ -99,15 +99,15 @@ class BaseCallback:
         """
         pass
 
-    def on_backlight_on(self):
+    def on_light_on(self):
         """
-        Called after the scanner's backlight is turned on.
+        Called after the scanner's light is turned on.
         """
         pass
 
-    def on_backlight_off(self):
+    def on_light_off(self):
         """
-        Called after the scanner's backlight is turned off.
+        Called after the scanner's light is turned off.
         """
         pass
 
@@ -176,13 +176,13 @@ class CallbackList(BaseCallback):
         for callback in self.callbacks:
             callback.on_frame_capture()
 
-    def on_backlight_on(self):
+    def on_light_on(self):
         for callback in self.callbacks:
-            callback.on_backlight_on()
+            callback.on_light_on()
 
-    def on_backlight_off(self):
+    def on_light_off(self):
         for callback in self.callbacks:
-            callback.on_backlight_off()
+            callback.on_light_off()
 
     def on_scan_start(self):
         for callback in self.callbacks:
@@ -223,10 +223,10 @@ class LightToggleCallback(SSESendingCallback):
     Callback to handle state of the clients' light toggle.
     """
 
-    def on_backlight_on(self):
+    def on_light_on(self):
         self.messenger.send("on", True)
     
-    def on_backlight_off(self):
+    def on_light_off(self):
         self.messenger.send("on", False)
     
     def on_scan_start(self):
