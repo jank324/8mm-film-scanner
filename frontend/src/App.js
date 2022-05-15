@@ -68,9 +68,9 @@ const Controls = () => {
         <Toggle target={flask("/fastforward")}>Fast-Forward</Toggle>
         <Toggle target={flask("/focuszoom")}>Zoom</Toggle>
       </ButtonGrid>
-      <label>Save Frames To</label>
+      <label className="select-none">Save Frames To</label>
       <input type="text" value={outputDirectory} className="bg-green-200" disabled={isScanning} onChange={onOutputDirectoryChange}/>
-      <label># Frames</label>
+      <label className="select-none"># Frames</label>
       <input type="text" value={nFrames} className="bg-green-200" disabled={isScanning} onChange={onNFramesChange}/>
       <ProgressBar now={currentFrameIndex + isScanning} max={nFrames}/>
       <button className={(isScanning ? stopScanStyle : startScanStyle) + " text-white font-bold py-2 px-4 rounded"} onClick={startScan}>{isScanning ? "Stop" : "Scan"}</button>
