@@ -91,21 +91,21 @@ const ButtonGrid = (props) => {
 
 const Toggle = (props) => {
 
-  const [enabled, setEnabled] = useState(true)
-  const [on, setOn] = useState(false)
+  const [isEnabled, setIsEnabled] = useState(true)
+  const [isActive, setIsActive] = useState(false)
 
-  const offStyle = "bg-blue-500 hover:bg-blue-700"
-  const onStyle = "bg-yellow-500 hover:bg-yellow-700"
+  const inactiveStyle = "bg-blue-500 hover:bg-blue-700"
+  const activeStyle = "bg-yellow-500 hover:bg-yellow-700"
 
   useEffect(() => {
     axios.get(props.target).then(response => {
-      setEnabled(response.data.enabled)
-      setOn(response.data.on)
+      setIsEnabled(response.data.is_enabled)
+      setIsActive(response.data.is_active)
     })
 
     const sse = new EventSource(props.target + "-stream")
-    sse.addEventListener("enabled", e => setEnabled(e.data === "True"))
-    sse.addEventListener("on", e => setOn(e.data === "True"))
+    sse.addEventListener("is_enabled", e => setIsEnabled(e.data === "True"))
+    sse.addEventListener("is_active", e => setIsActive(e.data === "True"))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
 
     return () => sse.close()
@@ -114,7 +114,7 @@ const Toggle = (props) => {
   const toggle = () => axios.post(props.target)
 
   return (
-    <button className={"aspect-square " + (on ? onStyle : offStyle) + " text-white font-bold py-2 px-4 rounded disabled:bg-red-500"} onClick={toggle} disabled={!enabled}>{props.children}</button>
+    <button className={"aspect-square " + (isActive ? activeStyle : inactiveStyle) + " text-white font-bold py-2 px-4 rounded disabled:bg-red-500"} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
   )
 }
 
