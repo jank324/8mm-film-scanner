@@ -233,7 +233,7 @@ class LightToggleCallback(SSESendingCallback):
         self.messenger.send("enabled", False)
 
     def on_scan_end(self):
-        self.messenger.send("enabled", False)
+        self.messenger.send("enabled", True)
 
 
 class AdvanceToggleCallback(SSESendingCallback):
