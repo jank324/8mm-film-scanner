@@ -32,6 +32,7 @@ const Controls = () => {
   const [isScanning, setIsScanning] = useState(true)
   const [path, setPath] = useState("")
   const [frames, setFrames] = useState(3800)
+  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
     axios.get(flask("/scan")).then(response => {
@@ -44,6 +45,7 @@ const Controls = () => {
     sse.addEventListener("isScanning", e => setIsScanning(e.data == "True"))
     sse.addEventListener("path", e => setPath(e.data))
     sse.addEventListener("frames", e => setFrames(parseInt(e.data)))
+    sse.addEventListener("progress", e => setProgress(parseInt(e.data)))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
 
     return () => sse.close()
@@ -70,7 +72,7 @@ const Controls = () => {
       <input type="text" value={path} className="bg-green-200" disabled={isScanning} onChange={onPathChange}/>
       <label># Frames</label>
       <input type="text" value={frames} className="bg-green-200" disabled={isScanning} onChange={onFramesChange}/>
-      <p>progress_bar that becomes visible</p>
+      <ProgressBar now={progress} max={frames}/>
       <button className={(isScanning ? stopScanStyle : startScanStyle) + " text-white font-bold py-2 px-4 rounded"} onClick={startScan}>{isScanning ? "Stop" : "Scan"}</button>
       <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500" onClick={poweroff} disabled={isScanning}> ________poweroff</button>
     </div>
@@ -113,6 +115,17 @@ const Toggle = (props) => {
 
   return (
     <button className={"aspect-square " + (on ? onStyle : offStyle) + " text-white font-bold py-2 px-4 rounded disabled:bg-red-500"} onClick={toggle} disabled={!enabled}>{props.children}</button>
+  )
+}
+
+const ProgressBar = (props) => {
+
+  return (
+    <div className="relative pt-1">
+      <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-200">
+        <div style={{width: `${props.now / props.max * 100}%`}} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"></div>
+      </div>
+    </div>
   )
 }
 
