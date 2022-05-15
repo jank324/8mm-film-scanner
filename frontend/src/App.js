@@ -21,7 +21,7 @@ function App() {
 const Preview = () => {
   return (
     <div className="h-screen grow flex justify-center bg-black">
-      <img className="h-screen" src={flask("/preview")}></img>
+      <img className="h-screen" src={flask("/preview")} alt="Preview of the current frame"></img>
     </div>
   )
 }
@@ -42,7 +42,7 @@ const Controls = () => {
     })
 
     const sse = new EventSource(flask("/scan-stream"))
-    sse.addEventListener("isScanning", e => setIsScanning(e.data == "True"))
+    sse.addEventListener("isScanning", e => setIsScanning(e.data === "True"))
     sse.addEventListener("path", e => setPath(e.data))
     sse.addEventListener("frames", e => setFrames(parseInt(e.data)))
     sse.addEventListener("progress", e => setProgress(parseInt(e.data)))
@@ -104,12 +104,12 @@ const Toggle = (props) => {
     })
 
     const sse = new EventSource(props.target + "-stream")
-    sse.addEventListener("enabled", e => setEnabled(e.data == "True"))
-    sse.addEventListener("on", e => setOn(e.data == "True"))
+    sse.addEventListener("enabled", e => setEnabled(e.data === "True"))
+    sse.addEventListener("on", e => setOn(e.data === "True"))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
 
     return () => sse.close()
-  }, [])
+  }, [props.target])
 
   const toggle = () => axios.post(props.target)
 
