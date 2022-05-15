@@ -135,7 +135,8 @@ def scan():
         return {
             "isScanning": scanner.is_scanning,
             "path": scanner.output_directory,
-            "frames": scanner.n_frames
+            "frames": scanner.n_frames,
+            "progress": scanner.current_frame_number if scanner.is_scanning else 0
         }
     elif request.method == "POST":
         if not scanner.is_scanning:

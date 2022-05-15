@@ -93,6 +93,12 @@ class BaseCallback:
         """
         pass
 
+    def on_frame_capture(self):
+        """
+        Called after a frame was captured during a scan.
+        """
+        pass
+
     def on_backlight_on(self):
         """
         Called after the scanner's backlight is turned on.
@@ -165,6 +171,10 @@ class CallbackList(BaseCallback):
     def on_fast_forward_end(self):
         for callback in self.callbacks:
             callback.on_fast_forward_end()
+    
+    def on_frame_capture(self):
+        for callback in self.callbacks:
+            callback.on_frame_capture()
 
     def on_backlight_on(self):
         for callback in self.callbacks:
@@ -302,6 +312,9 @@ class ScanControlsCallback(SSESendingCallback):
     """
     Callback to handle state of the clients' scan control panel.
     """
+
+    def on_frame_capture(self):
+        self.messenger.send("progress", self.scanner.current_frame_number)
     
     def on_scan_start(self):
         self.messenger.send("isScanning", True)
@@ -310,6 +323,7 @@ class ScanControlsCallback(SSESendingCallback):
     
     def on_scan_end(self):
         self.messenger.send("isScanning", False)
+        self.messenger.send("progress", 0)
 
 
 class Viewer:

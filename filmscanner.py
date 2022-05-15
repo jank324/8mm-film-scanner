@@ -169,6 +169,8 @@ class FilmScanner:
         t_last = t_start
 
         for i in range(start_index, n_frames):
+            self.current_frame_number = i + 1
+
             filename = f"frame-{i:05d}.jpg"
             filepath = os.path.join(output_directory, filename)
 
@@ -178,6 +180,7 @@ class FilmScanner:
             self.wait_for_previous_save()
             self.submit_save_frame(frame, filepath)
             self.preview_frame = frame
+            self.callback.on_frame_capture()
 
             t_now = time.time()
             dt = t_now - t_last
