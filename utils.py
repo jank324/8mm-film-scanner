@@ -224,16 +224,16 @@ class LightToggleCallback(SSESendingCallback):
     """
 
     def on_light_on(self):
-        self.messenger.send("on", True)
+        self.messenger.send("is_active", True)
     
     def on_light_off(self):
-        self.messenger.send("on", False)
+        self.messenger.send("is_active", False)
     
     def on_scan_start(self):
-        self.messenger.send("enabled", False)
+        self.messenger.send("is_enabled", False)
 
     def on_scan_end(self):
-        self.messenger.send("enabled", True)
+        self.messenger.send("is_enabled", True)
 
 
 class AdvanceToggleCallback(SSESendingCallback):
@@ -243,25 +243,25 @@ class AdvanceToggleCallback(SSESendingCallback):
 
     def on_advance_start(self):
         if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("on", True)
-            self.messenger.send("enabled", False)
+            self.messenger.send("is_active", True)
+            self.messenger.send("is_enabled", False)
     
     def on_advance_end(self):
         if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("on", False)
-            self.messenger.send("enabled", True)
+            self.messenger.send("is_active", False)
+            self.messenger.send("is_enabled", True)
         
     def on_fast_forward_start(self):
-        self.messenger.send("enabled", False)
+        self.messenger.send("is_enabled", False)
     
     def on_fast_forward_end(self):
-        self.messenger.send("enabled", True)
+        self.messenger.send("is_enabled", True)
     
     def on_scan_start(self):
-        self.messenger.send("enabled", False)
+        self.messenger.send("is_enabled", False)
     
     def on_scan_end(self):
-        self.messenger.send("enabled", True)
+        self.messenger.send("is_enabled", True)
 
 
 class FastForwardToggleCallback(SSESendingCallback):
@@ -271,23 +271,23 @@ class FastForwardToggleCallback(SSESendingCallback):
     
     def on_advance_start(self):
         if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("enabled", False)
+            self.messenger.send("is_enabled", False)
     
     def on_advance_end(self):
         if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("enabled", True)
+            self.messenger.send("is_enabled", True)
     
     def on_fast_forward_start(self):
-        self.messenger.send("on", True)
+        self.messenger.send("is_active", True)
     
     def on_fast_forward_end(self):
-        self.messenger.send("on", False)
+        self.messenger.send("is_active", False)
     
     def on_scan_start(self):
-        self.messenger.send("enabled", False)
+        self.messenger.send("is_enabled", False)
     
     def on_scan_end(self):
-        self.messenger.send("enabled", True)
+        self.messenger.send("is_enabled", True)
 
 
 class ZoomToggleCallback(SSESendingCallback):
@@ -296,16 +296,16 @@ class ZoomToggleCallback(SSESendingCallback):
     """
     
     def on_zoom_in(self):
-        self.messenger.send("on", True)
+        self.messenger.send("is_active", True)
     
     def on_zoom_out(self):
-        self.messenger.send("on", False)
+        self.messenger.send("is_active", False)
     
     def on_scan_start(self):
-        self.messenger.send("enabled", False)
+        self.messenger.send("is_enabled", False)
     
     def on_scan_end(self):
-        self.messenger.send("enabled", True)
+        self.messenger.send("is_enabled", True)
 
 
 class ScanControlsCallback(SSESendingCallback):
