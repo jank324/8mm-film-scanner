@@ -61,7 +61,7 @@ const Controls = () => {
   const onNFramesChange = event => setNFrames(event.target.value)
 
   return (
-    <div className="m-0 flex flex-col w-80 bg-[#0e0e0e]">
+    <div className="m-0 p-2 flex flex-col w-80 dark:bg-gray-800">
       <ButtonGrid>
         <Toggle target={flask("/advance")}>🦦 Step</Toggle>
         <Toggle target={flask("/light")}>💡 Light</Toggle>
@@ -82,7 +82,7 @@ const Controls = () => {
 
 const ButtonGrid = (props) => {
   return (
-    <div className="grid grid-cols-2 gap-2 m-2">
+    <div className="grid grid-cols-2 gap-2 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
       {props.children}
     </div>
   )
@@ -111,7 +111,7 @@ const Toggle = (props) => {
   const toggle = () => axios.post(props.target)
 
   return (
-    <button className={"bg-gradient-to-b from-[#1d1e22] to-[#16191d] font-bold text-center py-2 px-2 rounded-lg shadow-md shadow-black active:shadow-none hover:border-2 disabled:bg-red-500 " + (isActive ? "text-red-500" : "text-[#bababa]")} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
+    <button className={"text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 " + (isActive ? "text-red-500" : "text-[#bababa]")} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
   )
 }
 
