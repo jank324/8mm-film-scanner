@@ -61,12 +61,12 @@ const Controls = () => {
   const onNFramesChange = event => setNFrames(event.target.value)
 
   return (
-    <div className="m-0 flex flex-col w-80">
+    <div className="m-0 flex flex-col w-80 bg-[#0e0e0e]">
       <ButtonGrid>
-        <Toggle target={flask("/light")}>Light</Toggle>
-        <Toggle target={flask("/advance")}>Advance</Toggle>
-        <Toggle target={flask("/fastforward")}>Fast-Forward</Toggle>
-        <Toggle target={flask("/focuszoom")}>Zoom</Toggle>
+        <Toggle target={flask("/light")}>💡</Toggle>
+        <Toggle target={flask("/advance")}>👞</Toggle>
+        <Toggle target={flask("/fastforward")}>🛼</Toggle>
+        <Toggle target={flask("/focuszoom")}>🔍</Toggle>
       </ButtonGrid>
       <label className="select-none">Save Frames To</label>
       <input type="text" value={outputDirectory} className="bg-green-200" disabled={isScanning} onChange={onOutputDirectoryChange}/>
@@ -94,9 +94,6 @@ const Toggle = (props) => {
   const [isEnabled, setIsEnabled] = useState(true)
   const [isActive, setIsActive] = useState(false)
 
-  const inactiveStyle = "bg-blue-500 hover:bg-blue-700"
-  const activeStyle = "bg-yellow-500 hover:bg-yellow-700"
-
   useEffect(() => {
     axios.get(props.target).then(response => {
       setIsEnabled(response.data.is_enabled)
@@ -114,7 +111,7 @@ const Toggle = (props) => {
   const toggle = () => axios.post(props.target)
 
   return (
-    <button className={"aspect-square " + (isActive ? activeStyle : inactiveStyle) + " text-white font-bold py-2 px-4 rounded disabled:bg-red-500"} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
+    <button className={"aspect-square bg-gradient-to-b from-[#1d1e22] to-[#16191d] font-bold text-4xl text-center py-2 px-4 rounded-lg shadow-md shadow-black active:shadow-none hover:border-2 disabled:bg-red-500 " + (isActive ? "text-red-500" : "text-white")} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
   )
 }
 
