@@ -68,7 +68,7 @@ const Controls = () => {
         <Toggle target={flask("/fastforward")}>🏎 Fast-Forward</Toggle>
         <Toggle target={flask("/focuszoom")}>🔍 Zoom</Toggle>
       </ButtonGrid>
-      <ProgressBar now={currentFrameIndex + isScanning} max={nFrames}/>
+      <ProgressBar now={currentFrameIndex + isScanning} max={nFrames} show={isScanning}/>
       <div>
         <label for="n_frames" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Reel length</label>
         <input type="text" id="n_frames" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Number of frames" value={nFrames} required disabled={isScanning} onChange={onNFramesChange} />
@@ -126,14 +126,18 @@ const Toggle = (props) => {
 
 const ProgressBar = (props) => {
 
+  const showStyle = "p-4"
+  const hiddenStyle = "h-0 p-0"
+
   return (
-    <div>
+    <div class={"text-sm text-gray-700 bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 overflow-hidden transition-all " + (props.show ? showStyle : hiddenStyle)} role="alert">
+      <span class="font-medium">Scanning ...</span>
       <div class="flex justify-between mb-1">
-        <span class="text-sm font-medium text-blue-700 dark:text-white">Scanning frame {props.now}</span>
-        <span class="text-sm font-medium text-blue-700 dark:text-white">{props.now / props.max * 100}%</span>
+        <span class="text-sm text-purple-500 dark:text-purple-400">Frame {props.now} of {props.max}</span>
+        <span class="text-sm text-purple-500 dark:text-purple-400">{Math.round(props.now / props.max * 100)}%</span>
       </div>
-      <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-        <div class="bg-blue-600 h-2.5 rounded-full" style={{width: `${props.now / props.max * 100}%`}}></div>
+      <div class="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-900">
+        <div class="bg-purple-500 dark:bg-purple-400 h-1.5 rounded-full transition-all" style={{width: `${props.now / props.max * 100}%`}}></div>
       </div>
     </div>
   )
