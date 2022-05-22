@@ -79,7 +79,7 @@ const Controls = () => {
       </div>
       <button type="button" className={"focus:outline-none text-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 border " + (isScanning? scanButtonStopStyle : scanButtonStartStyle)} onClick={startScan}>{isScanning ? "⏹ Stop" : "🎥 Scan"}</button>
       <div className="flex flex-col-reverse justify-start items-end flex-grow">
-        <button className="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 flex-grow-0" onClick={poweroff} disabled={isScanning}>😴 Power off</button>
+        <button className="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 flex-grow-0 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed" onClick={poweroff} disabled={isScanning}>😴 Power off</button>
       </div>
     </div>
   )
@@ -117,7 +117,7 @@ const Toggle = (props) => {
   const toggle = () => axios.post(props.target)
 
   return (
-    <button className={"text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 " + (isActive ? "text-red-500" : "text-[#bababa]")} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
+    <button className={"text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed cursor-pointer" + (isActive ? "text-red-500" : "text-[#bababa]")} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
   )
 }
 
