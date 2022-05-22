@@ -61,7 +61,7 @@ const Controls = () => {
   const onNFramesChange = event => setNFrames(event.target.value)
 
   return (
-    <div className="m-0 p-2 flex flex-col w-80 dark:bg-gray-800">
+    <div className="m-0 p-2 flex flex-col gap-4 w-80 dark:bg-gray-800">
       <ButtonGrid>
         <Toggle target={flask("/advance")}>🦦 Step</Toggle>
         <Toggle target={flask("/light")}>💡 Light</Toggle>
@@ -69,10 +69,15 @@ const Controls = () => {
         <Toggle target={flask("/focuszoom")}>🔍 Zoom</Toggle>
       </ButtonGrid>
       <ProgressBar now={currentFrameIndex + isScanning} max={nFrames}/>
-      <label className="select-none"># Frames</label>
-      <input type="text" value={nFrames} className="bg-green-200" disabled={isScanning} onChange={onNFramesChange}/>
-      <label className="select-none">Save Frames To</label>
-      <input type="text" value={outputDirectory} className="bg-green-200" disabled={isScanning} onChange={onOutputDirectoryChange}/>
+
+      <div>
+        <label for="n_frames" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Reel length</label>
+        <input type="text" id="n_frames" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Number of frames" value={nFrames} required  disabled={isScanning} onChange={onNFramesChange} />
+      </div>
+      <div>
+        <label for="output_directory" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Output directory</label>
+        <input type="text" id="output_directory" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Directory to save scanned files to" value={outputDirectory} required disabled={isScanning} onChange={onOutputDirectoryChange} />
+      </div>
       <button className={(isScanning ? stopScanStyle : startScanStyle) + " text-white font-bold py-2 px-4 rounded"} onClick={startScan}>{isScanning ? "Stop" : "Scan"}</button>
       <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500" onClick={poweroff} disabled={isScanning}> ________poweroff</button>
     </div>
