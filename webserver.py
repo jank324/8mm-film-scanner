@@ -57,6 +57,11 @@ def advance_stream():
     return Response(advance_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
+@app.route("/dismiss", methods=("POST",))
+def dismiss():
+    scanner.last_scan_end_info = "dismissed"
+
+
 @app.route("/fastforward", methods=("GET","POST"))
 def fast_forward():
     if request.method == "GET":
@@ -136,7 +141,8 @@ def scan():
             "is_scanning": scanner.is_scanning,
             "output_directory": scanner.output_directory,
             "n_frames": scanner.n_frames,
-            "current_frame_index": scanner.current_frame_index if scanner.is_scanning else 0
+            "current_frame_index": scanner.current_frame_index if scanner.is_scanning else 0,
+            "last_scan_end_info": scanner.last_scan_end_info
         }
     elif request.method == "POST":
         if not scanner.is_scanning:

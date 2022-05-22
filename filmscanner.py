@@ -80,6 +80,7 @@ class FilmScanner:
         self.output_directory = "/media/pi/PortableSSD/test"
         self.n_frames = 3842
         self.scanned_frames = 0
+        self.last_scan_end_info = "dismissed"
 
     def __del__(self):
         self.turn_off_light()
@@ -144,6 +145,7 @@ class FilmScanner:
             Frame index at which to start scanning if you are not scanning from the beginning.
             Reduces the number of frames scanning.
         """
+        self.last_scan_end_info = "dismissed"
         self.scan_started_event.set()
 
         logger.info("Setting up scan")
@@ -198,6 +200,7 @@ class FilmScanner:
         logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
 
         self.is_scanning = False
+        self.last_scan_end_info = "success"
         self.callback.on_scan_end()
 
         self.scan_stopped_event.set()
@@ -533,6 +536,15 @@ class FilmScanner:
             self.stop_liveview()
         
         os.system("sudo poweroff")
+
+    @property
+    def last_scan_end_info(self):
+        return self._last_scan_end_info
+    
+    @last_scan_end_info.setter
+    def last_scan_end_info(self, value):
+        self._last_scan_end_info = value
+        self.callback.on_last_scan_end_info_change()
 
 
 class AdvanceTimeoutError(Exception):

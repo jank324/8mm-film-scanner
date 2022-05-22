@@ -98,6 +98,11 @@ class BaseCallback:
         Called after a frame was captured during a scan.
         """
         pass
+    
+    def on_last_scan_end_info_change(self):
+        """
+        Called when the info on how the last scan ended changed.
+        """
 
     def on_light_on(self):
         """
@@ -175,6 +180,10 @@ class CallbackList(BaseCallback):
     def on_frame_capture(self):
         for callback in self.callbacks:
             callback.on_frame_capture()
+    
+    def on_last_scan_end_info_change(self):
+        for callback in self.callbacks:
+            callback.on_last_scan_end_info_change()
 
     def on_light_on(self):
         for callback in self.callbacks:
@@ -316,6 +325,9 @@ class ScanControlsCallback(SSESendingCallback):
     def on_frame_capture(self):
         self.messenger.send("current_frame_index", self.scanner.current_frame_index)
     
+    def on_last_scan_end_info_change(self):
+        self.messenger.send("last_scan_end_info", self.scanner.last_scan_end_info)
+    
     def on_scan_start(self):
         self.messenger.send("is_scanning", True)
         self.messenger.send("output_directory", self.scanner.output_directory)
@@ -324,6 +336,7 @@ class ScanControlsCallback(SSESendingCallback):
     def on_scan_end(self):
         self.messenger.send("is_scanning", False)
         self.messenger.send("current_frame_index", 0)
+        self.messenger.send("last_scan_end_info", self.scanner.last_scan_end_info)
 
 
 class Viewer:
