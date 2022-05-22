@@ -69,10 +69,9 @@ const Controls = () => {
         <Toggle target={flask("/focuszoom")}>🔍 Zoom</Toggle>
       </ButtonGrid>
       <ProgressBar now={currentFrameIndex + isScanning} max={nFrames}/>
-
       <div>
         <label for="n_frames" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Reel length</label>
-        <input type="text" id="n_frames" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Number of frames" value={nFrames} required  disabled={isScanning} onChange={onNFramesChange} />
+        <input type="text" id="n_frames" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Number of frames" value={nFrames} required disabled={isScanning} onChange={onNFramesChange} />
       </div>
       <div>
         <label for="output_directory" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Output directory</label>
@@ -82,7 +81,6 @@ const Controls = () => {
       <div className="flex flex-col-reverse justify-start items-end flex-grow">
         <button className="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 flex-grow-0" onClick={poweroff} disabled={isScanning}>😴 Power off</button>
       </div>
-      
     </div>
   )
 }
@@ -126,9 +124,13 @@ const Toggle = (props) => {
 const ProgressBar = (props) => {
 
   return (
-    <div className="relative pt-1">
-      <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-200">
-        <div style={{width: `${props.now / props.max * 100}%`}} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"></div>
+    <div>
+      <div class="flex justify-between mb-1">
+        <span class="text-sm font-medium text-blue-700 dark:text-white">Scanning frame {props.now}</span>
+        <span class="text-sm font-medium text-blue-700 dark:text-white">{props.now / props.max * 100}%</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+        <div class="bg-blue-600 h-2.5 rounded-full" style={{width: `${props.now / props.max * 100}%`}}></div>
       </div>
     </div>
   )
