@@ -63,10 +63,10 @@ const Controls = () => {
   return (
     <div className="m-0 flex flex-col w-80 bg-[#0e0e0e]">
       <ButtonGrid>
-        <Toggle target={flask("/light")}>💡</Toggle>
-        <Toggle target={flask("/advance")}>👞</Toggle>
-        <Toggle target={flask("/fastforward")}>🛼</Toggle>
-        <Toggle target={flask("/focuszoom")}>🔍</Toggle>
+        <Toggle target={flask("/advance")}>🦦 Step</Toggle>
+        <Toggle target={flask("/light")}>💡 Light</Toggle>
+        <Toggle target={flask("/fastforward")}>🏎 Fast-Forward</Toggle>
+        <Toggle target={flask("/focuszoom")}>🔍 Zoom</Toggle>
       </ButtonGrid>
       <label className="select-none">Save Frames To</label>
       <input type="text" value={outputDirectory} className="bg-green-200" disabled={isScanning} onChange={onOutputDirectoryChange}/>
@@ -82,7 +82,7 @@ const Controls = () => {
 
 const ButtonGrid = (props) => {
   return (
-    <div className="grid grid-cols-4 gap-2 m-2">
+    <div className="grid grid-cols-2 gap-2 m-2">
       {props.children}
     </div>
   )
@@ -111,7 +111,7 @@ const Toggle = (props) => {
   const toggle = () => axios.post(props.target)
 
   return (
-    <button className={"aspect-square bg-gradient-to-b from-[#1d1e22] to-[#16191d] font-bold text-4xl text-center py-2 px-4 rounded-lg shadow-md shadow-black active:shadow-none hover:border-2 disabled:bg-red-500 " + (isActive ? "text-red-500" : "text-white")} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
+    <button className={"bg-gradient-to-b from-[#1d1e22] to-[#16191d] font-bold text-center py-2 px-2 rounded-lg shadow-md shadow-black active:shadow-none hover:border-2 disabled:bg-red-500 " + (isActive ? "text-red-500" : "text-[#bababa]")} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
   )
 }
 
