@@ -94,64 +94,64 @@ const Controls = () => {
 }
 
 
-const ButtonGrid = (props) => {
+const ButtonGrid = ({children}) => {
   return (
     <div className="grid grid-cols-2 gap-2 pb-2 border-b-2 border-gray-200 dark:border-gray-700">
-      {props.children}
+      {children}
     </div>
   )
 }
 
 
-const Toggle = (props) => {
+const Toggle = ({children, target}) => {
 
   const [isEnabled, setIsEnabled] = useState(true)
   const [isActive, setIsActive] = useState(false)
 
   useEffect(() => {
-    axios.get(props.target).then(response => {
+    axios.get(target).then(response => {
       setIsEnabled(response.data.is_enabled)
       setIsActive(response.data.is_active)
     })
 
-    const sse = new EventSource(props.target + "-stream")
+    const sse = new EventSource(target + "-stream")
     sse.addEventListener("is_enabled", e => setIsEnabled(e.data === "True"))
     sse.addEventListener("is_active", e => setIsActive(e.data === "True"))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
 
     return () => sse.close()
-  }, [props.target])
+  }, [target])
 
-  const toggle = () => axios.post(props.target)
+  const toggle = () => axios.post(target)
 
   const activeStyle = "border-yellow-400 dark:border-yellow-400"
   const inactiveStyle = "border-gray-200 dark:border-gray-700"
 
   return (
-    <button className={"text-gray-900 bg-white hover:bg-gray-100 border focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed cursor-pointer " + (isActive ? activeStyle : inactiveStyle)} onClick={toggle} disabled={!isEnabled}>{props.children}</button>
+    <button className={"text-gray-900 bg-white hover:bg-gray-100 border focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed cursor-pointer " + (isActive ? activeStyle : inactiveStyle)} onClick={toggle} disabled={!isEnabled}>{children}</button>
   )
 }
 
-const ProgressBar = (props) => {
+const ProgressBar = ({max, now, show}) => {
 
   const showStyle = "p-4 mt-2"
   const hiddenStyle = "h-0 p-0"
 
   return (
-    <div className={"p-4 text-sm text-gray-700 bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 overflow-hidden transition-all " + (props.show ? showStyle : hiddenStyle)} role="alert">
+    <div className={"p-4 text-sm text-gray-700 bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 overflow-hidden transition-all " + (show ? showStyle : hiddenStyle)} role="alert">
       <span className="font-medium">Scanning ...</span>
       <div className="flex justify-between mb-1">
-        <span className="text-sm text-purple-500 dark:text-purple-400">Frame {props.now} of {props.max}</span>
-        <span className="text-sm text-purple-500 dark:text-purple-400">{Math.round(props.now / props.max * 100)}%</span>
+        <span className="text-sm text-purple-500 dark:text-purple-400">Frame {now} of {max}</span>
+        <span className="text-sm text-purple-500 dark:text-purple-400">{Math.round(now / max * 100)}%</span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-900">
-        <div className="bg-purple-500 dark:bg-purple-400 h-1.5 rounded-full transition-all" style={{width: `${props.now / props.max * 100}%`}}></div>
+        <div className="bg-purple-500 dark:bg-purple-400 h-1.5 rounded-full transition-all" style={{width: `${now / max * 100}%`}}></div>
       </div>
     </div>
   )
 }
 
-const ScanSuccessAlert = (props) => {
+const ScanSuccessAlert = ({show}) => {
 
   const dismiss = () => axios.post(flask("/dismiss"))
 
@@ -159,7 +159,7 @@ const ScanSuccessAlert = (props) => {
   const hiddenStyle = "h-0 p-0"
 
   return (
-    <div className={"flex bg-green-100 rounded-lg dark:bg-green-200 overflow-hidden transition-all " + (props.show ? showStyle : hiddenStyle)} role="alert">
+    <div className={"flex bg-green-100 rounded-lg dark:bg-green-200 overflow-hidden transition-all " + (show ? showStyle : hiddenStyle)} role="alert">
       <svg className="flex-shrink-0 w-5 h-5 text-green-700 dark:text-green-800" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
       <div className="flex-col ml-3 text-sm font-medium text-green-700 dark:text-green-800">
         Scan finished successfully!
@@ -172,7 +172,7 @@ const ScanSuccessAlert = (props) => {
   )
 }
 
-const ScanFailureAlert = (props) => {
+const ScanFailureAlert = ({show}) => {
 
   const dismiss = () => axios.post(flask("/dismiss"))
 
@@ -180,7 +180,7 @@ const ScanFailureAlert = (props) => {
   const hiddenStyle = "h-0 p-0"
 
   return (
-    <div className={"flex bg-red-100 rounded-lg dark:bg-red-200 overflow-hidden transition-all " + (props.show ? showStyle : hiddenStyle)} role="alert">
+    <div className={"flex bg-red-100 rounded-lg dark:bg-red-200 overflow-hidden transition-all " + (show ? showStyle : hiddenStyle)} role="alert">
       <svg className="flex-shrink-0 w-5 h-5 text-red-700 dark:text-red-800" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
       <div className="ml-3 text-sm font-medium text-red-700 dark:text-red-800">
         Scan failed!
