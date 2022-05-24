@@ -10,7 +10,7 @@ const flask = route => "http://192.168.178.48:5000" + route
 function App() {
 
   return (
-    <div className="flex flex-wrap">
+    <div className="grid grid-cols-1 sm:flex w-screen">
       <Preview />
       <Controls />
     </div>
@@ -20,8 +20,8 @@ function App() {
 
 const Preview = () => {
   return (
-    <div className="h-screen grow flex justify-center bg-black">
-      <img className="h-screen" src={flask("/preview")} alt="Preview of the current frame"></img>
+    <div className="grow shrink justify-center flex bg-black">
+      <img className="w-screen sm:w-auto sm:h-screen object-contain" src={flask("/preview")} alt="Preview of the current frame"></img>
     </div>
   )
 }
@@ -64,7 +64,7 @@ const Controls = () => {
   const onNFramesChange = event => setNFrames(event.target.value)
 
   return (
-    <div className="m-0 p-2 flex flex-col w-80 dark:bg-gray-800">
+    <div className="lg:w-80 shrink-0 m-0 p-2 flex flex-col bg-white dark:bg-gray-800">
       <ButtonGrid>
         <Toggle target={flask("/advance")}>🦦 Step</Toggle>
         <Toggle target={flask("/light")}>💡 Light</Toggle>
@@ -87,7 +87,7 @@ const Controls = () => {
       <button type="button" className={"mt-4 focus:outline-none text-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 border " + (isScanning? scanButtonStopStyle : scanButtonStartStyle)} onClick={startScan}>{isScanning ? "⏹ Stop" : "🎥 Scan"}</button>
 
       <div className="flex flex-col-reverse justify-start items-end flex-grow">
-        <button className="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 flex-grow-0 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed" onClick={poweroff} disabled={isScanning}>😴 Power off</button>
+        <button className="mt-4 text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 flex-grow-0 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed" onClick={poweroff} disabled={isScanning}>😴 Power off</button>
       </div>
     </div>
   )
