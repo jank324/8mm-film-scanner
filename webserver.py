@@ -60,6 +60,7 @@ def advance_stream():
 @app.route("/dismiss", methods=("POST",))
 def dismiss():
     scanner.last_scan_end_info = "dismissed"
+    return "", 204
 
 
 @app.route("/fastforward", methods=("GET","POST"))
@@ -122,7 +123,8 @@ def light_stream():
 
 @app.route("/poweroff", methods=("POST",))
 def poweroff():
-    scanner.poweroff()
+    print("Pretending to power off")
+    # scanner.poweroff()
     return "", 204
 
 
