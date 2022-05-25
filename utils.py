@@ -1,4 +1,5 @@
-from datetime import datetime
+from collections import deque
+from datetime import datetime, timedelta
 import queue
 from threading import Event
 
@@ -322,21 +323,60 @@ class ScanControlsCallback(SSESendingCallback):
     Callback to handle state of the clients' scan control panel.
     """
 
+    def __init__(self):
+        super().__init__()
+        self.time_remaining = timedelta(0)
+        self.str_time_remaining = "-"
+        self.is_time_remaining_first_update = False
+
     def on_frame_capture(self):
+        self.update_time_remaining()
+
         self.messenger.send("current_frame_index", self.scanner.current_frame_index)
+        self.messenger.send("time_remaining", self.str_time_remaining)
     
     def on_last_scan_end_info_change(self):
         self.messenger.send("last_scan_end_info", self.scanner.last_scan_end_info)
     
     def on_scan_start(self):
+        self.init_time_remaining_estimation()
+
         self.messenger.send("is_scanning", True)
         self.messenger.send("output_directory", self.scanner.output_directory)
         self.messenger.send("n_frames", self.scanner.n_frames)
+        self.messenger.send("time_remaining", self.str_time_remaining)
     
     def on_scan_end(self):
         self.messenger.send("is_scanning", False)
         self.messenger.send("current_frame_index", 0)
         self.messenger.send("last_scan_end_info", self.scanner.last_scan_end_info)
+    
+    def init_time_remaining_estimation(self):
+        self.t_last = datetime.now()
+        self.dts = deque([], maxlen=100)
+        self.time_remaining = timedelta(0)
+        self.str_time_remaining = "-"
+
+        self.is_time_remaining_first_update = True
+    
+    def update_time_remaining(self):
+        t_now = datetime.now()
+        dt = t_now - self.t_last
+        self.t_last = t_now
+        
+        # On the first update of time remaining don't add dt to dts because it measures the duration
+        # of the scan initialisation and therefore throws off the time remaining estimate.
+        if self.is_time_remaining_first_update:
+            self.is_time_remaining_first_update = False
+            return
+
+        self.dts.append(dt) 
+        
+        dt_mean = sum(self.dts, timedelta(0)) / len(self.dts)
+        frames_remaining = self.scanner.n_frames - self.scanner.current_frame_index
+        self.time_remaining = dt_mean * frames_remaining
+
+        self.str_time_remaining = str(self.time_remaining).split(".")[0]
 
 
 class Viewer:

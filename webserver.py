@@ -144,7 +144,8 @@ def scan():
             "output_directory": scanner.output_directory,
             "n_frames": scanner.n_frames,
             "current_frame_index": scanner.current_frame_index if scanner.is_scanning else 0,
-            "last_scan_end_info": scanner.last_scan_end_info
+            "last_scan_end_info": scanner.last_scan_end_info,
+            "time_remaining": scan_controls_callback.str_time_remaining
         }
     elif request.method == "POST":
         if not scanner.is_scanning:

@@ -167,8 +167,6 @@ class FilmScanner:
         self.camera.resolution = (400, 300)
 
         time.sleep(5)
-        t_start = time.time()
-        t_last = t_start
 
         for i in range(start_index, n_frames):
             self.current_frame_index = i
@@ -186,20 +184,12 @@ class FilmScanner:
 
             self.advance()
 
-            t_now = time.time()
-            dt = t_now - t_last
-            fps = 1 / dt
-            remaining_seconds = int((n_frames - i) / fps)
-            remaining = timedelta(seconds=remaining_seconds)
-            logger.info(f"Captured \"{filepath}\" ({fps:.2f} fps / {remaining} s remaining)")
-            t_last = t_now
+            logger.info(f"Captured \"{filepath}\"")
 
             if self.scan_stop_requested:
                 break
 
-        t = t_now - t_start
-        fps = (i + 1) / t
-        logger.info(f"Scanned {i+1} frames in {t:.2f} seconds ({fps:.2f} fps)")
+        logger.info(f"Finished scanning {i+1} frames")
 
         self.is_scanning = False
         self.last_scan_end_info = "success"
