@@ -34,6 +34,7 @@ const Controls = () => {
   const [nFrames, setNFrames] = useState(3800)
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0)
   const [lastScanEndInfo, setLastScanEndInfo] = useState("dismissed")
+  const [timeRemaining, setTimeRemaining] = useState("-")
 
   useEffect(() => {
     axios.get(flask("/scan")).then(response => {
@@ -41,6 +42,7 @@ const Controls = () => {
       setOutputDirectory(response.data.output_directory)
       setNFrames(response.data.n_frames)
       setLastScanEndInfo(response.data.last_scan_end_info)
+      setTimeRemaining(response.time_remaining)
     })
 
     const sse = new EventSource(flask("/scan-stream"))
@@ -49,6 +51,7 @@ const Controls = () => {
     sse.addEventListener("n_frames", e => setNFrames(parseInt(e.data)))
     sse.addEventListener("current_frame_index", e => setCurrentFrameIndex(parseInt(e.data)))
     sse.addEventListener("last_scan_end_info", e => setLastScanEndInfo(e.data))
+    sse.addEventListener("time_remaining", e => setTimeRemaining(e.data))
     sse.onerror = e => sse.close()  // TODO: Do something more intelligent
 
     return () => sse.close()
@@ -72,7 +75,7 @@ const Controls = () => {
         <Toggle target={flask("/focuszoom")}>🔍 Zoom</Toggle>
       </ButtonGrid>
 
-      <ProgressBar now={currentFrameIndex + isScanning} max={nFrames} show={isScanning} />
+      <ProgressBar now={currentFrameIndex + isScanning} max={nFrames} info={timeRemaining} show={isScanning} />
       <ScanSuccessAlert show={lastScanEndInfo === "success"} />
       <ScanFailureAlert show={lastScanEndInfo === "failure"} />
 
@@ -132,7 +135,7 @@ const Toggle = ({children, target}) => {
   )
 }
 
-const ProgressBar = ({max, now, show}) => {
+const ProgressBar = ({max, now, info, show}) => {
 
   const showStyle = "p-4 mt-2"
   const hiddenStyle = "h-0 p-0"
@@ -142,7 +145,7 @@ const ProgressBar = ({max, now, show}) => {
       <span className="font-medium">Scanning ...</span>
       <div className="flex justify-between mb-1">
         <span className="text-sm text-purple-500 dark:text-purple-400">Frame {now} of {max}</span>
-        <span className="text-sm text-purple-500 dark:text-purple-400">{Math.round(now / max * 100)}%</span>
+        <span className="text-sm text-purple-500 dark:text-purple-400">{info}</span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-900">
         <div className="bg-purple-500 dark:bg-purple-400 h-1.5 rounded-full transition-all" style={{width: `${now / max * 100}%`}}></div>
