@@ -184,6 +184,8 @@ class FilmScanner:
             self.preview_frame = frame
             self.callback.on_frame_capture()
 
+            self.advance()
+
             t_now = time.time()
             dt = t_now - t_last
             fps = 1 / dt
