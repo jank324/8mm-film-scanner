@@ -36,6 +36,7 @@ const Controls = () => {
   const [lastScanEndInfo, setLastScanEndInfo] = useState("dismissed")
   const [timeRemaining, setTimeRemaining] = useState("-")
   const [isShowingPoweroffModal, setIsShowingPoweroffModal] = useState(false)
+  const [isEndOfUse, setIsEndOfUse] = useState(false)
 
   useEffect(() => {
     axios.get(flask("/scan")).then(response => {
@@ -62,7 +63,11 @@ const Controls = () => {
   const scanButtonStopStyle = "bg-red-700 border-red-700 hover:bg-red-800 hover:border-red-800 focus:ring-red-300 dark:bg-red-600 dark:border-red-600 dark:hover:bg-red-700 dark:hover:border-red-700 dark:focus:ring-red-900"
 
   const startScan = () => axios.post(flask("/scan"), {output_directory: outputDirectory, n_frames: nFrames})
-  const poweroff = () => axios.post(flask("/poweroff"))   // TODO blank out screen or something
+  const poweroff = () => {
+    axios.post(flask("/poweroff"))
+    setIsShowingPoweroffModal(false)
+    setIsEndOfUse(true)
+  }
 
   const openPoweroffModal = () => setIsShowingPoweroffModal(true)
   const closePoweroffModal = () => setIsShowingPoweroffModal(false)
@@ -97,6 +102,7 @@ const Controls = () => {
         <button className="mt-4 text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 flex-grow-0 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed" onClick={openPoweroffModal} disabled={isScanning}>😴 Power off</button>
       </div>
       <PoweroffModal onConfirm={poweroff} onAbort={closePoweroffModal} show={isShowingPoweroffModal} />
+      <EndOfUseModal show={isEndOfUse} />
     </div>
   )
 }
@@ -213,6 +219,20 @@ const PoweroffModal = ({onConfirm, onAbort, show}) => {
           <h3 className="mb-5 text-lg font-normal text-gray-900 dark:text-white">Are you sure you want to turn off the scanner?</h3>
           <button onClick={onConfirm} className="text-white border bg-red-600 border-red-600 hover:bg-red-800 hover:border-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 w-[106px]">Power off</button>
           <button onClick={onAbort} className="text-gray-900 bg-white hover:bg-gray-100 border focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 cursor-pointer border-gray-200 dark:border-gray-700 w-[106px]">Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const EndOfUseModal = ({show}) => {
+
+  return (
+    <div tabIndex="-1" className={"fixed top-0 right-0 left-0 w-full h-full flex bg-[#000000FF] " + (show ? "block" : "hidden")}>
+      <div className="relative w-96 m-auto align-middle rounded-lg shadow bg-white dark:bg-gray-800">
+        <div className="px-12 py-6 flex-col text-center">
+          <h3 className="mb-3 text-lg font-medium text-gray-900 dark:text-white">The scanner is powering off.</h3>
+          <span className="text-sm font-normal text-gray-900 dark:text-white">You may close this window and disconnect the scanner's power in a few minutes.</span>
         </div>
       </div>
     </div>
