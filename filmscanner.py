@@ -516,7 +516,8 @@ class FilmScanner:
             if self.liveview_stop_requested:
                 break
         
-        self.turn_off_light()
+        if not self.is_scanning:
+            self.turn_off_light()
         self.is_liveview_active = False
         self.liveview_stopped_event.set()
             
