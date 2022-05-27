@@ -31,6 +31,8 @@ class FilmScanner:
         self.callback = CallbackList(callback) if isinstance(callback, list) else callback
         self.callback.setup(self)
 
+        os.system("sudo pigpiod -t 0")  # Automatically start pigpio daemon for pigpio to work
+        time.sleep(5)
         self.pi = pigpio.pi()
 
         self.light = Light(6)
