@@ -70,7 +70,7 @@ class FilmScanner:
         self.img_stream = BytesIO()
         self.write_executor = ThreadPoolExecutor(max_workers=1)
 
-        self.turn_on_light()
+        self.turn_off_light()
 
         self.is_liveview_active = False
         self.liveview_executor = ThreadPoolExecutor(max_workers=1)
