@@ -52,6 +52,8 @@ class FilmScanner:
         self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
         time.sleep(2)
 
+        self.raw_offset = 18711040
+
         self.is_advancing = False
         self.is_fast_forwarding = False
         self.is_scanning = False
@@ -185,7 +187,7 @@ class FilmScanner:
             frame = self.capture_frame()
             self.wait_for_previous_save()
             self.submit_save_frame(frame, filepath)
-            self.preview_frame = frame
+            self.preview_frame = frame[:-self.raw_offset]   # Cut off the raw bayer data
             self.callback.on_frame_capture()
 
             self.advance()
