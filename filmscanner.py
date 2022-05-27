@@ -79,8 +79,8 @@ class FilmScanner:
         self.fast_forward_stopped_event = Event()
         
         self.scan_executor = ThreadPoolExecutor(max_workers=1)
-        self.output_directory = "/media/pi/PortableSSD/test"
-        self.n_frames = 3842
+        self.output_directory = "/media/pi/PortableSSD/unnamed/frames"
+        self.n_frames = 3800
         self.scanned_frames = 0
         self.last_scan_end_info = "dismissed"
 
