@@ -133,7 +133,7 @@ class FilmScanner:
         try:
             self.scan(output_directory, n_frames, start_index)
         except Exception as e:
-            print(f"AN ERROR HAS OCURRED: {e}")
+            print(f"AN ERROR HAS OCURRED: {e}") # TODO to logger (and web interface) instead of print
     
     def scan(self, output_directory, n_frames=3900, start_index=0):
         """
@@ -209,6 +209,8 @@ class FilmScanner:
 
         if self.viewers:
             self.start_liveview()
+        else:
+            self.turn_off_light()
 
         return i + 1
     
@@ -439,9 +441,9 @@ class FilmScanner:
         """
         now = datetime.now()
         self.viewers = [viewer for viewer in self.viewers if now - viewer.last_access < timedelta(minutes=1)]
-        if not self.viewers and self.is_liveview_active:
+        if not self.viewers and self.is_liveview_active and not self.liveview_stop_requested:
             # TODO This could cause a race condition if a new viewer is added here (?)
-            self.stop_liveview()
+            self.stop_liveview(blocking=False)
 
     def notify_viewers(self):
         """
@@ -454,31 +456,40 @@ class FilmScanner:
         """
         Start a liveview to fill the preview frames.
         """
-        logger.info("Starting liveview")
+        logger.debug("Liveview start requested")
         self.is_liveview_active = True
         self.liveview_stop_requested = False
         self.liveview_started_event.clear()
         self.liveview_executor.submit(self.liveview)
         self.liveview_started_event.wait()
     
-    def stop_liveview(self):
+    def stop_liveview(self, blocking=True):
         """
         Stop the liveview from writing the preview frames.
+
+        Parameters
+        ----------
+        blocking : boolean, optional
+            When set to `True`, block until liveview is actually stopped, otherwise return
+            immediately.
         """
-        logger.info("Stopping liveview")
+        logger.debug("Requesting liveview stop")
         self.liveview_stopped_event.clear()
         self.liveview_stop_requested = True
-        self.liveview_stopped_event.wait()
+        if blocking:
+            self.liveview_stopped_event.wait()
     
     def liveview(self):
         """
         Livewview function writing preview frames.
         """
+        logger.info("Starting liveview")
         self.liveview_started_event.set()
 
         buffer = BytesIO()
 
         self.camera.resolution = (800, 600)
+        self.turn_on_light()
         
         for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
             # TODO: Hack!
@@ -505,6 +516,7 @@ class FilmScanner:
             if self.liveview_stop_requested:
                 break
         
+        self.turn_off_light()
         self.is_liveview_active = False
         self.liveview_stopped_event.set()
             
