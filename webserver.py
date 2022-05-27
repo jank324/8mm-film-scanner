@@ -123,8 +123,7 @@ def light_stream():
 
 @app.route("/poweroff", methods=("POST",))
 def poweroff():
-    print("Pretending to power off")
-    # scanner.poweroff()
+    scanner.poweroff()
     return "", 204
 
 

@@ -527,6 +527,7 @@ class FilmScanner:
         if self.is_liveview_active:
             self.stop_liveview()
         
+        logger.info("Powering off")
         os.system("sudo poweroff")
 
     @property
