@@ -31,8 +31,12 @@ class FilmScanner:
         self.callback = CallbackList(callback) if isinstance(callback, list) else callback
         self.callback.setup(self)
 
-        os.system("sudo pigpiod -t 0")  # Automatically start pigpio daemon for pigpio to work
-        time.sleep(5)
+        # The command `pigs t` will return 0 if the pigpio daemon is running 65280 otherwise.
+        # Therefore, check if 0 is returned and automatically start the daemon if it is not running.
+        # `/dev/null 2>&1` diverts stdout and stderr to not be printed to the terminal.
+        if os.system("pigs t > /dev/null 2>&1"):
+            os.system("sudo pigpiod -t 0")
+            time.sleep(5)
         self.pi = pigpio.pi()
 
         self.light = Light(6)
