@@ -1,5 +1,4 @@
 from flask import Flask, Response, request
-from flask_cors import CORS
 
 from filmscanner import FilmScanner
 from notification import MailCallback
@@ -12,8 +11,7 @@ from utils import (
 )
 
 
-app = Flask(__name__)
-cors = CORS(app)
+app = Flask(__name__, static_folder="frontend/build", static_url_path="/")
 
 advance_toggle_callback = AdvanceToggleCallback()
 fast_forward_toggle_callback = FastForwardToggleCallback()
@@ -35,7 +33,12 @@ scanner = FilmScanner(
 scanner.camera.resolution = (800, 600)
 
 
-@app.route("/advance", methods=("GET","POST"))
+@app.route("/")
+def index():
+    return app.send_static_file("index.html")
+
+
+@app.route("/backend/advance", methods=("GET","POST"))
 def advance():
     if request.method == "GET":
         return {
@@ -52,18 +55,18 @@ def advance():
     return "", 400
 
 
-@app.route("/advance-stream")
+@app.route("/backend/advance-stream")
 def advance_stream():
     return Response(advance_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
-@app.route("/dismiss", methods=("POST",))
+@app.route("/backend/dismiss", methods=("POST",))
 def dismiss():
     scanner.last_scan_end_info = "dismissed"
     return "", 204
 
 
-@app.route("/fastforward", methods=("GET","POST"))
+@app.route("/backend/fastforward", methods=("GET","POST"))
 def fast_forward():
     if request.method == "GET":
         return {
@@ -79,12 +82,12 @@ def fast_forward():
     return "", 400
 
 
-@app.route("/fastforward-stream")
+@app.route("/backend/fastforward-stream")
 def fast_forward_stream():
     return Response(fast_forward_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
-@app.route("/focuszoom", methods=("GET","POST"))
+@app.route("/backend/focuszoom", methods=("GET","POST"))
 def toggle_focus_zoom():
     if request.method == "GET":
         return {
@@ -97,12 +100,12 @@ def toggle_focus_zoom():
     return "", 400
 
 
-@app.route("/focuszoom-stream")
+@app.route("/backend/focuszoom-stream")
 def focuszoom_stream():
     return Response(zoom_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
-@app.route("/light", methods=("GET","POST"))
+@app.route("/backend/light", methods=("GET","POST"))
 def toggle_light():
     if request.method == "GET":
         return {
@@ -116,18 +119,18 @@ def toggle_light():
     return "", 400
 
 
-@app.route("/light-stream")
+@app.route("/backend/light-stream")
 def light_stream():
     return Response(light_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
-@app.route("/poweroff", methods=("POST",))
+@app.route("/backend/poweroff", methods=("POST",))
 def poweroff():
     scanner.poweroff()
     return "", 204
 
 
-@app.route("/preview")
+@app.route("/backend/preview")
 def preview():
     def generate():
         for frame in scanner.preview():
@@ -135,7 +138,7 @@ def preview():
     return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundry=frame")
 
 
-@app.route("/scan", methods=("GET","POST"))
+@app.route("/backend/scan", methods=("GET","POST"))
 def scan():
     if request.method == "GET":
         return {
@@ -158,10 +161,10 @@ def scan():
     return "", 400
 
 
-@app.route("/scan-stream")
+@app.route("/backend/scan-stream")
 def scan_stream():
     return Response(scan_controls_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=False)
+    app.run(host="0.0.0.0", port=80, debug=False)

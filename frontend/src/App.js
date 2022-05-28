@@ -4,9 +4,6 @@ import axios from "axios"
 import './App.css';
 
 
-const flask = route => "http://192.168.178.48:5000" + route
-
-
 function App() {
 
   return (
@@ -21,7 +18,7 @@ function App() {
 const Preview = () => {
   return (
     <div className="grow shrink justify-center flex bg-black">
-      <img className="w-screen sm:w-auto sm:h-screen object-contain" src={flask("/preview")} alt="Preview of the current frame"></img>
+      <img className="w-screen sm:w-auto sm:h-screen object-contain" src="/backend/preview" alt="Preview of the current frame"></img>
     </div>
   )
 }
@@ -31,7 +28,7 @@ const Controls = () => {
 
   const [isScanning, setIsScanning] = useState(false)
   const [outputDirectory, setOutputDirectory] = useState("")
-  const [nFrames, setNFrames] = useState(3800)
+  const [nFrames, setNFrames] = useState(0)
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0)
   const [lastScanEndInfo, setLastScanEndInfo] = useState("dismissed")
   const [timeRemaining, setTimeRemaining] = useState("-")
@@ -39,7 +36,7 @@ const Controls = () => {
   const [isEndOfUse, setIsEndOfUse] = useState(false)
 
   useEffect(() => {
-    axios.get(flask("/scan")).then(response => {
+    axios.get("/backend/scan").then(response => {
       setIsScanning(response.data.is_scanning)
       setOutputDirectory(response.data.output_directory)
       setNFrames(response.data.n_frames)
@@ -47,7 +44,7 @@ const Controls = () => {
       setTimeRemaining(response.time_remaining)
     })
 
-    const sse = new EventSource(flask("/scan-stream"))
+    const sse = new EventSource("/backend/scan-stream")
     sse.addEventListener("is_scanning", e => setIsScanning(e.data === "True"))
     sse.addEventListener("output_directory", e => setOutputDirectory(e.data))
     sse.addEventListener("n_frames", e => setNFrames(parseInt(e.data)))
@@ -62,9 +59,9 @@ const Controls = () => {
   const scanButtonStartStyle = "bg-green-700 border-green-700 hover:bg-green-800 hover:border-green-800 focus:ring-green-300 dark:bg-green-600 dark:border-green-600 dark:hover:bg-green-700 dark:hover:border-green-700 dark:focus:ring-green-800"
   const scanButtonStopStyle = "bg-red-700 border-red-700 hover:bg-red-800 hover:border-red-800 focus:ring-red-300 dark:bg-red-600 dark:border-red-600 dark:hover:bg-red-700 dark:hover:border-red-700 dark:focus:ring-red-900"
 
-  const startScan = () => axios.post(flask("/scan"), {output_directory: outputDirectory, n_frames: nFrames})
+  const startScan = () => axios.post("/backend/scan", {output_directory: outputDirectory, n_frames: nFrames})
   const poweroff = () => {
-    axios.post(flask("/poweroff"))
+    axios.post("/backend/poweroff")
     setIsShowingPoweroffModal(false)
     setIsEndOfUse(true)
   }
@@ -78,10 +75,10 @@ const Controls = () => {
   return (
     <div className="lg:w-80 shrink-0 m-0 p-2 flex flex-col bg-white dark:bg-gray-800">
       <ButtonGrid>
-        <Toggle target={flask("/advance")}>🦦 Step</Toggle>
-        <Toggle target={flask("/light")}>💡 Light</Toggle>
-        <Toggle target={flask("/fastforward")}>🏎 Fast-Forward</Toggle>
-        <Toggle target={flask("/focuszoom")}>🔍 Zoom</Toggle>
+        <Toggle target={"/backend/advance"}>🦦 Step</Toggle>
+        <Toggle target={"/backend/light"}>💡 Light</Toggle>
+        <Toggle target={"/backend/fastforward"}>🏎 Fast-Forward</Toggle>
+        <Toggle target={"/backend/focuszoom"}>🔍 Zoom</Toggle>
       </ButtonGrid>
 
       <ProgressBar now={currentFrameIndex + isScanning} max={nFrames} info={timeRemaining} show={isScanning} />
@@ -167,7 +164,7 @@ const ProgressBar = ({max, now, info, show}) => {
 
 const ScanSuccessAlert = ({show}) => {
 
-  const dismiss = () => axios.post(flask("/dismiss"))
+  const dismiss = () => axios.post("/backend/dismiss")
 
   const showStyle = "p-4 mt-2"
   const hiddenStyle = "h-0 p-0"
@@ -188,7 +185,7 @@ const ScanSuccessAlert = ({show}) => {
 
 const ScanFailureAlert = ({show}) => {
 
-  const dismiss = () => axios.post(flask("/dismiss"))
+  const dismiss = () => axios.post("/backend/dismiss")
 
   const showStyle = "p-4 mt-2"
   const hiddenStyle = "h-0 p-0"
