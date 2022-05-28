@@ -135,7 +135,7 @@ def preview():
     def generate():
         for frame in scanner.preview():
             yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n" 
-    return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundry=frame")
+    return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
 @app.route("/backend/scan", methods=("GET","POST"))
