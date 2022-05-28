@@ -1,0 +1,6 @@
+flask
+jupyter
+picamerax
+pidng
+pigpio
+pyyaml
