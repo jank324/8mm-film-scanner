@@ -28,8 +28,7 @@ logger.addHandler(stream_handler)
 class FilmScanner:
 
     def __init__(self, callback=BaseCallback()):
-        self.callback = CallbackList(callback) if isinstance(callback, list) else callback
-        self.callback.setup(self)
+        self.callback = BaseCallback()  # Placeholder until object is fully initialised
 
         # The command `pigs t` will return 0 if the pigpio daemon is running 65280 otherwise.
         # Therefore, check if 0 is returned and automatically start the daemon if it is not running.
@@ -57,13 +56,16 @@ class FilmScanner:
         self.is_advancing = False
         self.is_fast_forwarding = False
         self.is_scanning = False
+        self.current_frame_index = 0
+        self.is_zoomed = False
+        self.last_scan_end_info = "dismissed"
 
         self.scan_started_event = Event()
         self.scan_stopped_event = Event()
         self.scan_stop_requested = False
         self.live_view_zoom_toggle_requested = False
-
-        self.is_zoomed = False
+        self.fast_forward_stop_requested = False
+        self.zoom_toggled_event = Event()
 
         self.last_steps = 0
 
@@ -82,13 +84,18 @@ class FilmScanner:
             self.preview_frame = f.read()
         
         self.zoom_toggled_event = Event()
+        self.fast_forward_started_event = Event()
         self.fast_forward_stopped_event = Event()
+
+        self.fast_forward_executor = ThreadPoolExecutor(max_workers=1)
         
         self.scan_executor = ThreadPoolExecutor(max_workers=1)
         self.output_directory = "/media/pi/PortableSSD/unnamed/frames"
         self.n_frames = 3800
         self.scanned_frames = 0
-        self.last_scan_end_info = "dismissed"
+
+        self.callback = CallbackList(callback) if isinstance(callback, list) else callback
+        self.callback.setup(self)
 
     def __del__(self):
         self.turn_off_light()
@@ -160,6 +167,7 @@ class FilmScanner:
 
         self.output_directory = output_directory
         self.n_frames = n_frames
+        self.current_frame_index = 0
 
         self.turn_on_light()
 
@@ -201,6 +209,7 @@ class FilmScanner:
 
         self.is_scanning = False
         self.last_scan_end_info = "success"
+        self.current_frame_index = 0
         self.callback.on_scan_end()
 
         self.scan_stopped_event.set()
@@ -296,6 +305,25 @@ class FilmScanner:
                     return False
             else:
                 return True
+
+    def start_fast_forward(self, n=None):
+        """
+        Start fast-forwarding. The arguments are the same as those of `fast_forward`.
+        """
+        self.fast_forward_stop_requested = False
+        self.is_fast_forwarding = True
+        self.fast_forward_started_event.clear()
+        self.fast_forward_executor.submit(self.fast_forward, n=n)
+        self.fast_forward_started_event.wait()
+    
+    def stop_fast_forward(self):
+        """
+        Stop a fast-forwarding. When called, the scanner will stop at the next frame. This method 
+        returns only when the fast-forwarding has actually been stopped.
+        """
+        self.fast_forward_stopped_event.clear()
+        self.fast_forward_stop_requested = True
+        self.fast_forward_stopped_event.wait()
             
     def fast_forward(self, n=None):
         """
@@ -307,13 +335,14 @@ class FilmScanner:
             Number of frames to advance. If set to `None`, fast-forward until stopped.
         """
         self.is_fast_forwarding = True
+        self.fast_forward_started_event.set()
         self.callback.on_fast_forward_start()
 
         if n is None:
             logger.debug("Fast-forwarding until stopped")
-            while not self.scan_stop_requested:
+            while not self.fast_forward_stop_requested:
                 self.advance()
-            self.scan_stop_requested = False
+            self.fast_forward_stop_requested = False
         else:
             logger.debug(f"Fast-forwarding {n} frames")
             for _ in range(n):
@@ -499,12 +528,15 @@ class FilmScanner:
                 if not self.is_zoomed:
                     self.is_zoomed = True
                     self.camera.zoom = (0.37, 0.37, 0.25, 0.25)
+                    self.live_view_zoom_toggle_requested = False
+                    self.zoom_toggled_event.set()
                     self.callback.on_zoom_in()
                 else:
                     self.is_zoomed = False
                     self.camera.zoom = (0.0, 0.0, 1.0, 1.0)
+                    self.live_view_zoom_toggle_requested = False
+                    self.zoom_toggled_event.set()
                     self.callback.on_zoom_out()
-                self.live_view_zoom_toggle_requested = False
 
             buffer.truncate()
             buffer.seek(0)
@@ -539,6 +571,11 @@ class FilmScanner:
 
         return viewer.view()
     
+    def toggle_zoom(self):
+        self.zoom_toggled_event.clear()
+        self.live_view_zoom_toggle_requested = True
+        self.zoom_toggled_event.wait()
+    
     def poweroff(self):
         """
         Turn the sanner off.
@@ -559,6 +596,26 @@ class FilmScanner:
     def last_scan_end_info(self, value):
         self._last_scan_end_info = value
         self.callback.on_last_scan_end_info_change()
+    
+    @property
+    def is_advance_allowed(self):
+        return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
+    
+    @property
+    def is_fast_forward_allowed(self):
+        return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
+    
+    @property
+    def is_light_toggle_allowed(self):
+        return not self.is_scanning
+    
+    @property
+    def is_zoom_toggle_allowed(self):
+        return not self.is_scanning
+    
+    @property
+    def is_scanning_allowed(self):
+        return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
 
 
 class AdvanceTimeoutError(Exception):

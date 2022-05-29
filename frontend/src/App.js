@@ -26,74 +26,36 @@ const Preview = () => {
 
 const Controls = () => {
 
-  const [currentFrameIndex, setCurrentFrameIndex] = useState(0)
-  const [isAdvanceActive, setIsAdvanceActive] = useState(false)
-  const [isAdvanceEnabled, setIsAdvanceEnabled] = useState(false)
+  const [scannerState, setScannerState] = useState({
+    advance_toggle: {active: false, enabled: false},
+    current_frame_index: 0,
+    fast_forward_toggle: {active: false, enabled: false},
+    is_scanning: false,
+    is_scan_button_enabled: false,
+    last_scan_end_info: "dismissed",
+    light_toggle: {active: false, enabled: false},
+    time_remaining: "-",
+    zoom_toggle: {active: false, enabled: false},
+  })
   const [isEndOfUse, setIsEndOfUse] = useState(false)
-  const [isFastForwardActive, setIsFastForwardActive] = useState(false)
-  const [isFastForwardEnabled, setIsFastForwardEnabled] = useState(false)
-  const [isLightActive, setIsLightActive] = useState(false)
-  const [isLightEnabled, setIsLightEnabled] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
   const [isShowingPoweroffModal, setIsShowingPoweroffModal] = useState(false)
-  const [isZoomActive, setIsZoomActive] = useState(false)
-  const [isZoomEnabled, setIsZoomEnabled] = useState(false)
-  const [lastScanEndInfo, setLastScanEndInfo] = useState("dismissed")
   const [nFrames, setNFrames] = useState(0)
   const [outputDirectory, setOutputDirectory] = useState("")
-  const [timeRemaining, setTimeRemaining] = useState("-")
 
   useEffect(() => {
-    // Advance toggle
-    axios.get("/backend/advance").then(response => {
-      setIsAdvanceEnabled(response.data.is_enabled)
-      setIsAdvanceActive(response.data.is_active)
-    })
-    // Fast-forward toggle
-    axios.get("/backend/fastforward").then(response => {
-      setIsFastForwardEnabled(response.data.is_enabled)
-      setIsFastForwardActive(response.data.is_active)
-    })
-    // Light toggle
-    axios.get("/backend/light").then(response => {
-      setIsLightEnabled(response.data.is_enabled)
-      setIsLightActive(response.data.is_active)
-    })
-    // Zoom toggle
-    axios.get("/backend/focuszoom").then(response => {
-      setIsZoomEnabled(response.data.is_enabled)
-      setIsZoomActive(response.data.is_active)
-    })
-    // Scan controls
-    axios.get("/backend/scan").then(response => {
-      setIsScanning(response.data.is_scanning)
-      setOutputDirectory(response.data.output_directory)
+    axios.get("/backend/dashboard").then(response => setScannerState(response.data))
+    axios.get("backend/scan-setup").then(response => {
       setNFrames(response.data.n_frames)
-      setLastScanEndInfo(response.data.last_scan_end_info)
-      setTimeRemaining(response.time_remaining)
+      setOutputDirectory(response.data.output_directory)
     })
 
     const sse = new EventSource("/backend/dashboard-sse")
-    // Advance toggle SSE
-    sse.addEventListener("advance_toggle_is_enabled", e => setIsAdvanceEnabled(e.data === "True"))
-    sse.addEventListener("advance_toggle_is_active", e => setIsAdvanceActive(e.data === "True"))
-    // Fast-forward SSE
-    sse.addEventListener("fast_forward_toggle_is_enabled", e => setIsFastForwardEnabled(e.data === "True"))
-    sse.addEventListener("fast_forward_toggle_is_active", e => setIsFastForwardActive(e.data === "True"))
-    // Light toggle SSE
-    sse.addEventListener("light_toggle_is_enabled", e => setIsLightEnabled(e.data === "True"))
-    sse.addEventListener("light_toggle_is_active", e => setIsLightActive(e.data === "True"))
-    // Zoom toggle SSE
-    sse.addEventListener("zoom_toggle_is_enabled", e => setIsZoomEnabled(e.data === "True"))
-    sse.addEventListener("zoom_toggle_is_active", e => setIsZoomActive(e.data === "True"))
-    // Scan controls SSE
-    sse.addEventListener("current_frame_index", e => setCurrentFrameIndex(parseInt(e.data)))
-    sse.addEventListener("is_scanning", e => setIsScanning(e.data === "True"))
-    sse.addEventListener("last_scan_end_info", e => setLastScanEndInfo(e.data))
-    sse.addEventListener("n_frames", e => setNFrames(parseInt(e.data)))
-    sse.addEventListener("output_directory", e => setOutputDirectory(e.data))
-    sse.addEventListener("time_remaining", e => setTimeRemaining(e.data))
-    // SSE error handling
+    sse.addEventListener("state", e => setScannerState(JSON.parse(e.data)))
+    sse.addEventListener("scan_setup", e => {
+      const scanSetup = JSON.parse(e.data)
+      setNFrames(scanSetup.n_frames)
+      setOutputDirectory(scanSetup.output_directory)
+    })
     sse.onerror = e => sse.close()  // TODO Do something more intelligent
 
     return () => sse.close()
@@ -118,28 +80,28 @@ const Controls = () => {
   return (
     <div className="lg:w-80 shrink-0 m-0 p-2 flex flex-col bg-white dark:bg-gray-800">
       <ButtonGrid>
-        <Toggle target={"/backend/advance"} enabled={isAdvanceEnabled} active={isAdvanceActive}>🦦 Step</Toggle>
-        <Toggle target={"/backend/light"} enabled={isLightEnabled} active={isLightActive}>💡 Light</Toggle>
-        <Toggle target={"/backend/fastforward"} enabled={isFastForwardEnabled} active={isFastForwardActive}>🏎 Fast-Forward</Toggle>
-        <Toggle target={"/backend/focuszoom"} enabled={isZoomEnabled} active={isZoomActive}>🔍 Zoom</Toggle>
+        <Toggle target={"/backend/advance"} enabled={scannerState.advance_toggle.enabled} active={scannerState.advance_toggle.active}>🦦 Step</Toggle>
+        <Toggle target={"/backend/light"} enabled={scannerState.light_toggle.enabled} active={scannerState.light_toggle.active}>💡 Light</Toggle>
+        <Toggle target={"/backend/fastforward"} enabled={scannerState.fast_forward_toggle.enabled} active={scannerState.fast_forward_toggle.active}>🏎 Fast-Forward</Toggle>
+        <Toggle target={"/backend/focuszoom"} enabled={scannerState.zoom_toggle.enabled} active={scannerState.zoom_toggle.active}>🔍 Zoom</Toggle>
       </ButtonGrid>
 
-      <ProgressBar now={currentFrameIndex + isScanning} max={nFrames} info={timeRemaining} show={isScanning} />
-      <ScanSuccessAlert show={lastScanEndInfo === "success"} />
-      <ScanFailureAlert show={lastScanEndInfo === "failure"} />
+      <ProgressBar now={scannerState.current_frame_index + scannerState.is_scanning} max={nFrames} info={scannerState.time_remaining} show={scannerState.is_scanning} />
+      <ScanSuccessAlert show={scannerState.last_scan_end_info === "success"} />
+      <ScanFailureAlert show={scannerState.last_scan_end_info === "failure"} />
 
       <div className="mt-2">
         <label htmlFor="n_frames" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Reel length</label>
-        <input type="text" id="n_frames" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Number of frames" value={nFrames} required disabled={isScanning} onChange={onNFramesChange} />
+        <input type="text" id="n_frames" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Number of frames" value={nFrames} required disabled={scannerState.is_scanning} onChange={onNFramesChange} />
       </div>
       <div className="mt-2">
         <label htmlFor="output_directory" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Output directory</label>
-        <input type="text" id="output_directory" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Directory to save scanned files to" value={outputDirectory} required disabled={isScanning} onChange={onOutputDirectoryChange} />
+        <input type="text" id="output_directory" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Directory to save scanned files to" value={outputDirectory} required disabled={scannerState.is_scanning} onChange={onOutputDirectoryChange} />
       </div>
-      <button type="button" className={"mt-4 focus:outline-none text-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 border " + (isScanning? scanButtonStopStyle : scanButtonStartStyle)} onClick={startScan}>{isScanning ? "⏹ Stop" : "🎥 Scan"}</button>
+      <button type="button" className={"mt-4 focus:outline-none text-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 border disabled:cursor-not-allowed " + (scannerState.is_scanning ? scanButtonStopStyle : scanButtonStartStyle)} onClick={startScan} disabled={!scannerState.is_scan_button_enabled}>{scannerState.is_scanning ? "⏹ Stop" : "🎥 Scan"}</button>
 
       <div className="flex flex-col-reverse justify-start items-end flex-grow">
-        <button className="mt-4 text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 flex-grow-0 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed" onClick={openPoweroffModal} disabled={isScanning}>😴 Power off</button>
+        <button className="mt-4 text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 flex-grow-0 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed" onClick={openPoweroffModal} disabled={scannerState.is_scanning}>😴 Power off</button>
       </div>
       <PoweroffModal onConfirm={poweroff} onAbort={closePoweroffModal} show={isShowingPoweroffModal} />
       <EndOfUseModal show={isEndOfUse} />

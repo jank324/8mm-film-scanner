@@ -19,21 +19,16 @@ def index():
     return app.send_static_file("index.html")
 
 
-@app.route("/backend/advance", methods=("GET","POST"))
+@app.route("/backend/advance", methods=("POST",))
 def advance():
-    if request.method == "GET":
-        return {
-            "is_active": scanner.is_advancing and not (scanner.is_fast_forwarding or scanner.is_scanning),
-            "is_enabled": not any([
-                scanner.is_advancing,
-                scanner.is_fast_forwarding,
-                scanner.is_scanning
-            ])
-        }
-    elif request.method == "POST":
+    if scanner.is_advance_allowed:
         scanner.advance()
-        return "", 204
-    return "", 400
+    return "", 204
+
+
+@app.route("/backend/dashboard")
+def dashboard():
+    return dashboard_callback.scanner_state_dict
 
 
 @app.route("/backend/dashboard-sse")
@@ -47,47 +42,27 @@ def dismiss():
     return "", 204
 
 
-@app.route("/backend/fastforward", methods=("GET","POST"))
+@app.route("/backend/fastforward", methods=("POST",))
 def fast_forward():
-    if request.method == "GET":
-        return {
-            "is_active": scanner.is_fast_forwarding,
-            "is_enabled": not (scanner.is_advancing or scanner.is_scanning)
-        }
-    elif request.method == "POST":
-        if not scanner.is_fast_forwarding:
-            scanner.fast_forward()
-        else:
-            scanner.scan_stop_requested = True
-        return "", 204
-    return "", 400
+    if not scanner.is_fast_forwarding and scanner.is_fast_forward_allowed:
+        scanner.start_fast_forward()
+    elif scanner.is_fast_forwarding:
+        scanner.stop_fast_forward()
+    return "", 204
 
 
-@app.route("/backend/focuszoom", methods=("GET","POST"))
+@app.route("/backend/focuszoom", methods=("POST",))
 def toggle_focus_zoom():
-    if request.method == "GET":
-        return {
-            "is_active": scanner.is_zoomed,
-            "is_enabled": not scanner.is_scanning
-        }
-    elif request.method == "POST":
-        scanner.live_view_zoom_toggle_requested = True
-        return "", 204
-    return "", 400
+    if scanner.is_zoom_toggle_allowed:
+        scanner.toggle_zoom()
+    return "", 204
 
 
-@app.route("/backend/light", methods=("GET","POST"))
+@app.route("/backend/light", methods=("POST",))
 def toggle_light():
-    if request.method == "GET":
-        return {
-            "is_active": scanner.is_light_on,
-            "is_enabled": not scanner.is_scanning
-        }
-    elif request.method == "POST":
-        if not scanner.is_scanning:
-            scanner.toggle_light()
-        return "", 204
-    return "", 400
+    if scanner.is_light_toggle_allowed:
+        scanner.toggle_light()
+    return "", 204
 
 
 @app.route("/backend/poweroff", methods=("POST",))
@@ -104,27 +79,20 @@ def preview():
     return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
-@app.route("/backend/scan", methods=("GET","POST"))
+@app.route("/backend/scan", methods=("POST",))
 def scan():
-    if request.method == "GET":
-        return {
-            "is_scanning": scanner.is_scanning,
-            "output_directory": scanner.output_directory,
-            "n_frames": scanner.n_frames,
-            "current_frame_index": scanner.current_frame_index if scanner.is_scanning else 0,
-            "last_scan_end_info": scanner.last_scan_end_info,
-            "time_remaining": dashboard_callback.str_time_remaining
-        }
-    elif request.method == "POST":
-        if not scanner.is_scanning:
-            scanner.start_scan(
-                output_directory=request.get_json()["output_directory"],
-                n_frames=int(request.get_json()["n_frames"])
-            )
-        else:
-            scanner.stop_scan()
-        return "", 204
-    return "", 400
+    if not scanner.is_scanning and scanner.is_scanning_allowed:
+        scanner.start_scan(
+            output_directory=request.get_json()["output_directory"],
+            n_frames=int(request.get_json()["n_frames"])
+        )
+    elif scanner.is_scanning:
+        scanner.stop_scan()
+    return "", 204
+
+@app.route("/backend/scan-setup")
+def scan_setup():
+    return {"n_frames": scanner.n_frames, "output_directory": scanner.output_directory}
 
 
 if __name__ == "__main__":

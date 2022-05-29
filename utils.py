@@ -1,5 +1,6 @@
 from collections import deque
 from datetime import datetime, timedelta
+import json
 import queue
 from threading import Event
 
@@ -49,6 +50,8 @@ class SSEMessenger:
         """
         Send `data` to subscribers on the `event` topic.
         """
+        if isinstance(data, dict):
+            data = json.dumps(data)
         message = format_sse(data, event=event)
         for i in reversed(range(len(self.subscribers))):
             try:
@@ -242,102 +245,70 @@ class DashboardCallback(SSESendingCallback):
         self.is_time_remaining_first_update = False
 
     def on_advance_start(self):
-        # Advance toggle
-        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("advance_toggle_is_active", True)
-            self.messenger.send("advance_toggle_is_enabled", False)
-
-        # Fast-forward toggle
-        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("fast_forward_toggle_is_enabled", False)
+        self.messenger.send("state", self.scanner_state_dict)
     
     def on_advance_end(self):
-        # Advance toggle
-        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("advance_toggle_is_active", False)
-            self.messenger.send("advance_toggle_is_enabled", True)
-
-        # Fast-forward toggle
-        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("fast_forward_toggle_is_enabled", True)
+        self.messenger.send("state", self.scanner_state_dict)
     
     def on_fast_forward_start(self):
-        # Advance toggle
-        self.messenger.send("advance_toggle_is_enabled", False)
-
-        # Fast-forward toggle
-        self.messenger.send("fast_forward_toggle_is_active", True)
+        self.messenger.send("state", self.scanner_state_dict)
     
     def on_fast_forward_end(self):
-        # Advance toggle
-        self.messenger.send("advance_toggle_is_enabled", True)
-
-        # Fast-forward toggle
-        self.messenger.send("fast_forward_toggle_is_active", False)
+        self.messenger.send("state", self.scanner_state_dict)
 
     def on_frame_capture(self):
-        # Scan controls
         self.update_time_remaining()
-        self.messenger.send("current_frame_index", self.scanner.current_frame_index)
-        self.messenger.send("time_remaining", self.str_time_remaining)
+        self.messenger.send("state", self.scanner_state_dict)
 
     def on_last_scan_end_info_change(self):
-        # Scan controls
-        self.messenger.send("last_scan_end_info", self.scanner.last_scan_end_info)
+        self.messenger.send("state", self.scanner_state_dict)
 
     def on_light_on(self):
-        # Light toggle
-        self.messenger.send("light_toggle_is_active", True)
+        self.messenger.send("state", self.scanner_state_dict)
     
     def on_light_off(self):
-        # Light toggle
-        self.messenger.send("light_toggle_is_active", False)
+        self.messenger.send("state", self.scanner_state_dict)
     
     def on_scan_start(self):
-        # Light toggle
-        self.messenger.send("light_toggle_is_enabled", False)
-
-        # Advance toggle
-        self.messenger.send("advance_toggle_is_enabled", False)
-
-        # Fast-forward toggle
-        self.messenger.send("fast_forward_toggle_is_enabled", False)
-
-        # Zoom toggle
-        self.messenger.send("zoom_toggle_is_enabled", False)
-
-        # Scan controls
         self.init_time_remaining_estimation()
-        self.messenger.send("is_scanning", True)
-        self.messenger.send("output_directory", self.scanner.output_directory)
-        self.messenger.send("n_frames", self.scanner.n_frames)
-        self.messenger.send("time_remaining", self.str_time_remaining)
+        self.messenger.send("state", self.scanner_state_dict)
+        scan_setup = {"n_frames": self.scanner.n_frames, "output_directory": self.scanner.output_directory}
+        self.messenger.send("scan_setup", scan_setup)
 
     def on_scan_end(self):
-        # Light toggle
-        self.messenger.send("light_toggle_is_enabled", True)
-
-        # Advance toggle
-        self.messenger.send("advance_toggle_is_enabled", True)
-
-        # Fast-forward toggle
-        self.messenger.send("fast_forward_toggle_is_enabled", True)
-
-        # Zoom toggle
-        self.messenger.send("zoom_toggle_is_enabled", True)
-
-        # Scan controls
-        self.messenger.send("is_scanning", False)
-        self.messenger.send("current_frame_index", 0)
-        self.messenger.send("last_scan_end_info", self.scanner.last_scan_end_info)
+        self.messenger.send("state", self.scanner_state_dict)
     
     def on_zoom_in(self):
-        # Zoom toggle
-        self.messenger.send("zoom_toggle_is_active", True)
+        self.messenger.send("state", self.scanner_state_dict)
     
     def on_zoom_out(self):
-        # Zoom toggle
-        self.messenger.send("zoom_toggle_is_active", False)
+        self.messenger.send("state", self.scanner_state_dict)
+    
+    @property
+    def scanner_state_dict(self):
+        return {
+            "advance_toggle": {
+                "active": self.scanner.is_advancing and not self.scanner.is_fast_forwarding,
+                "enabled": self.scanner.is_advance_allowed,
+            },
+            "current_frame_index": self.scanner.current_frame_index,
+            "fast_forward_toggle": {
+                "active": self.scanner.is_fast_forwarding,
+                "enabled": self.scanner.is_fast_forward_allowed or self.scanner.is_fast_forwarding,
+            },
+            "is_scanning": self.scanner.is_scanning,
+            "is_scan_button_enabled": self.scanner.is_scanning_allowed or self.scanner.is_scanning,
+            "last_scan_end_info": self.scanner.last_scan_end_info,
+            "light_toggle": {
+                "active": self.scanner.is_light_on,
+                "enabled": self.scanner.is_light_toggle_allowed,
+            },
+            "time_remaining": self.str_time_remaining,
+            "zoom_toggle": {
+                "active": self.scanner.is_zoomed,
+                "enabled": self.scanner.is_zoom_toggle_allowed,
+            },
+        }
 
     def init_time_remaining_estimation(self):
         self.t_last = datetime.now()
