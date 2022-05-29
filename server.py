@@ -2,35 +2,16 @@ from flask import Flask, Response, request
 
 from filmscanner import FilmScanner
 from notification import MailCallback
-from utils import (
-    AdvanceToggleCallback,
-    FastForwardToggleCallback,
-    LightToggleCallback,
-    ScanControlsCallback,
-    ZoomToggleCallback
-)
+from utils import DashboardCallback
 
 
 app = Flask(__name__, static_folder="frontend/build", static_url_path="/")
 
-advance_toggle_callback = AdvanceToggleCallback()
-fast_forward_toggle_callback = FastForwardToggleCallback()
-light_toggle_callback = LightToggleCallback()
+dashboard_callback = DashboardCallback()
 mail_callback = MailCallback()
-scan_controls_callback = ScanControlsCallback()
-zoom_toggle_callback = ZoomToggleCallback()
 
-scanner = FilmScanner(
-    callback=[
-        advance_toggle_callback,
-        light_toggle_callback,
-        fast_forward_toggle_callback,
-        mail_callback,
-        scan_controls_callback,
-        zoom_toggle_callback
-    ]
-)
-scanner.camera.resolution = (800, 600)
+scanner = FilmScanner(callback=[dashboard_callback,mail_callback])
+scanner.camera.resolution = (800, 600)  # TODO Does this need to be here?
 
 
 @app.route("/")
@@ -55,9 +36,9 @@ def advance():
     return "", 400
 
 
-@app.route("/backend/advance-stream")
-def advance_stream():
-    return Response(advance_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
+@app.route("/backend/dashboard-sse")
+def dashboard_sse():
+    return Response(dashboard_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 @app.route("/backend/dismiss", methods=("POST",))
@@ -82,11 +63,6 @@ def fast_forward():
     return "", 400
 
 
-@app.route("/backend/fastforward-stream")
-def fast_forward_stream():
-    return Response(fast_forward_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
-
-
 @app.route("/backend/focuszoom", methods=("GET","POST"))
 def toggle_focus_zoom():
     if request.method == "GET":
@@ -98,11 +74,6 @@ def toggle_focus_zoom():
         scanner.live_view_zoom_toggle_requested = True
         return "", 204
     return "", 400
-
-
-@app.route("/backend/focuszoom-stream")
-def focuszoom_stream():
-    return Response(zoom_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 @app.route("/backend/light", methods=("GET","POST"))
@@ -117,11 +88,6 @@ def toggle_light():
             scanner.toggle_light()
         return "", 204
     return "", 400
-
-
-@app.route("/backend/light-stream")
-def light_stream():
-    return Response(light_toggle_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 @app.route("/backend/poweroff", methods=("POST",))
@@ -147,7 +113,7 @@ def scan():
             "n_frames": scanner.n_frames,
             "current_frame_index": scanner.current_frame_index if scanner.is_scanning else 0,
             "last_scan_end_info": scanner.last_scan_end_info,
-            "time_remaining": scan_controls_callback.str_time_remaining
+            "time_remaining": dashboard_callback.str_time_remaining
         }
     elif request.method == "POST":
         if not scanner.is_scanning:
@@ -159,11 +125,6 @@ def scan():
             scanner.stop_scan()
         return "", 204
     return "", 400
-
-
-@app.route("/backend/scan-stream")
-def scan_stream():
-    return Response(scan_controls_callback.subscribe_to_sse(), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":

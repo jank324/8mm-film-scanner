@@ -228,129 +228,117 @@ class SSESendingCallback(BaseCallback):
         return self.messenger.subscribe()
 
 
-class LightToggleCallback(SSESendingCallback):
+class DashboardCallback(SSESendingCallback):
     """
-    Callback to handle state of the clients' light toggle.
-    """
-
-    def on_light_on(self):
-        self.messenger.send("is_active", True)
-    
-    def on_light_off(self):
-        self.messenger.send("is_active", False)
-    
-    def on_scan_start(self):
-        self.messenger.send("is_enabled", False)
-
-    def on_scan_end(self):
-        self.messenger.send("is_enabled", True)
-
-
-class AdvanceToggleCallback(SSESendingCallback):
-    """
-    Callback to handle state of the clients' advance toggle.
-    """
-
-    def on_advance_start(self):
-        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("is_active", True)
-            self.messenger.send("is_enabled", False)
-    
-    def on_advance_end(self):
-        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("is_active", False)
-            self.messenger.send("is_enabled", True)
-        
-    def on_fast_forward_start(self):
-        self.messenger.send("is_enabled", False)
-    
-    def on_fast_forward_end(self):
-        self.messenger.send("is_enabled", True)
-    
-    def on_scan_start(self):
-        self.messenger.send("is_enabled", False)
-    
-    def on_scan_end(self):
-        self.messenger.send("is_enabled", True)
-
-
-class FastForwardToggleCallback(SSESendingCallback):
-    """
-    Callback to handle state of the clients' fast-forward toggle.
-    """
-    
-    def on_advance_start(self):
-        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("is_enabled", False)
-    
-    def on_advance_end(self):
-        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
-            self.messenger.send("is_enabled", True)
-    
-    def on_fast_forward_start(self):
-        self.messenger.send("is_active", True)
-    
-    def on_fast_forward_end(self):
-        self.messenger.send("is_active", False)
-    
-    def on_scan_start(self):
-        self.messenger.send("is_enabled", False)
-    
-    def on_scan_end(self):
-        self.messenger.send("is_enabled", True)
-
-
-class ZoomToggleCallback(SSESendingCallback):
-    """
-    Callback to handle state of the clients' zoom toggle.
-    """
-    
-    def on_zoom_in(self):
-        self.messenger.send("is_active", True)
-    
-    def on_zoom_out(self):
-        self.messenger.send("is_active", False)
-    
-    def on_scan_start(self):
-        self.messenger.send("is_enabled", False)
-    
-    def on_scan_end(self):
-        self.messenger.send("is_enabled", True)
-
-
-class ScanControlsCallback(SSESendingCallback):
-    """
-    Callback to handle state of the clients' scan control panel.
+    Callback to send state information to the displays on the web dashboard.
     """
 
     def __init__(self):
         super().__init__()
+
+        # Scan controls
         self.time_remaining = timedelta(0)
         self.str_time_remaining = "-"
         self.is_time_remaining_first_update = False
 
-    def on_frame_capture(self):
-        self.update_time_remaining()
+    def on_advance_start(self):
+        # Advance toggle
+        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
+            self.messenger.send("advance_toggle_is_active", True)
+            self.messenger.send("advance_toggle_is_enabled", False)
 
+        # Fast-forward toggle
+        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
+            self.messenger.send("fast_forward_toggle_is_enabled", False)
+    
+    def on_advance_end(self):
+        # Advance toggle
+        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
+            self.messenger.send("advance_toggle_is_active", False)
+            self.messenger.send("advance_toggle_is_enabled", True)
+
+        # Fast-forward toggle
+        if not (self.scanner.is_fast_forwarding or self.scanner.is_scanning):
+            self.messenger.send("fast_forward_toggle_is_enabled", True)
+    
+    def on_fast_forward_start(self):
+        # Advance toggle
+        self.messenger.send("advance_toggle_is_enabled", False)
+
+        # Fast-forward toggle
+        self.messenger.send("fast_forward_toggle_is_active", True)
+    
+    def on_fast_forward_end(self):
+        # Advance toggle
+        self.messenger.send("advance_toggle_is_enabled", True)
+
+        # Fast-forward toggle
+        self.messenger.send("fast_forward_toggle_is_active", False)
+
+    def on_frame_capture(self):
+        # Scan controls
+        self.update_time_remaining()
         self.messenger.send("current_frame_index", self.scanner.current_frame_index)
         self.messenger.send("time_remaining", self.str_time_remaining)
-    
+
     def on_last_scan_end_info_change(self):
+        # Scan controls
         self.messenger.send("last_scan_end_info", self.scanner.last_scan_end_info)
+
+    def on_light_on(self):
+        # Light toggle
+        self.messenger.send("light_toggle_is_active", True)
+    
+    def on_light_off(self):
+        # Light toggle
+        self.messenger.send("light_toggle_is_active", False)
     
     def on_scan_start(self):
-        self.init_time_remaining_estimation()
+        # Light toggle
+        self.messenger.send("light_toggle_is_enabled", False)
 
+        # Advance toggle
+        self.messenger.send("advance_toggle_is_enabled", False)
+
+        # Fast-forward toggle
+        self.messenger.send("fast_forward_toggle_is_enabled", False)
+
+        # Zoom toggle
+        self.messenger.send("zoom_toggle_is_enabled", False)
+
+        # Scan controls
+        self.init_time_remaining_estimation()
         self.messenger.send("is_scanning", True)
         self.messenger.send("output_directory", self.scanner.output_directory)
         self.messenger.send("n_frames", self.scanner.n_frames)
         self.messenger.send("time_remaining", self.str_time_remaining)
-    
+
     def on_scan_end(self):
+        # Light toggle
+        self.messenger.send("light_toggle_is_enabled", True)
+
+        # Advance toggle
+        self.messenger.send("advance_toggle_is_enabled", True)
+
+        # Fast-forward toggle
+        self.messenger.send("fast_forward_toggle_is_enabled", True)
+
+        # Zoom toggle
+        self.messenger.send("zoom_toggle_is_enabled", True)
+
+        # Scan controls
         self.messenger.send("is_scanning", False)
         self.messenger.send("current_frame_index", 0)
         self.messenger.send("last_scan_end_info", self.scanner.last_scan_end_info)
     
+    def on_zoom_in(self):
+        # Zoom toggle
+        self.messenger.send("zoom_toggle_is_active", True)
+    
+    def on_zoom_out(self):
+        # Zoom toggle
+        self.messenger.send("zoom_toggle_is_active", False)
+
     def init_time_remaining_estimation(self):
         self.t_last = datetime.now()
         self.dts = deque([], maxlen=100)

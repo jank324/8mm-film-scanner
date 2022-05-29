@@ -26,16 +26,45 @@ const Preview = () => {
 
 const Controls = () => {
 
-  const [isScanning, setIsScanning] = useState(false)
-  const [outputDirectory, setOutputDirectory] = useState("")
-  const [nFrames, setNFrames] = useState(0)
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0)
-  const [lastScanEndInfo, setLastScanEndInfo] = useState("dismissed")
-  const [timeRemaining, setTimeRemaining] = useState("-")
-  const [isShowingPoweroffModal, setIsShowingPoweroffModal] = useState(false)
+  const [isAdvanceActive, setIsAdvanceActive] = useState(false)
+  const [isAdvanceEnabled, setIsAdvanceEnabled] = useState(false)
   const [isEndOfUse, setIsEndOfUse] = useState(false)
+  const [isFastForwardActive, setIsFastForwardActive] = useState(false)
+  const [isFastForwardEnabled, setIsFastForwardEnabled] = useState(false)
+  const [isLightActive, setIsLightActive] = useState(false)
+  const [isLightEnabled, setIsLightEnabled] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [isShowingPoweroffModal, setIsShowingPoweroffModal] = useState(false)
+  const [isZoomActive, setIsZoomActive] = useState(false)
+  const [isZoomEnabled, setIsZoomEnabled] = useState(false)
+  const [lastScanEndInfo, setLastScanEndInfo] = useState("dismissed")
+  const [nFrames, setNFrames] = useState(0)
+  const [outputDirectory, setOutputDirectory] = useState("")
+  const [timeRemaining, setTimeRemaining] = useState("-")
 
   useEffect(() => {
+    // Advance toggle
+    axios.get("/backend/advance").then(response => {
+      setIsAdvanceEnabled(response.data.is_enabled)
+      setIsAdvanceActive(response.data.is_active)
+    })
+    // Fast-forward toggle
+    axios.get("/backend/fastforward").then(response => {
+      setIsFastForwardEnabled(response.data.is_enabled)
+      setIsFastForwardActive(response.data.is_active)
+    })
+    // Light toggle
+    axios.get("/backend/light").then(response => {
+      setIsLightEnabled(response.data.is_enabled)
+      setIsLightActive(response.data.is_active)
+    })
+    // Zoom toggle
+    axios.get("/backend/focuszoom").then(response => {
+      setIsZoomEnabled(response.data.is_enabled)
+      setIsZoomActive(response.data.is_active)
+    })
+    // Scan controls
     axios.get("/backend/scan").then(response => {
       setIsScanning(response.data.is_scanning)
       setOutputDirectory(response.data.output_directory)
@@ -44,14 +73,28 @@ const Controls = () => {
       setTimeRemaining(response.time_remaining)
     })
 
-    const sse = new EventSource("/backend/scan-stream")
-    sse.addEventListener("is_scanning", e => setIsScanning(e.data === "True"))
-    sse.addEventListener("output_directory", e => setOutputDirectory(e.data))
-    sse.addEventListener("n_frames", e => setNFrames(parseInt(e.data)))
+    const sse = new EventSource("/backend/dashboard-sse")
+    // Advance toggle SSE
+    sse.addEventListener("advance_toggle_is_enabled", e => setIsAdvanceEnabled(e.data === "True"))
+    sse.addEventListener("advance_toggle_is_active", e => setIsAdvanceActive(e.data === "True"))
+    // Fast-forward SSE
+    sse.addEventListener("fast_forward_toggle_is_enabled", e => setIsFastForwardEnabled(e.data === "True"))
+    sse.addEventListener("fast_forward_toggle_is_active", e => setIsFastForwardActive(e.data === "True"))
+    // Light toggle SSE
+    sse.addEventListener("light_toggle_is_enabled", e => setIsLightEnabled(e.data === "True"))
+    sse.addEventListener("light_toggle_is_active", e => setIsLightActive(e.data === "True"))
+    // Zoom toggle SSE
+    sse.addEventListener("zoom_toggle_is_enabled", e => setIsZoomEnabled(e.data === "True"))
+    sse.addEventListener("zoom_toggle_is_active", e => setIsZoomActive(e.data === "True"))
+    // Scan controls SSE
     sse.addEventListener("current_frame_index", e => setCurrentFrameIndex(parseInt(e.data)))
+    sse.addEventListener("is_scanning", e => setIsScanning(e.data === "True"))
     sse.addEventListener("last_scan_end_info", e => setLastScanEndInfo(e.data))
+    sse.addEventListener("n_frames", e => setNFrames(parseInt(e.data)))
+    sse.addEventListener("output_directory", e => setOutputDirectory(e.data))
     sse.addEventListener("time_remaining", e => setTimeRemaining(e.data))
-    sse.onerror = e => sse.close()  // TODO: Do something more intelligent
+    // SSE error handling
+    sse.onerror = e => sse.close()  // TODO Do something more intelligent
 
     return () => sse.close()
   }, [])
@@ -75,10 +118,10 @@ const Controls = () => {
   return (
     <div className="lg:w-80 shrink-0 m-0 p-2 flex flex-col bg-white dark:bg-gray-800">
       <ButtonGrid>
-        <Toggle target={"/backend/advance"}>🦦 Step</Toggle>
-        <Toggle target={"/backend/light"}>💡 Light</Toggle>
-        <Toggle target={"/backend/fastforward"}>🏎 Fast-Forward</Toggle>
-        <Toggle target={"/backend/focuszoom"}>🔍 Zoom</Toggle>
+        <Toggle target={"/backend/advance"} enabled={isAdvanceEnabled} active={isAdvanceActive}>🦦 Step</Toggle>
+        <Toggle target={"/backend/light"} enabled={isLightEnabled} active={isLightActive}>💡 Light</Toggle>
+        <Toggle target={"/backend/fastforward"} enabled={isFastForwardEnabled} active={isFastForwardActive}>🏎 Fast-Forward</Toggle>
+        <Toggle target={"/backend/focuszoom"} enabled={isZoomEnabled} active={isZoomActive}>🔍 Zoom</Toggle>
       </ButtonGrid>
 
       <ProgressBar now={currentFrameIndex + isScanning} max={nFrames} info={timeRemaining} show={isScanning} />
@@ -114,24 +157,7 @@ const ButtonGrid = ({children}) => {
 }
 
 
-const Toggle = ({children, target}) => {
-
-  const [isEnabled, setIsEnabled] = useState(true)
-  const [isActive, setIsActive] = useState(false)
-
-  useEffect(() => {
-    axios.get(target).then(response => {
-      setIsEnabled(response.data.is_enabled)
-      setIsActive(response.data.is_active)
-    })
-
-    const sse = new EventSource(target + "-stream")
-    sse.addEventListener("is_enabled", e => setIsEnabled(e.data === "True"))
-    sse.addEventListener("is_active", e => setIsActive(e.data === "True"))
-    sse.onerror = e => sse.close()  // TODO: Do something more intelligent
-
-    return () => sse.close()
-  }, [target])
+const Toggle = ({children, target, enabled, active}) => {
 
   const toggle = () => axios.post(target)
 
@@ -139,7 +165,7 @@ const Toggle = ({children, target}) => {
   const inactiveStyle = "border-gray-200 dark:border-gray-700"
 
   return (
-    <button className={"text-gray-900 bg-white hover:bg-gray-100 border focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed cursor-pointer " + (isActive ? activeStyle : inactiveStyle)} onClick={toggle} disabled={!isEnabled}>{children}</button>
+    <button className={"text-gray-900 bg-white hover:bg-gray-100 border focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 disabled:text-gray-400 disabled:hover:bg-white dark:disabled:text-gray-500 dark:disabled:hover:bg-gray-800 disabled:cursor-not-allowed cursor-pointer " + (active ? activeStyle : inactiveStyle)} onClick={toggle} disabled={!enabled}>{children}</button>
   )
 }
 
