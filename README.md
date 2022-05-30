@@ -15,6 +15,9 @@ In this repository, I have collected all my materials in this project, including
     - [How to use](#how-to-use)
 
 
+<img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="right" width="100%"/>
+
+
 ## Introduction
 
 motivation, what it can do, photo of the scanner, screenshot of the dashboard and sample scan
