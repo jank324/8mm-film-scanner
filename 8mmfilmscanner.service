@@ -1,0 +1,13 @@
+[Unit]
+Description=8mm Film Scanner Server
+After=multi-user.target
+
+[Service]
+ExecStart=sudo /usr/bin/python3 /home/pi/Desktop/8mm-film-scanner/server.py
+WorkingDirectory=/home/pi/Desktop/8mm-film-scanner
+User=pi
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
