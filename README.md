@@ -1,24 +1,39 @@
-# 8mm-film-scanner
+# 8mm Film Scanner
 
-brief abstract of project
+The *8mm Film Scanner* is a project to build a scanner for digitising motion picture film in both the *Regular 8* and *Super 8* gauges by converting an old projector with the help of a [Raspberry Pi](https://www.raspberrypi.org) single board computer.
+
+In this repository, I have collected all my materials in this project, including information on the hardware and software design as well as my scanning workflow.
 
 ### Table of contents
 - [Introduction](#introduction)
-- [Detailed Technical Description](#detailed-technical-description)
-- [Running this Software on your own Scanner](#running-this-software-on-your-own-scanner)
+- [Detailed technical description](#detailed-technical-description)
+    - [Hardware design](#hardware-design)
+    - [Software design](#software-design)
+    - [Scanning workflow](#scanning-workflow)
+- [Run the software on your own scanner](#run-the-software-on-your-own-scanner)
+    - [Installation](#installation)
+    - [How to use](#how-to-use)
 
 
 ## Introduction
 
-introduce project, why, I built it, what it can do, photo of the scanner, screenshot of the dashboard and sample scan
+motivation, what it can do, photo of the scanner, screenshot of the dashboard and sample scan
 
 
-## Detailed Technical Description
+## Detailed technical description
 
 Introduce every little technical detail on how the scanner is built and the software implemented
 
+### Hardware design
 
-## Running this Software on your own Scanner
+### Software design
+
+### Scanning workflow
+
+
+## Run the software on your own scanner
+
+### Installation
 
 Not tested because I have only one piece of hardware
 
@@ -91,3 +106,7 @@ to: your@mail.com               # Address notifications are sent to (presumably 
 ```
 
 Please remember to **NEVER** commit `notification_config.yaml` as it contains the password to the scanner's mail account which should remain secret. Under normal circumstances, this repository's `.gitignore` should already take care of this.
+
+### How to use
+
+Type in path, click here to start scan or turn on light etc. ...
