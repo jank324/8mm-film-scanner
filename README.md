@@ -66,9 +66,9 @@ create file `notification_config.yaml` in project root directory
 Fill in the following with the details of your mail account and the mail address you want e-mails to be sent to
 
 ```yaml
-user: scanners@mailaddress.com          # Mail address of the scanner's account
-password: scanners-mail-password123     # Password of the scanner's account
-to: your@mailaddress.com                # Mail address you want mails to be sent to (presumably your own)
+user: scanners@mail.com         # Address of the scanner's account
+password: scannerspassword123   # Password of the scanner's account
+to: your@mail.com               # Address notifications are sent to (presumably your own)
 ```
 
 Please remember to **NEVER** commit `notification_config.yaml` as it contains the password to the scanner's mail account which should remain secret. Under normal circumstances, this repository's `.gitignore` should already take care of this.
