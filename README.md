@@ -2,7 +2,10 @@
 
 brief abstract of project
 
-table of contents for navigation
+### Table of contents
+- [Introduction](#introduction)
+- [Detailed Technical Description](#detailed-technical-description)
+- [Running this Software on your own Scanner](#running-this-software-on-your-own-scanner)
 
 
 ## Introduction
@@ -10,12 +13,12 @@ table of contents for navigation
 introduce project, why, I built it, what it can do, photo of the scanner, screenshot of the dashboard and sample scan
 
 
-## Full technical rundown
+## Detailed Technical Description
 
 Introduce every little technical detail on how the scanner is built and the software implemented
 
 
-## Run software on your own scanner yourself
+## Running this Software on your own Scanner
 
 Not tested because I have only one piece of hardware
 
