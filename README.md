@@ -1,7 +1,25 @@
 # 8mm-film-scanner
 
+brief abstract of project
 
-## Run yourself
+table of contents for navigation
+
+
+## Introduction
+
+introduce project, why, I built it, what it can do, photo of the scanner, screenshot of the dashboard and sample scan
+
+
+## Full technical rundown
+
+Introduce every little technical detail on how the scanner is built and the software implemented
+
+
+## Run software on your own scanner yourself
+
+Not tested because I have only one piece of hardware
+
+Ensure same connections as those described above
 
 Clone repository (`Desktop`).
 
