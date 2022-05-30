@@ -55,9 +55,7 @@ and then enable it via
 systemctl enable 8mmfilmscanner
 ```
 
-### (Optional) Send scan complete notification e-mails
-
-If you want the server to send e-mails when scan finish
+then to send email notifications on finished scans
 
 create mail account of your choice
 
