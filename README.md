@@ -10,6 +10,7 @@ In this repository, I have collected all my materials in this project, including
     - [Hardware design](#hardware-design)
     - [Software design](#software-design)
     - [Scanning workflow](#scanning-workflow)
+    - [Future features and fixes](#future-features-and-fixes)
 - [Run the software on your own scanner](#run-the-software-on-your-own-scanner)
     - [Installation](#installation)
     - [How to use](#how-to-use)
@@ -27,11 +28,25 @@ motivation, what it can do, photo of the scanner, screenshot of the dashboard an
 
 Introduce every little technical detail on how the scanner is built and the software implemented
 
+
 ### Hardware design
+
+Lorem ipsum
+
 
 ### Software design
 
+Lorem ipsum
+
+
 ### Scanning workflow
+
+Lorem ipsum
+
+
+### Future features and fixes
+
+Lorem ipsum
 
 
 ## Run the software on your own scanner
