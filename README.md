@@ -8,7 +8,13 @@ In this repository, I have collected all my materials in this project, including
 - [Introduction](#introduction)
 - [Detailed technical description](#detailed-technical-description)
     - [Hardware design](#hardware-design)
+        - [Projector conversion](#projector-conversion)
+        - [Camera](#camera)
+        - [Electrical systems](#electrical-systems)
+        - [Base plate and case](#base-plate-and-case)
     - [Software design](#software-design)
+        - [Scanning operations](#scanning-operations)
+        - [Dashboard and other user experience](#dashboard-and-other-user-experience)
     - [Scanning workflow](#scanning-workflow)
     - [Future features and fixes](#future-features-and-fixes)
 - [Run the software on your own scanner](#run-the-software-on-your-own-scanner)
@@ -33,10 +39,22 @@ Introduce every little technical detail on how the scanner is built and the soft
 
 Lorem ipsum
 
+#### Projector conversion
+
+#### Camera
+
+#### Electrical systems
+
+#### Base plate and case
+
 
 ### Software design
 
-Lorem ipsum
+Lorem ipsum ... overview
+
+#### Scanning operations
+
+#### Dashboard and other user experience
 
 
 ### Scanning workflow
@@ -46,7 +64,7 @@ Lorem ipsum
 
 ### Future features and fixes
 
-Lorem ipsum
+Dashboard camera settings, mounting PCBs in case
 
 
 ## Run the software on your own scanner
@@ -55,7 +73,7 @@ Lorem ipsum
 
 Not tested because I have only one piece of hardware
 
-Ensure same connections as those described above
+Ensure same connections as those described above as well as Raspberry Pi with Raspberry Pi OS installed as normal
 
 Clone repository (`Desktop`).
 
