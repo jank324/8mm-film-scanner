@@ -90,7 +90,7 @@ macro slider for fine focus adjustment
 
 #### Electrical systems
 
-<img src="schematic.svg" align="center" width="100%"/>
+<img src="schematic.png" align="center" width="100%"/>
 
 Everything powered via a USB-C power supply
 
