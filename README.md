@@ -77,6 +77,8 @@ Replace lamp with MR16 LED and place plexiglas sheet in front of it for diffusio
 
 Raspberry Pi HQ camera for quality and replicability of lens on C-Mount
 
+<img src="camera.jpeg" align="center" width="100%"/>
+
 Mount to Schneider-Kreuznach Componon-S 50mm for flat image plane
 
 using some adapters and distance thingies to enlarger the image macro
@@ -91,6 +93,10 @@ macro slider for fine focus adjustment
 #### Electrical systems
 
 <img src="schematic.png" align="center" width="100%"/>
+
+<img src="case_internals.jpeg" align="center" width="100%"/>
+
+<img src="projector_internals.jpeg" align="center" width="100%"/>
 
 Everything powered via a USB-C power supply
 
