@@ -26,7 +26,7 @@ In this repository, I have collected all my materials on this project, including
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 
-<img src="resource/side_view.png" align="center" width="100%"/>
+<img src="resource/three_quarter_view.png" align="center" width="100%"/>
 
 
 ## Introduction
