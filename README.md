@@ -47,9 +47,7 @@ TODO Replace with nicer photo
 ![Photo of the scanner](images/three_quarter.jpeg)
 
 TODO Just an example video
-<figure class="video_container">
-  <iframe src="https://youtu.be/dQVIjNfx9Is" frameborder="0" allowfullscreen="true"> </iframe>
-</figure>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/dQVIjNfx9Is" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="center" width="100%"/>
 
