@@ -4,6 +4,8 @@ The *8mm Film Scanner* is a project to build a scanner for digitising motion pic
 
 In this repository, I have collected all my materials in this project, including information on the hardware and software design as well as my scanning workflow.
 
+<img src="icon.png" align="right" width="25%"/>
+
 ### Table of contents
 - [Introduction](#introduction)
 - [Detailed technical description](#detailed-technical-description)
@@ -20,7 +22,6 @@ In this repository, I have collected all my materials in this project, including
 - [Run the software on your own scanner](#run-the-software-on-your-own-scanner)
     - [Installation](#installation)
     - [How to use](#how-to-use)
-
 
 <img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="right" width="100%"/>
 
