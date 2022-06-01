@@ -110,6 +110,8 @@ The LED light is controlled by the Pi using a KF-301 relay module that can switc
 
 The hall effect sensor, too, is connected to the Pi's 3.3V rail through the stepper PCB. It's digital signal output is connected to the PI via the GPIO 26 pin (purple). Note that a potentiometer on the hall effect sensor module allows for setting the threshold of the digital trigger. This setting will likely need adjusting to make the scanner work properly.
 
+The Pi also supplies a small case fan from its 3.3V supply.
+
 Computations on energy usage
 
 
