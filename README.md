@@ -43,6 +43,9 @@ Below you find a photo of my scanner, a screenshot of its web interface as well 
 
 TODO Insert photo, screenshot and sample scan.
 
+TODO Replace with nicer photo
+![Photo of the scanner](images/three_quarter.jpeg)
+
 TODO Just an example video
 <figure class="video_container">
   <iframe src="https://youtu.be/dQVIjNfx9Is" frameborder="0" allowfullscreen="true"> </iframe>
@@ -86,7 +89,7 @@ Replace lamp with MR16 LED and place plexiglas sheet in front of it for diffusio
 
 Raspberry Pi HQ camera for quality and replicability of lens on C-Mount
 
-<img src="images/camera.jpeg" align="center" width="100%"/>
+![Camera](images/camera.jpeg)
 
 Mount to Schneider-Kreuznach Componon-S 50mm for flat image plane
 
