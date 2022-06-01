@@ -50,57 +50,121 @@ The rest of this README is intended as a documentation of every detail and lesso
 
 ## Detailed technical description
 
-Introduce every little technical detail on how the scanner is built and the software implemented
+This section will go over every technical detail of the *8mm Film Scanner*. The goal is to document everything necessary to rebuild the scanner some day far in the future without having to redo all the research I did.
 
 
 ### Hardware design
 
-Lorem ipsum
+Lorem ipsum ...
 
 
 #### Projector conversion
 
-Lorem ipsum
+The scanner is built around a *Bolex 18-3 TC* dual gauge film projector. There is no is no particular reason why I used this projector other than that I was able to get it cheaply because it was sold as defective. I never tested the electrics of the projector but the film transport mechanism turned out to be in perfectly find condition, which is all I cared about for this project.
+
+There do exist some almost identical models to this one by Bolex and Eumig, inclduing the Bolex 18-3 Duo, Eumig 610 D, Eumig 605 D and Eumig 614 D.
+
+In order to convert the projector, I removed the power supply and the motor/fan assembly. In its place, I mounted an acrylic plate
+
+also remove lens
+
+mount stepper motor, motor driver hall effect sensor and magnet on aperture wheel
+
+Replace lamp with MR16 LED and place plexiglas sheet in front of it for diffusion
 
 
 #### Camera
 
-Lorem ipsum
+Raspberry Pi HQ camera for quality and replicability of lens on C-Mount
+
+Mount to Schneider-Kreuznach Componon-S 50mm for flat image plane
+
+using some adapters and distance thingies to enlarger the image macro
+
+leave just enough space around the image to have wiggle room but also give high resolution
+
+sharpness falls off quickly when changing aperture always use aperture f4 (?)
+
+macro slider for fine focus adjustment
 
 
 #### Electrical systems
 
-Lorem ipsum
+Fritzing plan of the electrical system
+
+Everything powered via a USB-C power supply
+
+USB-C PD trigger board set to 15V
+
+two step down converters to give 5V supply and 12V supply
+
+5V to Raspberry Pi via USB cable to keep safety in circuit
+
+12V to power LED and stepper motor
+
+LED connected via old GU5.3 Fassung
+
+Stepper motor via A4988 driver on practical PCB
+
+Computations on energy usage
 
 
 #### Base plate and case
 
-Lorem ipsum
+Include constructionszeichnungen mit Maßen
+
+Wooden frame and case from plywood to protect electronics and make easy to stow
+
+wooden case with lid. cooling fan on "grill" keeps Pi cooler than it would be outside
+
+PCBs mounted with double sided tape
+
+Projector mounted using mounting holes for original feet, used paper to trace over, M6 screws, spacers to deal with tilt
+
+Camera mounted on macro slider, on wooden plate for rough adjustments left and right and up and down
+
+Case is painted in edding clear coat
 
 
 ### Software design
 
-Lorem ipsum ... overview
+Two parts
+
+server handling scanning and web interface
 
 
 #### Scanning operations
 
-Lorem ipsum
+something about the scanning, advancing, stepper motor driving and hall detection
 
 
 #### Dashboard and other user experience
 
-Lorem ipsum
+web interface for easy use, describe video streaming and message structures
 
 
 ### Scanning workflow
 
-Lorem ipsum
+Note that this is not the only way to do it and in particular the particular softwares I use can be replaced with others easily
+
+Scan to RAW, to SSD (because SSD faster than internal)
+
+Convert raw bayer data to .dng files with script and RPiDNG
+
+Adjust colour and crop, then export to tiff
+
+From tiff files render into master video file (I use Apple Compressor to ProRes)
+
+Import into Final cut, crop to 4:3 and use Neat Video to remove what I feel like might be digital noise but preserve film grain
+
+Then use Neat and if required manual work to remove dust "that I find distracting".
+
+Chose not to completely degrain or stabilise to keep analog feel and not outstabilise original handshake
 
 
 ### Cost
 
-Lorem ipsum
+Put a table here of cost of everythin
 
 
 ### Future features and fixes
@@ -110,7 +174,13 @@ Dashboard camera settings, mounting PCBs in case
 
 ## Run the software on your own scanner
 
-Lorem ipsum
+Feel free to use this software on your own scanner
+
+brief instrictions
+
+prerequestie is that electrical connections are the same
+
+advance routine might need adjusting as timed to this scanner
 
 
 ### Installation
