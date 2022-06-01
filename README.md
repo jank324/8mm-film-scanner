@@ -43,7 +43,7 @@ Below you find a photo of my scanner, a screenshot of its web interface as well 
 
 TODO Insert photo, screenshot and sample scan.
 
-<img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="right" width="100%"/>
+<img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="center" width="100%"/>
 
 The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code necessary to build another one.
 
@@ -90,7 +90,7 @@ macro slider for fine focus adjustment
 
 #### Electrical systems
 
-Fritzing plan of the electrical system
+<img src="schematic.svg" align="center" width="100%"/>
 
 Everything powered via a USB-C power supply
 
