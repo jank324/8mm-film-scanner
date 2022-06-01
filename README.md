@@ -26,7 +26,7 @@ In this repository, I have collected all my materials on this project, including
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 
-<img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="right" width="100%"/>
+<img src="resource/side_view.png" align="center" width="100%"/>
 
 
 ## Introduction
@@ -35,13 +35,15 @@ I while ago, I found myself with over 800 rolls of 8mm film my grandfather had f
 
 Now, the easiest way to get films like these digitised is the use of a digitisation service. But for the sheer amount of film I had, this would have cost me well over 10,000€ and with these services you never know whether you will actually get a decent quality scan. The next option was to just get out the old projector and use a video camera to record the films as they play. This is a perfectly valid option and super easy to do, but the resulting recordings usually suffer from distortion, bad colours, a lack of sharpness and quite a bit of flicker. To do the true quality of these films justice, what was really needed was a frame-by-frame scanner. You can actually buy these but the ones available are either so expensive that they only make sense for professional users (e.g. scanners by [Filmfabriek](https://filmfabriek.nl)) or they leave a lot to be desired in terms of quality (like the famed [Wolverine](https://www.wolverinedata.com/products/MovieMaker_Pro)).
 
-The solution is to build your own scanner, an idea that got hooked on after finding a [video on the AACA Library's *Mike's Movie Machine*](https://www.youtube.com/watch?v=luGacxJMZI8), which is really just an incarnation of the absolutely amazing [*Kinograph*](https://www.kinograph.cc) project. TODO Kinograph Forums](https://forums.kinograph.cc)
+The solution is to build your own scanner, an idea that got hooked on after finding a [video on the AACA Library's *Mike's Movie Machine*](https://www.youtube.com/watch?v=luGacxJMZI8), which is really just an incarnation of the absolutely amazing [*Kinograph*](https://www.kinograph.cc) project. TODO [Kinograph Forums](https://forums.kinograph.cc)
 
 In the following, you will find a detailed description of my *8mm Film Scanner* and the workflow around it. The scanner is built around an old dual-gauge film projector and a [Raspberry Pi](https://www.raspberrypi.org) single board computer.
 
 Below you find a photo of my scanner, a screenshot of its web interface as well as a sample scan.
 
 TODO Insert photo, screenshot and sample scan.
+
+<img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="right" width="100%"/>
 
 The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code necessary to build another one.
 
