@@ -43,6 +43,11 @@ Below you find a photo of my scanner, a screenshot of its web interface as well 
 
 TODO Insert photo, screenshot and sample scan.
 
+TODO Just an example video
+<figure class="video_container">
+  <iframe src="https://youtu.be/dQVIjNfx9Is" frameborder="0" allowfullscreen="true"> </iframe>
+</figure>
+
 <img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="center" width="100%"/>
 
 The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code necessary to build another one.
