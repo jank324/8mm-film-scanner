@@ -2,7 +2,7 @@
 
 The *8mm Film Scanner* is a project to build a scanner for digitising motion picture film in both the *Regular 8* and *Super 8* gauges by converting an old projector with the help of a [Raspberry Pi](https://www.raspberrypi.org) single board computer.
 
-In this repository, I have collected all my materials in this project, including information on the hardware and software design as well as my scanning workflow.
+In this repository, I have collected all my materials on this project, including source code, information on the hardware and software design, instructions for using the software, a rundown of my scanning and editing workflow, and many more.
 
 <img src="icon.png" align="right" width="25%"/>
 
@@ -18,10 +18,13 @@ In this repository, I have collected all my materials in this project, including
         - [Scanning operations](#scanning-operations)
         - [Dashboard and other user experience](#dashboard-and-other-user-experience)
     - [Scanning workflow](#scanning-workflow)
+    - [Cost](#cost)
     - [Future features and fixes](#future-features-and-fixes)
 - [Run the software on your own scanner](#run-the-software-on-your-own-scanner)
     - [Installation](#installation)
     - [How to use](#how-to-use)
+- [Contributing](#contributing)
+- [Acknowledgements](#acknowledgements)
 
 <img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="right" width="100%"/>
 
@@ -40,25 +43,48 @@ Introduce every little technical detail on how the scanner is built and the soft
 
 Lorem ipsum
 
+
 #### Projector conversion
+
+Lorem ipsum
+
 
 #### Camera
 
+Lorem ipsum
+
+
 #### Electrical systems
 
+Lorem ipsum
+
+
 #### Base plate and case
+
+Lorem ipsum
 
 
 ### Software design
 
 Lorem ipsum ... overview
 
+
 #### Scanning operations
+
+Lorem ipsum
+
 
 #### Dashboard and other user experience
 
+Lorem ipsum
+
 
 ### Scanning workflow
+
+Lorem ipsum
+
+
+### Cost
 
 Lorem ipsum
 
@@ -69,6 +95,9 @@ Dashboard camera settings, mounting PCBs in case
 
 
 ## Run the software on your own scanner
+
+Lorem ipsum
+
 
 ### Installation
 
@@ -147,3 +176,13 @@ Please remember to **NEVER** commit `notification_config.yaml` as it contains th
 ### How to use
 
 Type in path, click here to start scan or turn on light etc. ...
+
+
+# Contributing
+
+basically say please feel free to use and contribute by issues and pull requests
+
+
+# Acknowledgements
+
+Kinograph forum (and Matthew Aepler)
