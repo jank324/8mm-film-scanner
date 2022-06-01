@@ -4,7 +4,7 @@ The *8mm Film Scanner* is a project to build a scanner for digitising motion pic
 
 In this repository, I have collected all my materials on this project, including source code, information on the hardware and software design, instructions for using the software, a rundown of my scanning and editing workflow, and many more.
 
-<img src="icon.png" align="right" width="25%"/>
+<img src="icon.svg" align="right" width="25%"/>
 
 ### Table of contents
 - [Introduction](#introduction)
