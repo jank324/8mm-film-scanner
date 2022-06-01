@@ -70,6 +70,10 @@ also remove lens
 
 mount stepper motor, motor driver hall effect sensor and magnet on aperture wheel
 
+<img src="images/projector_internals.jpeg" align="center" width="100%"/>
+
+<img src="images/lamphousing_internals.jpeg" align="center" width="80%"/>
+
 Replace lamp with MR16 LED and place plexiglas sheet in front of it for diffusion
 
 
@@ -77,7 +81,7 @@ Replace lamp with MR16 LED and place plexiglas sheet in front of it for diffusio
 
 Raspberry Pi HQ camera for quality and replicability of lens on C-Mount
 
-<img src="camera.jpeg" align="center" width="100%"/>
+<img src="images/camera.jpeg" align="center" width="100%"/>
 
 Mount to Schneider-Kreuznach Componon-S 50mm for flat image plane
 
@@ -92,30 +96,26 @@ macro slider for fine focus adjustment
 
 #### Electrical systems
 
-<img src="schematic.png" align="center" width="100%"/>
+Below you can see an overview of the scanner's electrical systems with red and black connections representing positive and negative power connections, and all other colours representing signal connections.
 
-<img src="case_internals.jpeg" align="center" width="100%"/>
+![Overview of electrical systems](images/schematic.png)
 
-<img src="projector_internals.jpeg" align="center" width="100%"/>
+The scanner is powered by a fairly standard 45W [USB-C power supply](https://www.amazon.de/gp/product/B098P15D4N/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1). The power supply is connected via a USB-C cable with USB-C PD support to a ZY12PDN USB-C PD trigger board. This board is capable of negotiating with the power supply that it should deliver power as well as the USB-C PD mode that is used. Different modes differ primarily in the voltage delivered. The trigger board can be configured via a button on the board to negotiate a particular voltage. In our particular case, the trigger board is configured to negotiate the 15V mode, though 20V would work just as well. Note that the power supply must support the mode. If the power supply does not support the mode the trigger board asks for, USB-C PD will fall back to 5V. At this voltage the scanner will not work, but 5V will not damage it either.
 
-Everything powered via a USB-C power supply
+A pair of LM2596S step down modules are then used to step the 15V from the power supply down to 5V required by the Raspberry Pi and 12V for the stepper motor and the LED light. While it would be possible to connect the Pi to the step down converter directly using jumper wires on its GPIO pins, the Micro USB end of an old USB cable is used instead. This keeps the Pi's fuses in circuit and protects the Pi in case of a problem with the power supply.
 
-USB-C PD trigger board set to 15V
+The stepper motor is driven by an A4988 stepper driver that sits on a [very practical PCB](https://www.amazon.de/gp/product/B07RGJQFSX/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) that makes it easier to mount and connect the driver. The Pi controls the stepper motor direction via its GPIO 21 pin (white), enables the stepper via its GPIO 16 pin (orange) and steps the motor via its GPIO 20 pin (green). Using the switches on the PCB, the driver is configured to run the stepper motor in full-step mode. Note that this PCB also has additional positive and ground supply pins which are used to make the Pi's 3.3V available in the projector housing due the the location of the Pi in the wooden case.
 
-two step down converters to give 5V supply and 12V supply
+The LED light is controlled by the Pi using a KF-301 relay module that can switch the 12V supply to the light. The relay receives its logic power from the 3.3V supply of the Pi and is controlled via the Pi's GPIO 6 pin (blue). Note that it is important that the relay is connected to the 3.3V supply and **NOT** the 5V supply, the the logic level is 3.3V and it will not trigger properly otherwise. The relay is connected to the LED light through through the original bulb's GU5.3 socket.
 
-5V to Raspberry Pi via USB cable to keep safety in circuit
-
-12V to power LED and stepper motor
-
-LED connected via old GU5.3 Fassung
-
-Stepper motor via A4988 driver on practical PCB
+The hall effect sensor, too, is connected to the Pi's 3.3V rail through the stepper PCB. It's digital signal output is connected to the PI via the GPIO 26 pin (purple). Note that a potentiometer on the hall effect sensor module allows for setting the threshold of the digital trigger. This setting will likely need adjusting to make the scanner work properly.
 
 Computations on energy usage
 
 
 #### Base plate and case
+
+<img src="images/case_internals.jpeg" align="center" width="100%"/>
 
 Include constructionszeichnungen mit Maßen
 
@@ -170,7 +170,7 @@ Chose not to completely degrain or stabilise to keep analog feel and not outstab
 
 ### Cost
 
-Put a table here of cost of everythin
+Put a table here of cost of everything
 
 
 ### Future features and fixes
