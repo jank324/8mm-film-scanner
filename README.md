@@ -26,7 +26,7 @@ In this repository, I have collected all my materials on this project, including
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 
-<img src="resource/three_quarter_view.png" align="center" width="100%"/>
+![Three-quarter view render](resource/three_quarter_view.png)
 
 
 ## Introduction
@@ -49,7 +49,7 @@ TODO Replace with nicer photo
 TODO Just an example video
 <iframe width="560" height="315" src="https://www.youtube.com/embed/dQVIjNfx9Is" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-<img src="https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg" align="center" width="100%"/>
+![Bonanza](https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg)
 
 The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code necessary to build another one.
 
@@ -76,7 +76,7 @@ also remove lens
 
 mount stepper motor, motor driver hall effect sensor and magnet on aperture wheel
 
-<img src="images/projector_internals.jpeg" align="center" width="100%"/>
+![Projector internals](images/projector_internals.jpeg)
 
 <img src="images/lamphousing_internals.jpeg" align="center" width="80%"/>
 
@@ -123,7 +123,7 @@ Computations on energy usage
 
 #### Base plate and case
 
-<img src="images/case_internals.jpeg" align="center" width="100%"/>
+![Case internals](images/case_internals.jpeg)
 
 Include constructionszeichnungen mit Maßen
 
@@ -258,6 +258,8 @@ systemctl enable 8mmfilmscanner
 then to send email notifications on finished scans
 
 create mail account of your choice
+
+![Screenshot test](images/Screenshot%202022-05-29%20at%2022.05.02.png)
 
 create file `notification_config.yaml` in project root directory
 
