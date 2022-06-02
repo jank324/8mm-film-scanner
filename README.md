@@ -68,7 +68,7 @@ Lorem ipsum ...
 
 The scanner is built around a *Bolex 18-3 TC* dual gauge film projector. There is no is no particular reason why I used this projector other than that I was able to get it cheaply because it was sold as defective. I never tested the electrics of the projector but the film transport mechanism turned out to be in perfectly find condition, which is all I cared about for this project.
 
-There do exist some almost identical models to this one by Bolex and Eumig, inclduing the Bolex 18-3 Duo, Eumig 610 D, Eumig 605 D and Eumig 614 D.
+There do exist some almost identical models to this one by Bolex and Eumig, inclduing the Bolex 18-3 Duo, Eumig 610 D, Eumig 605 D, Eumig 614 D and Revue Lux 3003.
 
 In order to convert the projector, I removed the power supply and the motor/fan assembly. In its place, I mounted an acrylic plate
 
@@ -122,6 +122,8 @@ Computations on energy usage
 
 
 #### Base plate and case
+
+![Drawing](images/engineering_drawing.png)
 
 ![Case internals](images/case_internals.jpeg)
 
@@ -258,8 +260,6 @@ systemctl enable 8mmfilmscanner
 then to send email notifications on finished scans
 
 create mail account of your choice
-
-![Screenshot test](images/Screenshot%202022-05-29%20at%2022.05.02.png)
 
 create file `notification_config.yaml` in project root directory
 
