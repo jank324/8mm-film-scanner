@@ -12,7 +12,7 @@ In this repository, I have collected all my materials on this project, including
     - [Hardware design](#hardware-design)
         - [Projector conversion](#projector-conversion)
         - [Camera](#camera)
-        - [Electrical systems](#electrical-systems)
+        - [Electrical systems and wiring](#electrical-systems-and-wiring)
         - [Base plate and case](#base-plate-and-case)
     - [Software design](#software-design)
         - [Scanning operations](#scanning-operations)
@@ -38,6 +38,8 @@ Now, the easiest way to get films like these digitised is the use of a digitisat
 The solution is to build your own scanner, an idea that got hooked on after finding a [video on the AACA Library's *Mike's Movie Machine*](https://www.youtube.com/watch?v=luGacxJMZI8), which is really just an incarnation of the absolutely amazing [*Kinograph*](https://www.kinograph.cc) project. TODO [Kinograph Forums](https://forums.kinograph.cc)
 
 In the following, you will find a detailed description of my *8mm Film Scanner* and the workflow around it. The scanner is built around an old dual-gauge film projector and a [Raspberry Pi](https://www.raspberrypi.org) single board computer.
+
+TODO more on features and capabilities, less on story and why not to do service or other scanning methods
 
 Below you find a photo of my scanner, a screenshot of its web interface as well as a sample scan.
 
@@ -85,22 +87,25 @@ Replace lamp with MR16 LED and place plexiglas sheet in front of it for diffusio
 
 #### Camera
 
-Raspberry Pi HQ camera for quality and replicability of lens on C-Mount
+The scanner uses the *Raspberry Pi HQ Camera* for taking pictures of the frames on the film. The HQ Camera is well suited for this task because its sensor delivers more than adequate quality and its C-mount makes it possible to mount a wide variety of lenses.
+
+The lens used is a Schneider-Kreuznach Componon-S 50mm enlarger lens. Enlarger lenses like it are widely available on the used market and well-suited to macro imaging applications. Enlarger lenses also have the nice property of a very flat image plane - exactly what is needed in a film scanning application. The Componon-S in particular is a very nice model and quite popular in the film scanning community, but other similar enlarger lenses are likely just as well suited.
+
+The Componon-S has an M39 thread and needs to adapted to the camera's C-mount. It also requires some distance to the sensor to achieve the enlargement required to make a Regular 8 or Super 8 frame fill the camera's sensor. As finding adapters directly from C-mount to M39 turned out to be rather difficult, I chose to adapt via M42. This has the nice side-effect that the M42 thread was widely used by Pentax in the 1960s and 70s, making adapters to other mounts as well as macro extension tubes very easy to get. In the photo below you can see the camera assembly. Starting from the camera, the following components are used to mount the lens:
+
+ - C-mount to M42 adapter
+ - 19mm M42 extension tube
+ - 26mm M42 extension tube
+ - M42 to M39 adapter ring (screws into the inside of the M42 thread and is therefore not visible)
 
 ![Camera](images/camera.jpeg)
 
-Mount to Schneider-Kreuznach Componon-S 50mm for flat image plane
-
-using some adapters and distance thingies to enlarger the image macro
-
-leave just enough space around the image to have wiggle room but also give high resolution
-
-sharpness falls off quickly when changing aperture always use aperture f4 (?)
+The resulting extension is just about right to fit the larger Super 8 frame with enough play to all sides. The lens also delivers very sharp images and does not show any visible vignetting. It must be noted, however, that APERTURE SHARPNESS FALLOFF
 
 macro slider for fine focus adjustment
 
 
-#### Electrical systems
+#### Electrical systems and wiring
 
 Below you can see an overview of the scanner's electrical systems with red and black connections representing positive and negative power connections, and all other colours representing signal connections.
 
