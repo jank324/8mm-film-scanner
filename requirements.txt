@@ -1,6 +1,6 @@
 flask
 jupyter
 picamerax
-pidng
+pidng==3.4.7
 pigpio
 pyyaml
