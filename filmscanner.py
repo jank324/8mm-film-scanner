@@ -49,6 +49,7 @@ class FilmScanner:
         self.camera.shutter_speed = int(1e6 * 1 / 250)    # 1/250
         self.camera.awb_mode = "off"
         self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
+        self.camera.vflip = True
         time.sleep(2)
 
         self.raw_offset = 18711040
