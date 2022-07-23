@@ -150,9 +150,7 @@ Case is painted in edding clear coat
 
 ### Software design
 
-Two parts
-
-server handling scanning and web interface
+The software for this project consists of two parts: the film scanning logic taking care of film advance and image capture, and the user interface logic serving a web interface to simplify and streamline the interaction with the scanner.
 
 
 #### Scanning operations
@@ -167,7 +165,20 @@ web interface for easy use, describe video streaming and message structures
 
 ### Scanning workflow
 
-Note that this is not the only way to do it and in particular the particular softwares I use can be replaced with others easily
+In this section I would like to briefly go over my current scanning workflow to illustrate how the scanner may be used to produce archivable digital copies of film rheels. Note that this is just what my workflow looks like now and likely to change and evolve. It also certainly is not the only way to do it and there is better ways to get the results you are looking for.
+
+Before starting the scan, I actually started by creating a list of all the film I have, giving every film a unique ID so I can identify them later. This allows be to easily track the progress of my scanning project over a long period of time and see which rheels I have already scanning or what stage of post-processing I last left them in.
+
+When it is time to scan a particular rheel, I start by physically cleaning the film. To do this, I put the film on a film editing viewer. Then I put a few drops of TODO cleaning solution onto a lint-free cloth and spool the film onto another reel while grabing the film with the soaked piece of cloth. It is adviasable to swap the spot on the cloth every couple of meters and put on new cleaning solution as to avoid scratching the film with the dirt that came off. Once the film is completely wound over, I wind it back onto its original rheel. Note that I only attach the end of the film to the original rheel very losely so it comes off the rheel easily when scanning. For your average Super 8 rheel this is easiest done by not putting the film into the "claw" that is supposed to hold it, but to gently place it in the slit that usally allows you the see how full the rheel is. Then just wind and the film will stay in place.
+
+I then thread the film onto the scanner and fast-forward to the first frame that is fully visible. I then use this frame to focus the camera onto the film grain. The *Zoom* view offered by the webinterface is very useful for the final focus adjustment.
+
+For the number of frames to scan, I usually estimate the number of frames on the rheel based on its length and the pitch of the film type, and then add ca. 10% to be sure to capture the entire film in one go.
+
+Rather than saving the scan on the Pi's SD card, I connect an external SSD via USB. It turns out this is significantly faster than using the SD card, so much so that with the SD card, the scan may be slowed down waiting for frames to save, which does not happend at all when using an external SSD. The path I select is `/media/pi/*pathtossd*/*rheelid*/frames`.
+
+
+
 
 Scan to RAW, to SSD (because SSD faster than internal)
 
