@@ -1,7 +1,7 @@
-from collections import deque
-from datetime import datetime, timedelta
 import json
 import queue
+from collections import deque
+from datetime import datetime, timedelta
 from threading import Event
 
 
@@ -41,7 +41,7 @@ class SSEMessenger:
 
         def generator():
             while True:
-                message = q.get()   # Blocks when queue is empty
+                message = q.get()  # Blocks when queue is empty
                 yield message
 
         return generator()
@@ -58,7 +58,7 @@ class SSEMessenger:
                 self.subscribers[i].put_nowait(message)
             except queue.Full:
                 del self.subscribers[i]
-    
+
 
 class BaseCallback:
     """
@@ -72,7 +72,7 @@ class BaseCallback:
 
     def setup(self, scanner):
         self.scanner = scanner
-    
+
     def on_advance_start(self):
         """
         Called before the scanner advances a frame.
@@ -102,7 +102,7 @@ class BaseCallback:
         Called after a frame was captured during a scan.
         """
         pass
-    
+
     def on_last_scan_end_info_change(self):
         """
         Called when the info on how the last scan ended changed.
@@ -160,11 +160,11 @@ class CallbackList(BaseCallback):
         self.callbacks = callbacks
 
         self.scanner = None
-    
+
     def setup(self, scanner):
         for callback in self.callbacks:
             callback.setup(scanner)
-    
+
     def on_advance_start(self):
         for callback in self.callbacks:
             callback.on_advance_start()
@@ -180,11 +180,11 @@ class CallbackList(BaseCallback):
     def on_fast_forward_end(self):
         for callback in self.callbacks:
             callback.on_fast_forward_end()
-    
+
     def on_frame_capture(self):
         for callback in self.callbacks:
             callback.on_frame_capture()
-    
+
     def on_last_scan_end_info_change(self):
         for callback in self.callbacks:
             callback.on_last_scan_end_info_change()
@@ -204,11 +204,11 @@ class CallbackList(BaseCallback):
     def on_scan_end(self):
         for callback in self.callbacks:
             callback.on_scan_end()
-    
+
     def on_zoom_in(self):
         for callback in self.callbacks:
             callback.on_zoom_in()
-    
+
     def on_zoom_out(self):
         for callback in self.callbacks:
             callback.on_zoom_out()
@@ -223,7 +223,7 @@ class SSESendingCallback(BaseCallback):
     def __init__(self):
         super().__init__()
         self.messenger = SSEMessenger()
-    
+
     def subscribe_to_sse(self):
         """
         Subsribed to the server-sent events sent by this callback.
@@ -246,13 +246,13 @@ class DashboardCallback(SSESendingCallback):
 
     def on_advance_start(self):
         self.messenger.send("state", self.scanner_state_dict)
-    
+
     def on_advance_end(self):
         self.messenger.send("state", self.scanner_state_dict)
-    
+
     def on_fast_forward_start(self):
         self.messenger.send("state", self.scanner_state_dict)
-    
+
     def on_fast_forward_end(self):
         self.messenger.send("state", self.scanner_state_dict)
 
@@ -265,39 +265,45 @@ class DashboardCallback(SSESendingCallback):
 
     def on_light_on(self):
         self.messenger.send("state", self.scanner_state_dict)
-    
+
     def on_light_off(self):
         self.messenger.send("state", self.scanner_state_dict)
-    
+
     def on_scan_start(self):
         self.init_time_remaining_estimation()
         self.messenger.send("state", self.scanner_state_dict)
-        scan_setup = {"n_frames": self.scanner.n_frames, "output_directory": self.scanner.output_directory}
+        scan_setup = {
+            "n_frames": self.scanner.n_frames,
+            "output_directory": self.scanner.output_directory,
+        }
         self.messenger.send("scan_setup", scan_setup)
 
     def on_scan_end(self):
         self.messenger.send("state", self.scanner_state_dict)
-    
+
     def on_zoom_in(self):
         self.messenger.send("state", self.scanner_state_dict)
-    
+
     def on_zoom_out(self):
         self.messenger.send("state", self.scanner_state_dict)
-    
+
     @property
     def scanner_state_dict(self):
         return {
             "advance_toggle": {
-                "active": self.scanner.is_advancing and not self.scanner.is_fast_forwarding,
+                "active": self.scanner.is_advancing
+                and not self.scanner.is_fast_forwarding,
                 "enabled": self.scanner.is_advance_allowed,
             },
             "current_frame_index": self.scanner.current_frame_index,
             "fast_forward_toggle": {
                 "active": self.scanner.is_fast_forwarding,
-                "enabled": self.scanner.is_fast_forward_allowed or self.scanner.is_fast_forwarding,
+                "enabled": self.scanner.is_fast_forward_allowed
+                or self.scanner.is_fast_forwarding,
             },
             "is_scanning": self.scanner.is_scanning,
-            "is_scan_button_enabled": self.scanner.is_scanning_allowed or self.scanner.is_scanning,
+            "is_scan_button_enabled": self.scanner.is_scanning_allowed
+            or self.scanner.is_scanning,
             "last_scan_end_info": self.scanner.last_scan_end_info,
             "light_toggle": {
                 "active": self.scanner.is_light_on,
@@ -317,20 +323,20 @@ class DashboardCallback(SSESendingCallback):
         self.str_time_remaining = "-"
 
         self.is_time_remaining_first_update = True
-    
+
     def update_time_remaining(self):
         t_now = datetime.now()
         dt = t_now - self.t_last
         self.t_last = t_now
-        
+
         # On the first update of time remaining don't add dt to dts because it measures the duration
         # of the scan initialisation and therefore throws off the time remaining estimate.
         if self.is_time_remaining_first_update:
             self.is_time_remaining_first_update = False
             return
 
-        self.dts.append(dt) 
-        
+        self.dts.append(dt)
+
         dt_mean = sum(self.dts, timedelta(0)) / len(self.dts)
         frames_remaining = self.scanner.n_frames - self.scanner.current_frame_index
         self.time_remaining = dt_mean * frames_remaining
@@ -348,13 +354,13 @@ class Viewer:
 
         self.event = Event()
         self.last_access = datetime.now()
-    
+
     def notify(self):
         """
         Notify this viewer that a new frame is available.
         """
         self.event.set()
-    
+
     def view(self):
         """
         Generator that yields preview frames when this viewer is notified (that a new one is

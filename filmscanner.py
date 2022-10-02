@@ -1,19 +1,18 @@
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
-from functools import partial
-from fractions import Fraction
-from io import BytesIO
 import logging
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
+from fractions import Fraction
+from functools import partial
+from io import BytesIO
 from pathlib import Path
 from threading import Event
-import time
 
-from picamerax import PiCamera
 import pigpio
+from picamerax import PiCamera
 
 from utils import BaseCallback, CallbackList, Viewer
-
 
 # Setup logging (to console)
 logger = logging.getLogger(__name__)
@@ -26,7 +25,6 @@ logger.addHandler(stream_handler)
 
 
 class FilmScanner:
-
     def __init__(self, callback=BaseCallback()):
         self.callback = BaseCallback()  # Placeholder until object is fully initialised
 
@@ -42,13 +40,13 @@ class FilmScanner:
         self.motor = StepperMotor(16, 21, 20)
         self.frame_sensor = HallEffectSensor(26)
 
-        self.camera = PiCamera(resolution=(800,600))
+        self.camera = PiCamera(resolution=(800, 600))
         self.camera.analog_gain = 1
         self.camera.digital_gain = 1
         # self.camera.exposure_mode = "off"
-        self.camera.shutter_speed = int(1e6 * 1 / 250)    # 1/250
+        self.camera.shutter_speed = int(1e6 * 1 / 250)  # 1/250
         self.camera.awb_mode = "off"
-        self.camera.awb_gains = (Fraction(513,256), Fraction(703,256))
+        self.camera.awb_gains = (Fraction(513, 256), Fraction(703, 256))
         self.camera.vflip = True
         time.sleep(2)
 
@@ -83,19 +81,21 @@ class FilmScanner:
         self.liveview_stopped_event = Event()
         with open("placeholder_image.jpg", "rb") as f:
             self.preview_frame = f.read()
-        
+
         self.zoom_toggled_event = Event()
         self.fast_forward_started_event = Event()
         self.fast_forward_stopped_event = Event()
 
         self.fast_forward_executor = ThreadPoolExecutor(max_workers=1)
-        
+
         self.scan_executor = ThreadPoolExecutor(max_workers=1)
         self.output_directory = "/media/pi/PortableSSD/unnamed/frames"
         self.n_frames = 3800
         self.scanned_frames = 0
 
-        self.callback = CallbackList(callback) if isinstance(callback, list) else callback
+        self.callback = (
+            CallbackList(callback) if isinstance(callback, list) else callback
+        )
         self.callback.setup(self)
 
     def __del__(self):
@@ -104,15 +104,17 @@ class FilmScanner:
 
         self.camera.close()
 
-        del(self.motor)
-        
+        del self.motor
+
         self.pi.stop()
-    
+
     def start_scan(self, output_directory, n_frames, start_index=0):
         """
         Start a scan. The arguments are the same as those of `scan`.
         """
-        logger.info(f"Starting scan (output_directory={output_directory} / frames={n_frames} / start_index={start_index})")
+        logger.info(
+            f"Starting scan (output_directory={output_directory} / frames={n_frames} / start_index={start_index})"
+        )
         self.scan_stop_requested = False
         self.is_scanning = True
         self.scan_started_event.clear()
@@ -120,10 +122,10 @@ class FilmScanner:
             self.debug_scan,
             output_directory=output_directory,
             n_frames=n_frames,
-            start_index=start_index
+            start_index=start_index,
         )
         self.scan_started_event.wait()
-    
+
     def stop_scan(self):
         """
         Stop a scan prematurely. When called, the scanner will stop once the current frame finished
@@ -133,7 +135,7 @@ class FilmScanner:
         self.scan_stopped_event.clear()
         self.scan_stop_requested = True
         self.scan_stopped_event.wait()
-    
+
     def debug_scan(self, output_directory, n_frames=3900, start_index=0):
         """
         The same as `scan`, but exceptions are caught and printed to `stdout`.
@@ -141,8 +143,10 @@ class FilmScanner:
         try:
             self.scan(output_directory, n_frames, start_index)
         except Exception as e:
-            print(f"AN ERROR HAS OCURRED: {e}") # TODO to logger (and web interface) instead of print
-    
+            print(
+                f"AN ERROR HAS OCURRED: {e}"
+            )  # TODO to logger (and web interface) instead of print
+
     def scan(self, output_directory, n_frames=3900, start_index=0):
         """
         Scan a film reel frame-by-frame.
@@ -196,12 +200,12 @@ class FilmScanner:
             frame = self.capture_frame()
             self.wait_for_previous_save()
             self.submit_save_frame(frame, filepath)
-            self.preview_frame = frame[:-self.raw_offset]   # Cut off the raw bayer data
+            self.preview_frame = frame[: -self.raw_offset]  # Cut off the raw bayer data
             self.callback.on_frame_capture()
 
             self.advance()
 
-            logger.info(f"Captured \"{filepath}\"")
+            logger.info(f'Captured "{filepath}"')
 
             if self.scan_stop_requested:
                 break
@@ -223,7 +227,7 @@ class FilmScanner:
             self.turn_off_light()
 
         return i + 1
-    
+
     def wait_for_previous_save(self):
         """
         If a frame is currently being saved, blocks until that save operation has finished.
@@ -258,8 +262,12 @@ class FilmScanner:
 
         self.motor.enable()
         self.motor.start(speed=300, acceleration=24)
-        time.sleep(t_threshold * 0.25)  # Move magnet out of range before arming Hall effect sensor
-        was_frame_detected = self.frame_sensor.wait_for_trigger(timeout=t_threshold*0.75)
+        time.sleep(
+            t_threshold * 0.25
+        )  # Move magnet out of range before arming Hall effect sensor
+        was_frame_detected = self.frame_sensor.wait_for_trigger(
+            timeout=t_threshold * 0.75
+        )
         self.motor.stop(deceleration=24)
         self.motor.disable()
 
@@ -270,10 +278,10 @@ class FilmScanner:
                 fixed = self.recover()
             if not fixed:
                 raise AdvanceTimeoutError()
-        
+
         self.is_advancing = False
         self.callback.on_advance_end()
-    
+
     def recover(self):
         """
         Attempt to recover the frame advance after an error has occurred.
@@ -281,10 +289,12 @@ class FilmScanner:
         attempts = 0
         pause = 1
         while True:
-            logger.warning(f"Attempting frame sensor recovery (attempt={attempts}, pause={pause})")
+            logger.warning(
+                f"Attempting frame sensor recovery (attempt={attempts}, pause={pause})"
+            )
 
             self.motor.direction = 1
-            
+
             self.motor.enable()
             self.motor.start(speed=1, acceleration=1)
             self.frame_sensor.wait_for_trigger(timeout=1.0)
@@ -298,7 +308,7 @@ class FilmScanner:
             try:
                 self.advance(recover=False)
             except AdvanceTimeoutError:
-                if True: # attempts < 5:
+                if True:  # attempts < 5:
                     attempts += 1
                     time.sleep(pause)
                     pause *= 2
@@ -316,16 +326,16 @@ class FilmScanner:
         self.fast_forward_started_event.clear()
         self.fast_forward_executor.submit(self.fast_forward, n=n)
         self.fast_forward_started_event.wait()
-    
+
     def stop_fast_forward(self):
         """
-        Stop a fast-forwarding. When called, the scanner will stop at the next frame. This method 
+        Stop a fast-forwarding. When called, the scanner will stop at the next frame. This method
         returns only when the fast-forwarding has actually been stopped.
         """
         self.fast_forward_stopped_event.clear()
         self.fast_forward_stop_requested = True
         self.fast_forward_stopped_event.wait()
-            
+
     def fast_forward(self, n=None):
         """
         Fast-forward a given number of frames or until stopped.
@@ -352,11 +362,11 @@ class FilmScanner:
                     logger.debug("Stopping fast-forwarding early")
                     self.scan_stop_requested = False
                     break
-        
+
         self.is_fast_forwarding = False
         self.fast_forward_stopped_event.set()
         self.callback.on_fast_forward_end()
-            
+
     def capture_frame(self):
         """
         Capture the current frame.
@@ -367,7 +377,7 @@ class FilmScanner:
             JPEG encoded image with raw bayer data appended.
         """
         self.camera.shutter_speed = int(1e6 * 1 / 250)
-        
+
         buffer = BytesIO()
         self.camera.capture(buffer, format="jpeg", bayer=True)
 
@@ -375,7 +385,7 @@ class FilmScanner:
         frame = buffer.read()
 
         return frame
-    
+
     def save_frame(self, frame, filepath):
         """
         Save a frame to a the given path.
@@ -386,16 +396,16 @@ class FilmScanner:
             Frame to save encoded as bytes.
         filepath : str
             Path to save the frame to.
-        """  
+        """
         with open(filepath, "wb") as f:
             f.write(frame)
 
         logger.debug(f"Saved {filepath}")
-    
+
     @property
     def is_light_on(self):
         return self.light.is_on
-    
+
     def turn_on_light(self):
         """
         Turn on the scanner's light.
@@ -405,7 +415,7 @@ class FilmScanner:
         """
         self.light.turn_on()
         self.callback.on_light_on()
-    
+
     def turn_off_light(self):
         """
         Turn off the scanner's light.
@@ -415,7 +425,7 @@ class FilmScanner:
         """
         self.light.turn_off()
         self.callback.on_light_off()
-    
+
     def toggle_light(self):
         """
         Toggle the scanner's light.
@@ -427,11 +437,11 @@ class FilmScanner:
             self.turn_off_light()
         else:
             self.turn_on_light()
-    
+
     def start_logging_to_output_directory(self):
         """
         Start logging to `scan.log` file in the current output directory.
-        
+
         Parameters
         ----------
         directory : str
@@ -446,32 +456,40 @@ class FilmScanner:
         self.scan_logging_handler.setFormatter(formatter)
 
         logger.addHandler(self.scan_logging_handler)
-    
+
     def stop_logging_to_output_directory(self):
         """
         Stop logging to `scan.log` file in the current output directory.
         """
         if hasattr(self, "scan_logging_handler"):
             logger.removeHandler(self.scan_logging_handler)
-    
+
     @property
     def preview_frame(self):
         return self._preview_frame
-    
+
     @preview_frame.setter
     def preview_frame(self, value):
         self._preview_frame = value
 
         self.prune_viewers()
         self.notify_viewers()
-    
+
     def prune_viewers(self):
         """
         Remove viewers that did not retreive the frame for longer than a threshold time.
         """
         now = datetime.now()
-        self.viewers = [viewer for viewer in self.viewers if now - viewer.last_access < timedelta(minutes=1)]
-        if not self.viewers and self.is_liveview_active and not self.liveview_stop_requested:
+        self.viewers = [
+            viewer
+            for viewer in self.viewers
+            if now - viewer.last_access < timedelta(minutes=1)
+        ]
+        if (
+            not self.viewers
+            and self.is_liveview_active
+            and not self.liveview_stop_requested
+        ):
             # TODO This could cause a race condition if a new viewer is added here (?)
             self.stop_liveview(blocking=False)
 
@@ -481,7 +499,7 @@ class FilmScanner:
         """
         for viewer in self.viewers:
             viewer.notify()
-    
+
     def start_liveview(self):
         """
         Start a liveview to fill the preview frames.
@@ -492,7 +510,7 @@ class FilmScanner:
         self.liveview_started_event.clear()
         self.liveview_executor.submit(self.liveview)
         self.liveview_started_event.wait()
-    
+
     def stop_liveview(self, blocking=True):
         """
         Stop the liveview from writing the preview frames.
@@ -508,7 +526,7 @@ class FilmScanner:
         self.liveview_stop_requested = True
         if blocking:
             self.liveview_stopped_event.wait()
-    
+
     def liveview(self):
         """
         Livewview function writing preview frames.
@@ -520,8 +538,10 @@ class FilmScanner:
 
         self.camera.resolution = (800, 600)
         self.turn_on_light()
-        
-        for _ in self.camera.capture_continuous(buffer, format="jpeg", use_video_port=True):
+
+        for _ in self.camera.capture_continuous(
+            buffer, format="jpeg", use_video_port=True
+        ):
             # TODO: Hack!
             self.camera.shutter_speed = int(1e6 * 1 / 100)
 
@@ -548,12 +568,12 @@ class FilmScanner:
 
             if self.liveview_stop_requested:
                 break
-        
+
         if not self.is_scanning:
             self.turn_off_light()
         self.is_liveview_active = False
         self.liveview_stopped_event.set()
-            
+
     def preview(self):
         """
         Add a preview viewer and get its view.
@@ -571,12 +591,12 @@ class FilmScanner:
         self.viewers.append(viewer)
 
         return viewer.view()
-    
+
     def toggle_zoom(self):
         self.zoom_toggled_event.clear()
         self.live_view_zoom_toggle_requested = True
         self.zoom_toggled_event.wait()
-    
+
     def poweroff(self):
         """
         Turn the sanner off.
@@ -585,35 +605,35 @@ class FilmScanner:
             self.stop_scan()
         if self.is_liveview_active:
             self.stop_liveview()
-        
+
         logger.info("Powering off")
         os.system("sudo poweroff")
 
     @property
     def last_scan_end_info(self):
         return self._last_scan_end_info
-    
+
     @last_scan_end_info.setter
     def last_scan_end_info(self, value):
         self._last_scan_end_info = value
         self.callback.on_last_scan_end_info_change()
-    
+
     @property
     def is_advance_allowed(self):
         return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
-    
+
     @property
     def is_fast_forward_allowed(self):
         return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
-    
+
     @property
     def is_light_toggle_allowed(self):
         return not self.is_scanning
-    
+
     @property
     def is_zoom_toggle_allowed(self):
         return not self.is_scanning
-    
+
     @property
     def is_scanning_allowed(self):
         return not (self.is_advancing or self.is_fast_forwarding or self.is_scanning)
@@ -625,9 +645,11 @@ class AdvanceTimeoutError(Exception):
     one of two possible causes: (A) The magnet passed the Hall effect sensor undetected. (B) The
     motor skipped steps, for example because it got stuck.
     """
+
     def __init__(self):
         super().__init__(
-            "Frame sensor not reached in time. It was either missed, or the motor got stuck.")
+            "Frame sensor not reached in time. It was either missed, or the motor got stuck."
+        )
 
 
 class HallEffectSensor:
@@ -638,7 +660,7 @@ class HallEffectSensor:
     ----------
     input_pin : int
         Broadcom number of the GPIO header pin receiving a digital signal from the sensor.
-    
+
     Attributes
     ---------
     is_armed : bool
@@ -648,12 +670,12 @@ class HallEffectSensor:
 
     def __init__(self, input_pin):
         self.input_pin = input_pin
-        
+
         self.pi = pigpio.pi()
         self.pi.set_mode(self.input_pin, pigpio.INPUT)
-        
+
         self.is_armed = False
-    
+
     def wait_for_trigger(self, timeout=None):
         frame_detected_event = Event()
         frame_detected_event.clear()
@@ -665,7 +687,7 @@ class HallEffectSensor:
             self.disarm()
 
         return has_detected
-    
+
     def arm(self, user_callback):
         """
         Setup the sensor to run a callback function whenever the Hall effect is detected.
@@ -679,12 +701,14 @@ class HallEffectSensor:
         assert not self.is_armed, "Cannot arm armed Hall Effect sensor!"
         self.is_armed = True
         self.callback = partial(self.sensor_callback, user_callback)
-        self.pigpio_callback = self.pi.callback(self.input_pin, pigpio.RISING_EDGE, self.detect)
-    
+        self.pigpio_callback = self.pi.callback(
+            self.input_pin, pigpio.RISING_EDGE, self.detect
+        )
+
     def sensor_callback(self, user_callback):
         self.disarm()
         user_callback()
-    
+
     def disarm(self):
         """
         Stop calling the callback function when the Hall effect is detected.
@@ -709,35 +733,35 @@ class Light:
     ----------
     switch_pin : int
         Broadcom number of the GPIO header pin used to turn the light on and off.
-    
+
     Attributes
     ---------
     is_on : bool
         Flag representing the light's state, `True` when the light is on and `False` when it is off.
     """
-    
+
     def __init__(self, switch_pin):
         self.switch_pin = switch_pin
 
         self.pi = pigpio.pi()
         self.pi.set_mode(self.switch_pin, pigpio.OUTPUT)
-        
+
         self.turn_off()
-    
+
     def turn_on(self):
         """
         Turn the light on.
         """
         self.pi.write(self.switch_pin, 0)
         self.is_on = True
-    
+
     def turn_off(self):
         """
         Turn the light off.
         """
         self.pi.write(self.switch_pin, 1)
         self.is_on = False
-    
+
     def toggle(self):
         """
         Toggle the light between on and off.
@@ -760,7 +784,7 @@ class StepperMotor:
         Broadcom number of the GPIO header pin connected to the stepper driver's `DIR` input.
     step_pin : int
         Broadcom number of the GPIO header pin connected to the stepper driver's `STEP` input.
-    
+
     Attributes
     ---------
     is_enabled : bool
@@ -786,24 +810,24 @@ class StepperMotor:
         self.disable()
         self.direction = 0  # Set direction counter-clockwise
         self.speed = 0
-    
+
     def __del__(self):
         self.pi.wave_clear()
-    
+
     def enable(self):
         """
         Enable the stepper motor (and its holding force as well as ability to step).
         """
         self.pi.write(self.enable_pin, 0)
         self.is_enabled = True
-    
+
     def disable(self):
         """
         Disable the stepper motor (and its holding force as well as ability to step).
         """
         self.pi.write(self.enable_pin, 1)
         self.is_enabled = False
-    
+
     @property
     def direction(self):
         return self._direction
@@ -851,13 +875,13 @@ class StepperMotor:
 
         ramp = self.make_ramp(pwm_frequency, -pwm_deceleration)
         self.send_ramp(ramp)
-    
+
     def rpm2hz(self, rpm):
         """
         Convert RPM to PWM frequency in Hz for this particular stepper motor.
         """
         return self.STEPS_PER_ROUND * rpm / 60
-    
+
     def make_ramp(self, target_frequency, acceleration, stay=0):
         """
         Make list of `(frequency, step)` pairs to ramp up the motor and stay at the target speed
@@ -867,12 +891,12 @@ class StepperMotor:
         if not frequencies:
             frequencies = [self.PWM_FREQUENCIES[0]]
 
-        ramp = [(speed, int(speed/abs(acceleration))) for speed in frequencies[:-1]]
+        ramp = [(speed, int(speed / abs(acceleration))) for speed in frequencies[:-1]]
         if stay > 0:
             ramp.append((frequencies[-1], stay))
-        
+
         return ramp if acceleration > 0 else list(reversed(ramp))
-    
+
     def send_ramp(self, ramp):
         """
         Send wave chain that describes list of `(frequency, step)` pairs to step pin.
@@ -886,17 +910,17 @@ class StepperMotor:
             frequency = ramp[i][0]
             micros = int(5e5 / frequency)
             wf = []
-            wf.append(pigpio.pulse(1<<self.step_pin, 0, micros))    # Pulse on
-            wf.append(pigpio.pulse(0, 1<<self.step_pin, micros))    # Pulse off
+            wf.append(pigpio.pulse(1 << self.step_pin, 0, micros))  # Pulse on
+            wf.append(pigpio.pulse(0, 1 << self.step_pin, micros))  # Pulse off
             self.pi.wave_add_generic(wf)
             wid[i] = self.pi.wave_create()
-        
+
         # Generate chain of waves
         chain = []
         for i in range(length):
-            steps= ramp[i][1]
+            steps = ramp[i][1]
             x = steps & 255
             y = steps >> 8
             chain += [255, 0, wid[i], 255, 1, x, y]
-        
-        self.pi.wave_chain(chain)   # Transmit chain of wave forms
+
+        self.pi.wave_chain(chain)  # Transmit chain of wave forms

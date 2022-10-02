@@ -1,22 +1,22 @@
 import smtplib
 from email.message import EmailMessage
+
 import yaml
 
 from utils import BaseCallback
 
 
 class EmailNotifier:
-
     def __init__(self):
         with open("notification_config.yaml", "r") as config_file:
             config = yaml.safe_load(config_file)
-        
+
         self.to = config["to"]
         self.user = config["user"]
         self.password = config["password"]
 
         self.sender = f"Jan's Film Scanner <{self.user}>"
-    
+
     def send(self, text):
         """Send an e-mail notification to the configured address with `text` as the message."""
         message = EmailMessage()
@@ -37,6 +37,6 @@ class MailCallback(BaseCallback):
 
     def __init__(self):
         self.notifier = EmailNotifier()
-    
+
     def on_scan_end(self):
         self.notifier.send(f"Finished scanning {self.scanner.n_frames} frames!")

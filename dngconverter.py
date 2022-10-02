@@ -1,7 +1,7 @@
 import argparse
-from concurrent.futures import ThreadPoolExecutor, wait
 import glob
 import os
+from concurrent.futures import ThreadPoolExecutor, wait
 
 from pidng.core import RPICAM2DNG
 
@@ -17,7 +17,9 @@ def bayerjpg2dng(filepath, delete=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert Raspberry Pi Bayer JPEGs to DNGs.")
+    parser = argparse.ArgumentParser(
+        description="Convert Raspberry Pi Bayer JPEGs to DNGs."
+    )
     parser.add_argument("directory", help="Directory with the JPEG files")
     parser.add_argument("--delete", action="store_true")
     args = parser.parse_args()
@@ -25,8 +27,10 @@ def main():
     filepaths = glob.glob(f"{args.directory}/frame-*.jpg")
 
     executor = ThreadPoolExecutor()
-    
-    futures = [executor.submit(bayerjpg2dng, path, delete=args.delete) for path in filepaths]
+
+    futures = [
+        executor.submit(bayerjpg2dng, path, delete=args.delete) for path in filepaths
+    ]
     wait(futures)
 
 

@@ -4,13 +4,12 @@ from filmscanner import FilmScanner
 from notification import MailCallback
 from utils import DashboardCallback
 
-
 app = Flask(__name__, static_folder="frontend/build", static_url_path="/")
 
 dashboard_callback = DashboardCallback()
 mail_callback = MailCallback()
 
-scanner = FilmScanner(callback=[dashboard_callback,mail_callback])
+scanner = FilmScanner(callback=[dashboard_callback, mail_callback])
 scanner.camera.resolution = (800, 600)  # TODO Does this need to be here?
 
 
@@ -75,8 +74,11 @@ def poweroff():
 def preview():
     def generate():
         for frame in scanner.preview():
-            yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n" 
-    return app.response_class(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+            yield b"--frame\r\n" + b"ContentType: image/jpeg\r\n\r\n" + frame + b"\r\n\r\n"
+
+    return app.response_class(
+        generate(), mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
 
 
 @app.route("/backend/scan", methods=("POST",))
@@ -84,11 +86,12 @@ def scan():
     if not scanner.is_scanning and scanner.is_scanning_allowed:
         scanner.start_scan(
             output_directory=request.get_json()["output_directory"],
-            n_frames=int(request.get_json()["n_frames"])
+            n_frames=int(request.get_json()["n_frames"]),
         )
     elif scanner.is_scanning:
         scanner.stop_scan()
     return "", 204
+
 
 @app.route("/backend/scan-setup")
 def scan_setup():
