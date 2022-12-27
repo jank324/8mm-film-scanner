@@ -1,19 +1,18 @@
 import argparse
-import glob
-import os
 from concurrent.futures import ThreadPoolExecutor, wait
+from pathlib import Path
 
 from pidng.core import RPICAM2DNG
 
 
-def bayerjpg2dng(filepath, delete=False):
+def bayerjpg2dng(filepath: Path, delete: bool = False) -> None:
     print(f"Converting {filepath}")
 
     d = RPICAM2DNG()
-    d.convert(filepath)
+    d.convert(str(filepath))
 
     if delete:
-        os.remove(filepath)
+        filepath.unlink()
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -29,13 +28,13 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main():
+def main() -> None:
     args = parse_arguments()
 
-    filepaths = glob.glob(f"{args.directory}/frame-*.jpg")
+    directory = Path(args.directory)
+    filepaths = directory.glob("frame-*.jpg")
 
     executor = ThreadPoolExecutor()
-
     futures = [
         executor.submit(bayerjpg2dng, path, delete=args.delete) for path in filepaths
     ]
