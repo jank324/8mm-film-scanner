@@ -6,6 +6,10 @@ from pidng.core import RPICAM2DNG
 
 
 def bayerjpg2dng(filepath: Path, delete: bool = False) -> None:
+    """
+    Convert a the file at `filepath` to a `.dng` file. Deletes the old file if `delete`
+    is set to `True`.
+    """
     print(f"Converting {filepath}")
 
     d = RPICAM2DNG()
