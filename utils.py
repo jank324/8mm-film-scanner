@@ -62,9 +62,9 @@ class SSEMessenger:
 
 class BaseCallback:
     """
-    Base class of callbacks for `FilmScanner` objects. Inherit from this class and overwrite one of
-    its methods to react to the corresponding event. Access the `FilmScanner` class a callback is
-    connected to via `self.scanner`.
+    Base class of callbacks for `FilmScanner` objects. Inherit from this class and
+    overwrite one of its methods to react to the corresponding event. Access the
+    `FilmScanner` class a callback is connected to via `self.scanner`.
     """
 
     def __init__(self):
@@ -216,8 +216,8 @@ class CallbackList(BaseCallback):
 
 class SSESendingCallback(BaseCallback):
     """
-    Callback that reacts to events on the `FilmScanner` object by sending server-sent events which
-    can be subscribed to.
+    Callback that reacts to events on the `FilmScanner` object by sending server-sent
+    events which can be subscribed to.
     """
 
     def __init__(self):
@@ -329,8 +329,9 @@ class DashboardCallback(SSESendingCallback):
         dt = t_now - self.t_last
         self.t_last = t_now
 
-        # On the first update of time remaining don't add dt to dts because it measures the duration
-        # of the scan initialisation and therefore throws off the time remaining estimate.
+        # On the first update of time remaining don't add dt to dts because it measures
+        # the duration of the scan initialisation and therefore throws off the time
+        # remaining estimate.
         if self.is_time_remaining_first_update:
             self.is_time_remaining_first_update = False
             return
@@ -363,8 +364,8 @@ class Viewer:
 
     def view(self):
         """
-        Generator that yields preview frames when this viewer is notified (that a new one is
-        available).
+        Generator that yields preview frames when this viewer is notified (that a new
+        one is available).
         """
         while True:
             self.event.wait()

@@ -25,11 +25,15 @@ logger.addHandler(stream_handler)
 
 
 class FilmScanner:
+    """Class representing the 8mm film scanner and its scanning functionalities."""
+
     def __init__(self, callback=BaseCallback()):
         self.callback = BaseCallback()  # Placeholder until object is fully initialised
 
-        # The command `pigs t` will return 0 if the pigpio daemon is running 65280 otherwise.
-        # Therefore, check if 0 is returned and automatically start the daemon if it is not running.
+        # The command `pigs t` will return 0 if the pigpio daemon is running 65280
+        # otherwise.
+        # Therefore, check if 0 is returned and automatically start the daemon if it is
+        # not running.
         # `/dev/null 2>&1` diverts stdout and stderr to not be printed to the terminal.
         if os.system("pigs t > /dev/null 2>&1"):
             os.system("sudo pigpiod -t 0")
@@ -128,8 +132,9 @@ class FilmScanner:
 
     def stop_scan(self):
         """
-        Stop a scan prematurely. When called, the scanner will stop once the current frame finished
-        scanning. This method returns only when the scan has actually been stopped.
+        Stop a scan prematurely. When called, the scanner will stop once the current
+        frame finished scanning. This method returns only when the scan has actually
+        been stopped.
         """
         logger.info("Stopping scan")
         self.scan_stopped_event.clear()
@@ -154,16 +159,17 @@ class FilmScanner:
         Parameters
         ----------
         output_directory : string
-            Directory that frames will be saved to. If the given directory does not exist, it will
-            be created automatically.
+            Directory that frames will be saved to. If the given directory does not
+            exist, it will be created automatically.
         n_frames : int
-            Number of frames on the reel. Try to figure out how much frames are in the reel you wish
-            to scan and then add some frames for safety. A 15m (50 foot) reel has about 3600 frames,
-            so to be save it it recommned to scan 3800 frames. Note that the actual number of frames scanned
-            is `n_frames - start_index`.
+            Number of frames on the reel. Try to figure out how much frames are in the
+            reel you wish to scan and then add some frames for safety. A 15m (50 foot)
+            reel has about 3600 frames, so to be save it it recommned to scan 3800
+            frames. Note that the actual number of frames scanned is
+            `n_frames - start_index`.
         start_index: int, optional
-            Frame index at which to start scanning if you are not scanning from the beginning.
-            Reduces the number of frames scanning.
+            Frame index at which to start scanning if you are not scanning from the
+            beginning. Reduces the number of frames scanning.
         """
         self.last_scan_end_info = "dismissed"
         self.scan_started_event.set()
@@ -230,7 +236,8 @@ class FilmScanner:
 
     def wait_for_previous_save(self):
         """
-        If a frame is currently being saved, blocks until that save operation has finished.
+        If a frame is currently being saved, blocks until that save operation has
+        finished.
         """
         # Wait for previous image to be saved if there was one
         if hasattr(self, "write_future"):
@@ -238,9 +245,9 @@ class FilmScanner:
 
     def submit_save_frame(self, frame, filepath):
         """
-        Submit a frame for saving. Returns immediately while the frame is saved concurrently. Use
-        `wait for previous save` to block until saving is finished. The arguments are the same as
-        those of `save_frame`.
+        Submit a frame for saving. Returns immediately while the frame is saved
+        concurrently. Use `wait for previous save` to block until saving is finished.
+        The arguments are the same as those of `save_frame`.
         """
         self.write_future = self.write_executor.submit(self.save_frame, frame, filepath)
 
@@ -251,7 +258,8 @@ class FilmScanner:
         Parameters
         ----------
         recover : bool
-            Set `true` to attempt to recevor the scanner when an error occurs during the advance.
+            Set `true` to attempt to recevor the scanner when an error occurs during the
+            advance.
         """
         self.is_advancing = True
         self.callback.on_advance_start()
@@ -329,8 +337,8 @@ class FilmScanner:
 
     def stop_fast_forward(self):
         """
-        Stop a fast-forwarding. When called, the scanner will stop at the next frame. This method
-        returns only when the fast-forwarding has actually been stopped.
+        Stop a fast-forwarding. When called, the scanner will stop at the next frame.
+        This method returns only when the fast-forwarding has actually been stopped.
         """
         self.fast_forward_stopped_event.clear()
         self.fast_forward_stop_requested = True
@@ -410,8 +418,8 @@ class FilmScanner:
         """
         Turn on the scanner's light.
 
-        NOTE: Call this method instead of calling the light object directly in order to make sure
-        that the callback is called.
+        NOTE: Call this method instead of calling the light object directly in order to
+        make sure that the callback is called.
         """
         self.light.turn_on()
         self.callback.on_light_on()
@@ -420,8 +428,8 @@ class FilmScanner:
         """
         Turn off the scanner's light.
 
-        NOTE: Call this method instead of calling the light object directly in order to make sure
-        that the callback is called.
+        NOTE: Call this method instead of calling the light object directly in order to
+        make sure that the callback is called.
         """
         self.light.turn_off()
         self.callback.on_light_off()
@@ -430,8 +438,8 @@ class FilmScanner:
         """
         Toggle the scanner's light.
 
-        NOTE: Call this method instead of calling the light directly in order to make sure that
-        the callback is called.
+        NOTE: Call this method instead of calling the light directly in order to make
+        sure that the callback is called.
         """
         if self.light.is_on:
             self.turn_off_light()
@@ -518,8 +526,8 @@ class FilmScanner:
         Parameters
         ----------
         blocking : boolean, optional
-            When set to `True`, block until liveview is actually stopped, otherwise return
-            immediately.
+            When set to `True`, block until liveview is actually stopped, otherwise
+            return immediately.
         """
         logger.debug("Requesting liveview stop")
         self.liveview_stopped_event.clear()
@@ -641,9 +649,9 @@ class FilmScanner:
 
 class AdvanceTimeoutError(Exception):
     """
-    Raised when the the frame sensor was not reached within some threshold time. This may have
-    one of two possible causes: (A) The magnet passed the Hall effect sensor undetected. (B) The
-    motor skipped steps, for example because it got stuck.
+    Raised when the the frame sensor was not reached within some threshold time. This
+    may have one of two possible causes: (A) The magnet passed the Hall effect sensor
+    undetected. (B) The motor skipped steps, for example because it got stuck.
     """
 
     def __init__(self):
@@ -659,13 +667,14 @@ class HallEffectSensor:
     Parameters
     ----------
     input_pin : int
-        Broadcom number of the GPIO header pin receiving a digital signal from the sensor.
+        Broadcom number of the GPIO header pin receiving a digital signal from the
+        sensor.
 
     Attributes
     ---------
     is_armed : bool
-        Flag set to true when the sensor is armed, i.e. setup to call a callback function whenever
-        the Hall effect is detected.
+        Flag set to true when the sensor is armed, i.e. setup to call a callback
+        function whenever the Hall effect is detected.
     """
 
     def __init__(self, input_pin):
@@ -690,13 +699,14 @@ class HallEffectSensor:
 
     def arm(self, user_callback):
         """
-        Setup the sensor to run a callback function whenever the Hall effect is detected.
+        Setup the sensor to run a callback function whenever the Hall effect is
+        detected.
 
         Parameters
         ----------
         callback : function
-            Callback function that is called everytime the sensor detects the Hall effect. The
-            function should receive no parameters nor return anything.
+            Callback function that is called everytime the sensor detects the Hall
+            effect. The function should receive no parameters nor return anything.
         """
         assert not self.is_armed, "Cannot arm armed Hall Effect sensor!"
         self.is_armed = True
@@ -737,7 +747,8 @@ class Light:
     Attributes
     ---------
     is_on : bool
-        Flag representing the light's state, `True` when the light is on and `False` when it is off.
+        Flag representing the light's state, `True` when the light is on and `False`
+        when it is off.
     """
 
     def __init__(self, switch_pin):
@@ -779,17 +790,20 @@ class StepperMotor:
     Parameters
     ----------
     enable_pin : int
-        Broadcom number of the GPIO header pin connected to the stepper driver's `SLEEP` input.
+        Broadcom number of the GPIO header pin connected to the stepper driver's `SLEEP`
+        input.
     direction_pin : int
-        Broadcom number of the GPIO header pin connected to the stepper driver's `DIR` input.
+        Broadcom number of the GPIO header pin connected to the stepper driver's `DIR`
+        input.
     step_pin : int
-        Broadcom number of the GPIO header pin connected to the stepper driver's `STEP` input.
+        Broadcom number of the GPIO header pin connected to the stepper driver's `STEP`
+        input.
 
     Attributes
     ---------
     is_enabled : bool
-        Enable status of the motor. The motor must be enabled to provide a holding force or be able
-        to run.
+        Enable status of the motor. The motor must be enabled to provide a holding force
+        or be able to run.
     speed : int
         Current speed of the motor in RPM.
     """
@@ -844,9 +858,11 @@ class StepperMotor:
         Parameters
         ----------
         speed : int, optional
-            Desired target speed to run at in RPM. The achieved motor speed may be slightly slower.
+            Desired target speed to run at in RPM. The achieved motor speed may be
+            slightly slower.
         acceleration : int, optional
-            Acceleration with which to approach the target speed in `rounds / (minute * second)`.
+            Acceleration with which to approach the target speed in
+            `rounds / (minute * second)`.
         """
 
         assert self.is_enabled, "Cannot start a disabled stepper motor!"
@@ -884,8 +900,8 @@ class StepperMotor:
 
     def make_ramp(self, target_frequency, acceleration, stay=0):
         """
-        Make list of `(frequency, step)` pairs to ramp up the motor and stay at the target speed
-        for `stay` steps.
+        Make list of `(frequency, step)` pairs to ramp up the motor and stay at the
+        target speed for `stay` steps.
         """
         frequencies = [f for f in self.PWM_FREQUENCIES if f <= target_frequency]
         if not frequencies:

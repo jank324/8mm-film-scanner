@@ -18,7 +18,10 @@ class EmailNotifier:
         self.sender = f"Jan's Film Scanner <{self.user}>"
 
     def send(self, text):
-        """Send an e-mail notification to the configured address with `text` as the message."""
+        """
+        Send an e-mail notification to the configured address with `text` as the
+        message.
+        """
         message = EmailMessage()
         message.set_content("")
         message["to"] = self.to
