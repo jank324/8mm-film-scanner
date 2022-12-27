@@ -21,9 +21,18 @@ def bayerjpg2dng(jpg_path: Path, delete: bool = False) -> None:
         jpg_path.unlink()
 
 
-def validate_file(path: Path, min_bytes: int = 1) -> bool:
+def validate_file(path: Path, min_bytes: int = 1) -> None:
     """Check if file exists and has a file size larger than `min_bytes`."""
-    return path.is_file() and path.stat().st_size > min_bytes
+    is_valid = path.is_file() and path.stat().st_size > min_bytes
+    if not is_valid:
+        raise InvalidFileException(path)
+
+
+class InvalidFileException(Exception):
+    """Exception raised when a file was found to be invalid."""
+
+    def __init__(self, filepath: Path) -> None:
+        super().__init__(f'File "{filepath}" is invalid.')
 
 
 def parse_arguments() -> argparse.Namespace:
