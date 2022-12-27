@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 def bayerjpg2dng(jpg_path: Path, delete: bool = False) -> None:
     """
-    Convert a the file at `filepath` to a `.dng` file. Deletes the old file if `delete`
+    Convert a the file at `jpg_path` to a `.dng` file. Deletes the old file if `delete`
     is set to `True`.
     """
     d = RPICAM2DNG()
