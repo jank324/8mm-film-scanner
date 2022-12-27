@@ -7,7 +7,11 @@ from utils import BaseCallback
 
 
 class EmailNotifier:
-    def __init__(self):
+    """
+    Convenience class to send e-mail notifications in a preconfigured e-mail template.
+    """
+
+    def __init__(self) -> None:
         with open("notification_config.yaml", "r") as config_file:
             config = yaml.safe_load(config_file)
 
@@ -17,7 +21,7 @@ class EmailNotifier:
 
         self.sender = f"Jan's Film Scanner <{self.user}>"
 
-    def send(self, text):
+    def send(self, text: str) -> None:
         """
         Send an e-mail notification to the configured address with `text` as the
         message.
@@ -38,8 +42,8 @@ class EmailNotifier:
 class MailCallback(BaseCallback):
     """Callback for sending an e-mail notification when a scan finished."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.notifier = EmailNotifier()
 
-    def on_scan_end(self):
+    def on_scan_end(self) -> None:
         self.notifier.send(f"Finished scanning {self.scanner.n_frames} frames!")
