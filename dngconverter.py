@@ -14,8 +14,16 @@ def bayerjpg2dng(filepath: Path, delete: bool = False) -> None:
     d = RPICAM2DNG()
     d.convert(str(filepath))
 
+    dng_path = filepath.parent / (filepath.name + ".dng")
+    validate_file(dng_path, min_bytes=int(1e6))
+
     if delete:
         filepath.unlink()
+
+
+def validate_file(path: Path, min_bytes: int = 1) -> bool:
+    """Check if file exists and has a file size larger than `min_bytes`."""
+    return path.is_file() and path.stat().st_size > min_bytes
 
 
 def parse_arguments() -> argparse.Namespace:
