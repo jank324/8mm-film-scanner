@@ -1,5 +1,5 @@
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 from pidng.core import RPICAM2DNG
@@ -38,7 +38,7 @@ def main() -> None:
     filepaths = list(directory.glob("frame-*.jpg"))
 
     with tqdm(total=len(filepaths)) as pbar:
-        executor = ThreadPoolExecutor()
+        executor = ProcessPoolExecutor(max_workers=2)
         futures = [
             executor.submit(bayerjpg2dng, path, delete=args.delete)
             for path in filepaths
