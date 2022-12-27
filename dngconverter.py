@@ -6,19 +6,19 @@ from pidng.core import RPICAM2DNG
 from tqdm import tqdm
 
 
-def bayerjpg2dng(filepath: Path, delete: bool = False) -> None:
+def bayerjpg2dng(jpg_path: Path, delete: bool = False) -> None:
     """
     Convert a the file at `filepath` to a `.dng` file. Deletes the old file if `delete`
     is set to `True`.
     """
     d = RPICAM2DNG()
-    d.convert(str(filepath))
+    d.convert(str(jpg_path))
 
-    dng_path = filepath.parent / (filepath.name + ".dng")
+    dng_path = jpg_path.parent / (jpg_path.name + ".dng")
     validate_file(dng_path, min_bytes=int(1e6))
 
     if delete:
-        filepath.unlink()
+        jpg_path.unlink()
 
 
 def validate_file(path: Path, min_bytes: int = 1) -> bool:
