@@ -1,8 +1,9 @@
 import argparse
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from pidng.core import RPICAM2DNG
+from tqdm import tqdm
 
 
 def bayerjpg2dng(filepath: Path, delete: bool = False) -> None:
@@ -10,8 +11,6 @@ def bayerjpg2dng(filepath: Path, delete: bool = False) -> None:
     Convert a the file at `filepath` to a `.dng` file. Deletes the old file if `delete`
     is set to `True`.
     """
-    print(f"Converting {filepath}")
-
     d = RPICAM2DNG()
     d.convert(str(filepath))
 
@@ -36,13 +35,16 @@ def main() -> None:
     args = parse_arguments()
 
     directory = Path(args.directory)
-    filepaths = directory.glob("frame-*.jpg")
+    filepaths = list(directory.glob("frame-*.jpg"))
 
-    executor = ThreadPoolExecutor()
-    futures = [
-        executor.submit(bayerjpg2dng, path, delete=args.delete) for path in filepaths
-    ]
-    wait(futures)
+    with tqdm(total=len(filepaths)) as pbar:
+        executor = ThreadPoolExecutor()
+        futures = [
+            executor.submit(bayerjpg2dng, path, delete=args.delete)
+            for path in filepaths
+        ]
+        for _ in as_completed(futures):
+            pbar.update()
 
 
 if __name__ == "__main__":
