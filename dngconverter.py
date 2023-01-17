@@ -14,7 +14,7 @@ def bayerjpg2dng(jpg_path: Path, delete: bool = False) -> None:
     d = RPICAM2DNG()
     d.convert(str(jpg_path))
 
-    dng_path = jpg_path.parent / (jpg_path.name + ".dng")
+    dng_path = jpg_path.with_suffix(".dng")
     validate_file(dng_path, min_bytes=int(1e6))
 
     if delete:
@@ -60,7 +60,8 @@ def main() -> None:
             executor.submit(bayerjpg2dng, path, delete=args.delete)
             for path in filepaths
         ]
-        for _ in as_completed(futures):
+        for future in as_completed(futures):
+            _ = future.result()
             pbar.update()
 
 
