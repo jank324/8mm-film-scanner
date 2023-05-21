@@ -51,8 +51,6 @@ TODO Replace with nicer photo
 TODO Just an example video
 <iframe width="560" height="315" src="https://www.youtube.com/embed/dQVIjNfx9Is" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-![Bonanza](https://www.bonanza.org/globalassets/photos/homepage-hero/leone4.jpg)
-
 The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code necessary to build another one.
 
 
