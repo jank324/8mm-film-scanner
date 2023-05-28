@@ -44,8 +44,8 @@ Some of the features of this scanner include:
  - Up to TODO resolution (though 2K is recommended)
  - Scanning independent from a computer, allowing for unattended scans
  - RAW scanning workflow
- - Support for up two TODO m (TODO feet) reels
- - An easy-to-use web interface (with light and dark modes)
+ - Support for up two 120 m (400 feet) reels
+ - An easy-to-use web interface (with a mobile version as well as light and dark modes)
  - Once-piece design that takes no time to set up or stow away
 
 Below you find ...
@@ -94,23 +94,28 @@ The original halogen bulb of the projector is replaced with an LED light bulb. D
 
 #### Camera
 
-The scanner uses a *Raspberry Pi HQ Camera* to capture the frames on the film. This model was chosen because it is easy to use on the Raspberry Pi, the image quality is more than adequate and the C-mount as well as its sensor size make it easy to adapt lenses and achieve the magnification required to have the small film frames fill the camera's sensor.
+The scanner uses the [*Raspberry Pi HQ Camera*](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/) to capture the frames on the film. This model was chosen because it is easy to use with the Raspberry Pi, the image quality is more than adequate and the C-mount as well as its sensor size make it easy to adapt lenses and achieve the magnification required to have the small film frames fill the camera's image sensor.
 
-The lens used is a Schneider-Kreuznach Componon-S 50mm enlarger lens. Today, enlarger lenses are widely available on the used market and well-suited to macro imaging applications. Enlarger lenses also usually have a very flat image plane, helping us avoid focus vignetting. The Componon-S in particular is a very good quality model and a popular choice in the film scanning community, but other similar enlarger lenses are just as well suited.
+The lens used is a *Schneider-Kreuznach Componon-S 50mm* enlarger lens. Today, enlarger lenses are widely available on the used market. They well-suited to macro imaging applications and usually have a very flat image plane, helping us avoid focus vignetting. The Componon-S in particular is a very good quality model and a popular choice in the film scanning community, but other similar enlarger lenses are just as well suited.
 
-The chosen lens has an M39 thread and needs to be adapted to the camera's C-mount. It also requires some distance to the sensor to achieve the enlargement required to make a Regular 8 or Super 8 frame fill the camera's sensor. As finding adapters directly from C-mount to M39 turned out to be rather difficult, I chose to adapt via M42-mount. This mount was widely used by Pentax in the 1960s and 70s, making adapters to other mounts as well as macro extension tubes very easy to find. The following components are used to adapt the enlarger lens to the HQ Camera (starting from the camera):
+The Componon-S has an M39 thread and therefore needs to be adapted to the camera's C-mount. It also needs to be mounted at some distance from the image sensor to achieve the enlargement required to make a Regular 8 or Super 8 frame fill the camera's sensor. As finding adapters directly from C-mount to M39 turned out to be rather difficult, I chose to adapt via M42-mount. This mount was widely used by Pentax in the 1960s and 70s, making adapters to other mounts as well as macro extension tubes very easy to find. The following components are used to adapt the enlarger lens to the HQ Camera (starting from the camera):
 
  - C-mount to M42 adapter
- - 19mm M42 extension tube
- - 26mm M42 extension tube
+ - 19 mm M42 extension tube
+ - 26 mm M42 extension tube
  - M42 to M39 adapter ring (screws into the inside of the M42 thread and is therefore not visible)
 
- The picture below shows the final camera assembly. Note that the M42-to-M39 adapter is not visible as it screws into the inside of the extension tube's thread before the lens is screwed in.
+The picture below shows the final camera assembly. Note that the M42-to-M39 adapter is not visible as it screws into the inside of the extension tube's thread before the lens is screwed in.
 
 ![Camera](images/camera.jpeg)
-% TODO photo of entire camera assembly
 
-Using the HQ Camera's tripod mount, the camera is mounted on a TODO macro slider that can be used to adjust focus. The macro slider itself is mounted to a wooden baseplate via a TODO screw. Four screws are used to mount the base plate to the main plate of the scanner. Using four pairs of nuts and washers, it is possible to adjust the height of the camera. The four wholes to mount the base plate are elongated in parallel to the film plane, allowing for horizontal adjustment of the camera position.
+Using the HQ Camera's tripod mount, the camera is mounted on a *MENGS W-160* macro slider that can be used to adjust focus. The same macro slider can often be found under different brands. The macro slider itself is mounted to a wooden baseplate with a [3/8-16x1 screw with a hex head](https://www.amazon.de/gp/product/B07JGWWSFK/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) that was shortened. Four  M6x50mm screws with hex heads are used to mount the base plate to the main plate of the scanner. Using four pairs of nuts and washers, it is possible to adjust the height of the camera. The four wholes to mount the base plate are elongated in parallel to the film plane, allowing for horizontal adjustment of the camera position. More details and measurements of this camera mount can be found in TODO.
+
+The lens is always used at an aperture of f4.7. This was found to be the aperture at which the lens is by far the sharpest and lets in the correct amount of light for the rest of the camera setup.
+
+The forward end of the lens is somewhere around 78 mm away from the film gate, but this has likely changed since as a result of focusing adjustments.
+
+I have published [further studies on the camera setup on the Kinograph forums](https://forums.kinograph.cc/t/reverse-mounting-schneider-componon-s-50-mm-on-c-cs-mount/1767/8?u=jankaiser).
 
 
 #### Electrical systems and wiring
