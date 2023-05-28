@@ -44,7 +44,9 @@ Some of the features of this scanner include:
  - Up to TODO resolution (though 2K is recommended)
  - Scanning independent from a computer, allowing for unattended scans
  - RAW scanning workflow
+ - Support for up two TODO m (TODO feet) reels
  - An easy-to-use web interface (with light and dark modes)
+ - Once-piece design that takes no time to set up or stow away
 
 Below you find ...
 
@@ -65,31 +67,29 @@ The rest of this README is intended as a documentation of every detail and lesso
 
 ## Detailed technical description
 
-This section will go over every technical detail of the *8mm Film Scanner*. The goal is to document everything necessary to rebuild the scanner some day far in the future without having to redo all the research I did.
+This section will go over technical details of the *8mm Film Scanner*. The goal is to document provide other (or even myself at some point in the future) with everything needed to rebuild the scanner without having to redo all the research I did.
 
 
 ### Hardware design
 
-TODO ...
+In this section, the hardware of the scanner is described. It will go over how the projector was converted to be a scanner, the camera sensor, lenses and mount, the electronics supplying power to and communication between the components as well as the base plate holding everything together.
 
 
 #### Projector conversion
 
-The scanner is built around a *Bolex 18-3 TC* dual gauge film projector. There is no is no particular reason why I used this projector other than that I was able to get it cheaply because it was sold as defective. I never tested the electrics of the projector but the film transport mechanism turned out to be in perfectly find condition, which is all I cared about for this project.
+The scanner is built around a *Bolex 18-3 TC* dual gauge film projector. There was no particular reason why I used this projector other than that I found a very cheap one sold as defective in the local ads. I never tested the electric components of the projector, but the film transport was in perfectly fine condition, which is all I cared about for this project.
 
-There do exist some almost identical models to this one by Bolex and Eumig, including the Bolex 18-3 Duo, Eumig 610 D, Eumig 605 D, Eumig 614 D and Revue Lux 3003.
+There are some almost identical models to this one by Bolex and Eumig, including the Bolex 18-3 Duo, Eumig 610 D, Eumig 605 D, Eumig 614 D and Revue Lux 3003. So, if you would like to follow along with this build, the conversion should be almost the same for these models. Other projectors, however, will also be just fine and look fairly similar.
 
-In order to convert the projector, I removed the power supply and the motor/fan assembly. In its place, I mounted an acrylic plate
-
-also remove lens
-
-mount stepper motor, motor driver hall effect sensor and magnet on aperture wheel
+In order to convert the projector, I removed the power supply and the motor/fan assembly from the left side of the housing. In its place, I mounted an acrylic base plate to mount new components to. A photo of the baseplate with its components is shown below. For this particular projector, a tensioning arm for the main drive chain was originally mounted to the motor/fan assembly. This was simply remounted on the base plate. Furthermore, a [Nema 17 1.5 A 12 V stepper motor](https://www.amazon.de/gp/product/B07KZQ77VH/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) was mounted using a right angle [mounting bracket](https://www.amazon.de/gp/product/B07CM3LZD1/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) designed for NEMA 17 stepper motors. A pulley is mounted to the shaft of the stepper motor. This pulley should match the belt shape and size of the projector, but it is possible to get away with mixing v-belts and a pulley for round belts (see below TODO). I've chosen [this pulley](https://www.amazon.de/gp/product/B07C4R3PGV/ref=ppx_yo_dt_b_asin_title_o05_s00?ie=UTF8&psc=1). Pulley needs to be aligned with the pulley on the projector's main drive shaft (in my case also the aperture wheel). The stepper motor needs to be mounted at the same distance to the drive shaft pulley, such that it maintains the same tension on the drive belt as the original motor did. It might also make sense to replace the belt with a new one. These are readily available online by searching for the projector's name. In addition to the stepper motor assembly, a [KY-024 Hall effect sensor](https://www.amazon.de/gp/product/B089QK1CHR/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) is mounted on the rear of the baseplate using a right-angle bracket. A small [5x1 mm Neodymium magnet](https://www.amazon.de/gp/product/B07T13H3R5/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) is mounted to the core of the aperture wheel. The hall effect sensor and the magnet need to be lined up. They are used to detect that the scanner has advanced one frame. Parts of the electronics are also mounted to the base plate, either using double sided tape or screws as appropriate. They are further described in section TODO.
 
 ![Projector internals](images/projector_internals.jpeg)
 
-<img src="images/lamphousing_internals.jpeg" align="center" width="80%"/>
+On the right side of the project, the original lens is remove. This allows the camera to take take photos of the film directly from the film gate. Furthermore, I removed a mask from the film gate in order to be able to capture a larger area of the original film frame. I did not drill out the film gate because I did not want to risk scratching the film, but this is certainly an option, if removing the mask does not reveal all of the frame. Neither removing the mask nor drilling out the gate is strictly required, but merely allows the scanner to capture more of the frame the would have been projected.
 
-Replace lamp with MR16 LED and place plexiglas sheet in front of it for diffusion
+The original halogen bulb of the projector is replaced with an LED light bulb. Doing so is critical because the film and likely some of the components of the projector would overheat otherwise. Replacing the bulb with an LED very easy on this and many other models of projector, as MR16 LED bulbs can be mounted without any modifications. The bulb should be at least CRI 90+ and produce about 270 lm at an angle of 38°. I chose [this 3W bulb by *greenandco*]. Note that very similar 6.5 W *Philips Master expertcolor* LED with with 420 lm turned out to be too bright in my earlier experiments. The colour temperature of the bulb should ideally be similar to the original halogen bulb, i.e. somewhere around 2700 K. In addition to mounting an LED bulb, the light of this bulb also needs to be further diffused. I used a 3mm sheet of white acrylic, specifically [*PLEXIGLAS LED white WH52 GT*](https://www.plexiglas.de/en/products/plexiglas/plexiglas-led). This specific type of acrylic by PLEXIGLAS is specifically designed to be colour-accurate for lighting applications and PLEXIGLAS themselves sell small samples for very little money. These samples are more than large enough (in fact I had to cut mine in half) for mounting in front of the MR16 bulb. Note the *WH52* indicating the level of diffusion (and light attenutation) that work well with the LED bulb I chose. The acrylic is mounted to the front of the bulb mounting bracket using double sided tape as can be seen in the photo below.
+
+<img src="images/lamphousing_internals.jpeg" align="center" width="80%"/>
 
 
 #### Camera
