@@ -39,12 +39,22 @@ The solution is to build your own scanner, an idea that I got hooked on after fi
 
 In the following, you will find a detailed description of my *8mm Film Scanner* as well as my scanning workflow, using a dual-gauge film projector and a [Raspberry Pi](https://www.raspberrypi.org) with a *HQ Camera*.
 
-Below you find a photo of my scanner, a screenshot of its web interface as well as a sample scan.
+Some of the features of this scanner include:
+ - Dual gauge scanning of both *Regular 8* and *Super 8*
+ - Up to TODO resolution (though 2K is recommended)
+ - Scanning independent from a computer, allowing for unattended scans
+ - RAW scanning workflow
+ - An easy-to-use web interface (with light and dark modes)
 
+Below you find ...
+
+ - ... a photo of the scanner
 ![Photo of the scanner](images/three_quarter.jpeg)
 
-TODO Scanning interface 
+ - ... a screenshot of the scanner's web interface
+![Web interface in light mode](images/web_interface_light.png)
 
+ - ... a video of samples scans
 TODO Sample scan.
 
 TODO Just an example video
