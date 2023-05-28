@@ -1,8 +1,8 @@
 # 8mm Film Scanner
 
-The *8mm Film Scanner* is a project to build a scanner for digitising motion picture film in both the *Regular 8* and *Super 8* gauges by converting an old projector with the help of a [Raspberry Pi](https://www.raspberrypi.org) single board computer.
+The *8mm Film Scanner* is a project to build a scanner for digitising 8mm motion picture film in both the *Regular 8* and *Super 8* gauges by converting an old projector with the help of a [Raspberry Pi](https://www.raspberrypi.org) single board computer.
 
-In this repository, I have collected all my materials on this project, including source code, information on the hardware and software design, instructions for using the software, a rundown of my scanning and editing workflow, and many more.
+In this repository, I have collected all my materials on this project, including source code, information on the hardware and software design, instructions for using the software, a rundown of my scanning and editing workflow and many more.
 
 <img src="icon.svg" align="right" width="25%"/>
 
@@ -33,25 +33,24 @@ In this repository, I have collected all my materials on this project, including
 
 I while ago, I found myself with over 800 rolls of 8mm film my grandfather had filmed throughout the 1960s, 70s and 80s. Having just digitised my grandparents' photo collection, naturally I wanted to know what was on these 8mm films and digitise them as well, so they would be safe from further deterioration and so we would actually watch them instead of always being too lazy to set up the projector.
 
-Now, the easiest way to get films like these digitised is the use of a digitisation service. But for the sheer amount of film I had, this would have cost me well over 10,000€ and with these services you never know whether you will actually get a decent quality scan. The next option was to just get out the old projector and use a video camera to record the films as they play. This is a perfectly valid option and super easy to do, but the resulting recordings usually suffer from distortion, bad colours, a lack of sharpness and quite a bit of flicker. To do the true quality of these films justice, what was really needed was a frame-by-frame scanner. You can actually buy these but the ones available are either so expensive that they only make sense for professional users (e.g. scanners by [Filmfabriek](https://filmfabriek.nl)) or they leave a lot to be desired in terms of quality (like the famed [Wolverine](https://www.wolverinedata.com/products/MovieMaker_Pro)).
+The easiest way to get films like these digitised is the use of a digitisation service. But for the sheer amount of film I had, this would have cost me well over 10,000€ and with these services you never know whether you will actually receive a decent quality scan. The next option was to get out the old projector and use a video camera to record the films as they play. This is a perfectly valid option and super easy to do, but the resulting recordings usually suffer from image distortion, bad colours, a lack of sharpness and quite a bit of flicker. To do the true quality of these films justice, what was really needed was a frame-by-frame scanner that takes an image of every single frame of the film directly off of the film itself. You can actually buy these, but the ones available are either so expensive that they only make sense for professional users (e.g. scanners by [Filmfabriek](https://filmfabriek.nl)) or they leave a lot to be desired in terms of quality (like the famed [Wolverine](https://www.wolverinedata.com/products/MovieMaker_Pro)).
 
-The solution is to build your own scanner, an idea that got hooked on after finding a [video on the AACA Library's *Mike's Movie Machine*](https://www.youtube.com/watch?v=luGacxJMZI8), which is really just an incarnation of the absolutely amazing [*Kinograph*](https://www.kinograph.cc) project. TODO [Kinograph Forums](https://forums.kinograph.cc)
+The solution is to build your own scanner, an idea that I got hooked on after finding a [video on the AACA Library's *Mike's Movie Machine*](https://www.youtube.com/watch?v=luGacxJMZI8), which is really just an incarnation of the absolutely amazing [*Kinograph*](https://www.kinograph.cc) project. The Kinograph project is accompanied by the [Kinograph Forums](https://forums.kinograph.cc), quite possibly the best community on motion picture film scanning you will find on the internet, hosting invaluable information and some incredible projects built by talented and passionate people. On scanner build project in particular that I would like to point out as they key inspiration for this project is [the build by Scott Schiller](https://youtube.com/playlist?list=PLIACRGgedheWF4xr1zxiASZ1QqJUfloQ2), who also produced an awesome video series about his scanner and his scanning workflow.
 
-In the following, you will find a detailed description of my *8mm Film Scanner* and the workflow around it. The scanner is built around an old dual-gauge film projector and a [Raspberry Pi](https://www.raspberrypi.org) single board computer.
-
-TODO more on features and capabilities, less on story and why not to do service or other scanning methods
+In the following, you will find a detailed description of my *8mm Film Scanner* as well as my scanning workflow, using a dual-gauge film projector and a [Raspberry Pi](https://www.raspberrypi.org) with a *HQ Camera*.
 
 Below you find a photo of my scanner, a screenshot of its web interface as well as a sample scan.
 
-TODO Insert photo, screenshot and sample scan.
-
-TODO Replace with nicer photo
 ![Photo of the scanner](images/three_quarter.jpeg)
+
+TODO Scanning interface 
+
+TODO Sample scan.
 
 TODO Just an example video
 <iframe width="560" height="315" src="https://www.youtube.com/embed/dQVIjNfx9Is" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code necessary to build another one.
+The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code required to build another one.
 
 
 ## Detailed technical description
