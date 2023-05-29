@@ -41,7 +41,7 @@ In the following, you will find a detailed description of my *8mm Film Scanner* 
 
 Some of the features of this scanner include:
  - Dual gauge scanning of both *Regular 8* and *Super 8*
- - Up to 3K resolution (though 2K is recommended)
+ - Up to 3K resolution (though 2K is recommended, 4K is possible with modifications)
  - Scanning independent from a computer, allowing for unattended scans
  - RAW scanning workflow
  - Support for up two 120 m (400 feet) reels
@@ -141,23 +141,19 @@ Two [mini breadboards](https://www.amazon.de/gp/product/B01M9CHKO4/ref=ppx_yo_dt
 
 #### Base plate and case
 
-![Drawing](images/engineering_drawing.png)
+To make setting up the scanner and stowing it away as easy as possible, the entire system is mounted on a base plate. The base plate also provides housing for the electronics that did not fit into the projector's housing.
+
+The entire base plate is built from 9 mm poplar plywood. For the main part of the base plate, two 9 mm sheets were glued together, giving the base a strength of 18 mm. The housing for the electronics is placed in the front left corner of the base plate. It is fully glued together. There are openings for the Raspberry Pi's ports and the power connector on its left side. A round hole on its rear side allows for wires to be passed through toward the projector housing. On the case's left side, three slits allow for cooling and a narrow slit is placed on the bottom for the camera's ribbon cable. The lid of the case is two sheets of plywood glued together, with the bottom sheet being smaller than the top one to allow the lid to sit firmly on the top of the case. For protection, all wooden parts of the base plate are painted using [edding 5200 semi gloss clear coat](https://www.edding-fachshop.de/edding-5200-Permanentspray-Klarlack-4-5200995-ar941.aspx), but other clear coats should do just fine. The image below provides dimensions for the base plate.
+
+![Drawing](images/base_plate_dimensions.png)
+
+Inside the electronics housing, all PCBs are mounted using double sided tape. The same applies to a small cooling fan mounted in the inside of the three cooling slits. This fan is strictly necessary to provide cooling to the Pi and the power supply components. I have found in tests, that with the fan and the cooling radiators installed on the Pi, the SOCs temperatures under load remain significantly lower than they do with the Pi out in the open air but without a cooling fan or radiator. The inside of the electronics housing is shown below.
 
 ![Case internals](images/case_internals.jpeg)
 
-Include construction drawings with measurements
+The projector is mounted using screws through holes. The screws are screwed through the base plate and into the holes that the projector's feet were originally screwed into. Note that this particular projector uses a special type of screw thread on the front that is 6mm in diameter and has two threads, each with twice the pitch of a standard M6 thread. I was unable to find buy a suitable screw for this, but the original foot is effectively a screw and worked just fine as such to mount the projector to the base plate. To mark the screw holes for the projector in the correct locations, a piece of paper was place on the bottom of the projector, the holes were traced and then transferred to the plywood. As the bottom of the projector is not at a perfect right angle relative to its sides and the film gate, washers were pushed under the higher side such that the projector stands mostly upright.
 
-Wooden frame and case from plywood to protect electronics and make easy to stow
-
-wooden case with lid. cooling fan on "grill" keeps Pi cooler than it would be outside
-
-PCBs mounted with double sided tape
-
-Projector mounted using mounting holes for original feet, used paper to trace over, M6 screws, spacers to deal with tilt
-
-Camera mounted on macro slider, on wooden plate for rough adjustments left and right and up and down
-
-Case is painted in Edding clear coat
+A camera mounting plate made from plywood is installed in the front left corner. It is further detailed in section TODO.
 
 
 ### Software design
