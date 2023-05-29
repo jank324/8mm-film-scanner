@@ -41,7 +41,7 @@ In the following, you will find a detailed description of my *8mm Film Scanner* 
 
 Some of the features of this scanner include:
  - Dual gauge scanning of both *Regular 8* and *Super 8*
- - Up to TODO resolution (though 2K is recommended)
+ - Up to 3K resolution (though 2K is recommended)
  - Scanning independent from a computer, allowing for unattended scans
  - RAW scanning workflow
  - Support for up two 120 m (400 feet) reels
