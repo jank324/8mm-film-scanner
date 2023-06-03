@@ -185,34 +185,58 @@ Automated e-mail notifications are implemented using a callback to the callbacks
 
 ### Scanning workflow
 
-In this section I would like to briefly go over my current scanning workflow to illustrate how the scanner may be used to produce archivable digital copies of film reels. Note that this is just what my workflow looks like now and likely to change and evolve. It also certainly is not the only way to do it and there is better ways to get the results you are looking for.
+In this section I would like to briefly go over my current scanning workflow to illustrate how the scanner may be used to produce archivable digital copies of 8mm film reels. Note that this is what my workflow looks like right now and likely to change and evolve over time. It also certainly is not the only way to do it and there probably are better ways to get the results you are looking for.
 
-Before starting the scan, I actually started by creating a list of all the film I have, giving every film a unique ID so I can identify them later. This allows be to easily track the progress of my scanning project over a long period of time and see which reels I have already scanning or what stage of post-processing I last left them in.
+Before starting to scan any of my film, I actually started by creating a list of all the film I have, giving every film a unique ID so I can identify them later. This allows me to easily track the progress of my scanning project over a long period of time and see which reels I have already scanning or what stage of post-processing I last left them in. Based on the IDs, I maintain a spreadsheet with various information on each reel. This includes their current status, which can be any one of *not digitised*, *old digitisation*, *in progress*, *scanned* and *finalised*, where *old digitisation* refers to a reel digitised with an inferior method many years ago and *finalised* means that a reel has been into a larger film project (for example of all reels from a holiday). Further, the spreadsheet contains information on where to find the physical reel, the type of film, its length and what larger project the reel belongs to. In my particular case, many of the reels were actually labeled with detailed information on their contents. I have created a text document that with typed copies of these labels and the corresponding reel ID. A screenshot of the spreadsheet is shown below.
 
-When it is time to scan a particular reel, I start by physically cleaning the film. To do this, I put the film on a film editing viewer. Then I put a few drops of TODO cleaning solution onto a lint-free cloth and spool the film onto another reel while grabbing the film with the soaked piece of cloth. It is advisable to swap the spot on the cloth every couple of meters and put on new cleaning solution as to avoid scratching the film with the dirt that came off. Once the film is completely wound over, I wind it back onto its original reel. Note that I only attach the end of the film to the original reel very loosely so it comes off the reel easily when scanning. For your average Super 8 reel this is easiest done by not putting the film into the "claw" that is supposed to hold it, but to gently place it in the slit that usually allows you the see how full the reel is. Then just wind and the film will stay in place.
+![Spreadsheet](images/spreadsheet.png)
 
-I then thread the film onto the scanner and fast-forward to the first frame that is fully visible. I then use this frame to focus the camera onto the film grain. The *Zoom* view offered by the web interface is very useful for the final focus adjustment.
+When it is time to scan a particular reel, I start by physically cleaning the film. To do this, I put the film on a film editing viewer. Then I put a few drops of TODO cleaning solution onto a lint-free cloth and spool the film onto another reel while grabbing the film with the soaked piece of cloth. It is advisable to swap the spot on the cloth every couple of meters and put on new cleaning solution as to avoid scratching the film with the dirt that came off it. Once the film is completely wound over, I wind it back onto its original reel. Note that I only attach the end of the film to the original reel very loosely so it comes off the reel easily when scanning. For your average Super 8 reel this is easiest done by not putting the film into the "claw" that is supposed to hold it, but to gently place it in the slit that usually allows you the see how full the reel is. Then just wind and the film will stay in place.
 
-For the number of frames to scan, I usually estimate the number of frames on the reel based on its length and the pitch of the film type, and then add ca. 10% to be sure to capture the entire film in one go.
+I then thread the film onto the scanner and fast-forward to the first frame that is fully visible. I use this frame to focus the camera onto the film grain. The *Zoom* view offered by the web interface is very useful for the final focus adjustment. You might need to focus back and forth a little bit, until **the grain** appears as sharp as it gets.
 
-Rather than saving the scan on the Pi's SD card, I connect an external SSD via USB. It turns out this is significantly faster than using the SD card, so much so that with the SD card, the scan may be slowed down waiting for frames to save, which does not happen at all when using an external SSD. The path I select is `/media/pi/*pathtossd*/*rheelid*/frames`.
+For the number of frames to scan, I usually estimate the number of frames on the reel based on its length and the pitch of the film type, and then add ca. 5% to be sure to capture the entire film in one go. For example, for a 15 m (50 feet) reel, I capture 3800 frames, while the reel usually actually has around 3600 frames.
 
+Rather than saving the scan on the Pi's SD card, I connect an external SSD via USB. It turns out this is significantly faster than using the SD card, so much so that with the SD card, the scan may be slowed down waiting for frames to save, which does not happen at all when using an external SSD. Note that I think for its speed, it is important to choose an SSD over a hard drive here. The path I select is `/media/pi/*path-to-ssd*/*rheel-id*/frames`.
 
+Once the scan (or multiple scans) is done, I shut down the scanner and connect the SSD to my computer. At this stage I usually like to delete the empty frames from the end of the reel to save memory and processing time in the next steps. The Pi captures images, but only attaches the raw bayer data to JPG files. Therefore, the next step is to use the `dngconverter.py` script to convert the images to `.dng` files. Note that this specifically requires version `3.4.7` of the `pidng` package. The script provides a `--delete` option to automatically delete the original JPG files once they have been converted, but I prefer to do this manually once I know the conversion was successful. The converted DNG files may appear green. This is not a problem!
 
+The next step is to import all the images into *Adobe Lightroom*. Here, we correct the white balance and the exposure, and crop into the frames, making sure to include the whole frame, not just a 4:3 crop of it. Some film stocks have changed colour or faded over time. They might required a colour correction as well. Luckily, the very common Kodachrome film stock usually retains its colours excellently. Use Lightroom's *Copy Develop Settings* feature to make sure the settings are consistent for all frames on the reel (or at the very minimum the in the scene).
 
-Scan to RAW, to SSD (because SSD faster than internal)
+TODO Describe and provide Lightroom preset
 
-Convert raw bayer data to .dng files with script and RPiDNG
+While the provided exposure correction should be just fine for properly exposed scenes, you might encounter underexposed scenes in particular. Here it might make sense to pull up the *Exposure* slider, but values of more than 2.9 usually don't reveal any more image details. Note that this is not a limitation of the image files, but of the film itself, as experiments with longer exposure times have shown. Next, the frames are exported as TIFF files. I choose 8 bit TIFFs, as the frames are already (mostly) exposure- and colour-corrected. I also turn off compression as these are only temporary files and doing so significantly reduces export times. I like to export to an `lr_export` directory right next to the original `frames` directory.
 
-Adjust colour and crop, then export to tiff
+Once the export has finished, I use *Apple Compressor* to render a video file from the exported images. Choose the little plus icon at the bottom of the Compressor window, click *Add Image Sequence*, select the `lr_export` directory with the exported frames in it and make sure to choose *Manually to* with the correct frame rate for your film gauge (16 fps for Regular 8 and 18 fps for Super 8). I export to *Apple ProRes 422* to retain quality in an intermediate format. In addition, I name my output file `*reel-id*_lr_export.mov` and save it in the same directory as the `frames` and `lr_export` directories.
 
-From tiff files render into master video file (I use Apple Compressor to ProRes)
+At this point I check the exported video file, primarily because I'm excited to see the film for the first time, but also to check for issues that might warrant a second scan before I move on.
 
-Import into Final cut, crop to 4:3 and use Neat Video to remove what I feel like might be digital noise but preserve film grain
+The next step is to fix defects and remove the gate weave from the footage in my video editing software. I use *Final Cut Pro*. 
 
-Then use Neat and if required manual work to remove dust "that I find distracting".
+**Note:** While Final Cut doesn’t officially support 18 fps projects, with a little workaround it will handle custom frame rates easily:
 
-Chose not to completely remove grain or stabilise to keep analog feel and not remove original handshake
+ 1. Create a new empty project make sure it already has the correct resolution and colour space set. You will not be able to change it later.
+ 2. With the project selected, go to *File* → *Export XML…* and save the `.xml` file somewhere.
+ 3. Open the `.xml` file and find all the `frameDuration` fields. Change them to match your desired frame rate in the format that they are currently in. A screenshot below shows an example changed to 16 fps below. Don’t forget to save the file.
+4. Now, go back into Final Cut. Select *File* → *Import* → *XML* and select the `.xml` file.
+
+You should now have a project that correctly shows that it is 16 fps (or whatever you selected). If you want to avoid having to redo this process all the time, you can simply duplicate the project when you need a new one.
+
+**A little trick here:** Duplicating with the keyboard shortcut *cmd+D* works even when the context menu item is greyed out. Only Apple knows why 🤔.
+
+TODO Add screenshot of file
+
+After importing the clip, I first crop it to the correct aspect ratio by selecting *Spatial Conform* -> *Type* -> *Fit* for the whole clip. Then I go through the clip from beginning to end and cut it at each scene change. Sometimes in analog film, frames between scene changes at overexposed or have light leaks. I like to remove these frames. I then stabilise each scene using the *SmoothCam* method. To make sure I'm only removing the gate weave but retaining original camera movement as much as possible, I turn the *Rotation Smooth* and *Scale Smooth* settings all the way to 0.0. The *Translation Smooth* setting is set to 0.33. Note that for any lower setting, Final Cut will not perform any stabilisation. In some scenes (for example when shot from a driving car) the natural shakiness of the footage overpowers the gate weave. In these cases, I will not stabilise the clip, because doing so would look over-processed and crop in too much into the original footage. Sometimes clips seems table, but Final Cut still chooses to crop in a lot. In these cases it might help to remove just a few frames from either end of the clip. This step of the process is also the right time to remove scenes with those from other scans of the same reel, if there were defects like black frames, doubled frames or large static pieces of dust in your scan.
+
+Once all of this is done, I will export the clip to *Apple ProRes 422* to `*reel-id* fixed and stabilised` and reimport it to Final Cut. This is done to reduce processing times in the next step.
+
+For the next step, I create a new project in Final Cut and add two copies of the reel stacked on top of each other. I leave the top clip untouched and apply the *NEAT Video* filter to the bottom one. In NEAT Video, I deactivate the *Spatial Filter*. The *Temporal Filter* is left activated and setup as shown below. These settings make sure to retain the grain but remove the dust. In an ideal world, I would just apply this filter to the entire clip. Unfortunately, this filter tends to produces quite unsightly artefacts from time to time. Therefore, I will go through the clip and deactivate sections of the unfiltered top clip only where there is a disturbing piece of dust, such that the bottom clip with the dust removed is visible for those frames. My goal here is not to remove all the dust, but only to remove the dust that distracts from the viewing experience. Ideally the film would look like a very clean film would have looked in its day, not entirely free of dust, but not visibly dirty either. I achieve this by watching the film once, and removing all the dust that is clearly obvious. I then watch it again, preferably in full screen, and check if any such dust remains.
+
+TODO add screenshot of final cut
+
+![NEAT Video dust removal settings](images/neat_dust_settings.png)
+
+At last, I export the final clip as `*reel-id* final`. If the reel is part of a larger project, for example from a holiday, I will combine these final video files into a Final Cut project, once all reels have been scanned.
 
 
 ### Cost
@@ -303,9 +327,9 @@ create file `notification_config.yaml` in project root directory
 Fill in the following with the details of your mail account and the mail address you want e-mails to be sent to
 
 ```yaml
-user: scanners@mail.com         # Address of the scanner's account
-password: scannerspassword123   # Password of the scanner's account
-to: your@mail.com               # Address notifications are sent to (presumably your own)
+user: scanners@mail.com           # Address of the scanner's account
+password: scanners-password-123   # Password of the scanner's account
+to: your@mail.com                 # Address notifications are sent to (presumably your own)
 ```
 
 Please remember to **NEVER** commit `notification_config.yaml` as it contains the password to the scanner's mail account which should remain secret. Under normal circumstances, this repository's `.gitignore` should already take care of this.
