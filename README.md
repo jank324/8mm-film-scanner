@@ -241,12 +241,22 @@ At last, I export the final clip as `*reel-id* final`. If the reel is part of a 
 
 ### Cost
 
-Put a table here of cost of everything
+TODO Put a table here of cost of everything
 
 
-### Future features and fixes
+### Current issues, future features and fixes
 
-Dashboard camera settings, mounting PCBs in case
+While the scanner has successfully scanned well over 50 reels over the past year already, there for remain a number of things that are not quite perfect just yet. I hope to fix these some day, but well all know that nothing survives as long as a temporary solution.
+
+ - **Dust removal workflow:** The dust removal as it is right now delivers excellent results, but it remains a lot of work. On a good day, I can currently finish the dust removal on one 15 m reel (just over 3 min) in 3-4 hours. At hundreds of reels to scan that is a very long time. Ideally, I would like a fully automatic solution. While NEAT Video is great, letting it fully do a reel without supervision does not give satisfying results. In the future, I would like to explore a neural network-based solution, similar to already existing solutions for video restoration, but less heavy-handed.
+ - **Unreliable frame advance:** Most of the time the frame advance works just fine, but every 5k - 10k frames, it either produces a black frame, a doubled frame or a frame that is partially dark. This caused by the scanner not advancing fully, either because the Hall effect sensor was missed or because the belt connecting the stepper motor to the projector's mechanism slipped at the point where the mechanism has the most resistance. Unfortunately, because there is only this one sensor, the scanner cannot detect which of the two has happened (both have happened before, but now I suspect mostly the slipping). The problem is also difficult to debug due to it occurring so rarely, yet it happens often enough to be at least a little annoying. Possible solutions include:
+    - Switching to a more reliable photo sensor. The Hall effect sensor seems to be not perfectly reliable due to its proximity to the stepper motor.
+    - Adding a second sensor. This would allow the Pi to detect what has happened and recover it reliably if possible. To mount it, I would prefer to swap the base plate in the projector for a 3D-printed one that makes all components easier to mount.
+    - Relubricating the projector's mechanisms. The projector's mechanisms may have more resistance than they should have. Adding new lubrication could fix this, but so far I have not dared to disassemble the mechanism to do this.
+    - Ensuring proper belt tension on the drive belt. I have eyeballed the belt tension when installing the stepper motor, to be similar to the original motor. A slipping belt may be fixed by doing this properly. This is, however, outside of the scope of my personal expertise.
+ - **Crashing live preview:** Sometimes the live preview goes black or freezes. This is caused by the preview thread crashing. It is easily fixed by rebooting the scanner and therefore has not been annoying enough for me to fix yet. It, too, is difficult to debug as it only happens sporadically.
+ - **Lose PCB mounts:**  All components in the Raspberry Pi case on the base plate are mounted using double sided tape. This is too lose, especially for the Pi and the USB-C PD trigger board, because they move a lot when plugging things in our pulling them out. The trigger board has actually come lose since I've mounted it. I would like to 3D-print a mounting rack that screws into the wood and holds all the components in the case firmly.
+ - **Web interface camera settings:** Adding camera settings to the web interface would be nice. I have not found the need for that yet, though, because all film stocks I have scanned so far worked with the same fixed exposure. This is actually to be expected with properly exposed films. Over- and underexposed films are easily fixed thanks to scanning in RAW format.
 
 
 ## Run the software on your own scanner
