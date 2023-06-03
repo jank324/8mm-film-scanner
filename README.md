@@ -328,7 +328,7 @@ Please remember to **NEVER** commit `notification_config.yaml` as it contains th
 
 # Contributing
 
-basically say please feel free to use and contribute by issues and pull requests
+You are welcome to contribute to this project. If you find any issues, you may create a corresponding Issue here on GitHub. Even better, if you fixed something, you may create a Pull Request.
 
 
 # Acknowledgements
