@@ -163,8 +163,11 @@ The software for this project consists of two parts: the film scanning logic tak
 
 #### Scanning operations
 
-something about the scanning, advancing, stepper motor driving and hall detection
+The scanning operations, including advancing the film and capturing frames, are handled by the `FilmScanner` class. Scanning is done by capturing the current frame, submitting it to a concurrent save method and then triggering the frame advance before repeating the process. To advance to the next frame, the stepper motor is ramped up and then run at a constant speed until the hall effect sensor was detected, at which point it is ramped down again. There is both a minimum time that has to pass before a completed frame advance may be detected as well as a timeout. If a timeout is detected before the hall effect sensor, the scanner will attempt to recover by reversing the advance mechanism until the hall effect sensor it detected and then reattempting the frame advance. Before submitting a frame for concurrent saving, the scanner might wait, if the previous frame has not finished saving yet. This prevents unsaved frames from piling up if the memory is slow for some reason.
 
+The `pigpio` package is used to interface with the Hall effect sensor, the LED light and the stepper motor. The `picamerax` package is used to interface with the HQ camera.
+
+The scanning code provides callbacks for various events, such as beginning and end of a scan, make it easy to implement various functions, e.g. the GUI or e-mail notifications, without the need to modify the actual scanning code.
 
 #### Dashboard and other user experience
 
