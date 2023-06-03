@@ -261,34 +261,23 @@ While the scanner has successfully scanned well over 50 reels over the past year
 
 ## Run the software on your own scanner
 
-Feel free to use this software on your own scanner
+You are welcome to run this software or modified versions of it on your own scanner. A prerequisite is that the hardware is setup in roughly the same way (though it does not need to be based on a projector). You will need to make sure that the GPIO connections are either on the same pins as my scanner or that you change the code according to your connections.
 
-brief instructions
+These instructions may be incomplete. Furthermore, they have not been fully tested as I only have a single scanner. Please feel free to create an Issue for any questions you might have or problems you might find.
 
-prerequisite is that electrical connections are the same
-
-advance routine might need adjusting as timed to this scanner
-
-
-### Installation
-
-Not tested because I have only one piece of hardware
-
-Ensure same connections as those described above as well as Raspberry Pi with Raspberry Pi OS installed as normal
-
-Clone repository (`Desktop`).
+Start by cloning the repository (`Desktop`)
 
 ```sh
 git clone https://github.com/jank324/8mm-film-scanner.git
 ```
 
-Install python packages
+and install the required Python packages.
 
 ```sh
 sudo python3 -m pip install -r requirements.txt
 ```
 
-Need *npm* installed.
+Then install *npm*
 
 `cd` to `frontend` directory.
 
@@ -296,27 +285,25 @@ Need *npm* installed.
 cd frontend
 ```
 
-install packages
+and its required packages.
 
 ```sh
 npm install
 ```
 
-then build frontend via
+Continue to build the frontend via
 
 ```sh
 npm run build
 ```
 
-`cd` back to the project root (`..`) then you can start the server by running
+then `cd` back to the project root (`..`) where you can start the server by running
 
 ```sh
 sudo python3 server.py
 ```
 
-You probably want to run the server on boot of the Pi ...
-
-This repository provides a *systemd* service `8mmfilmscanner.service` that runs the 8mm Film Scanner's server on boot. To set up the service, copy the `.service` file to `/etc/systemd/system` by running
+You probably want to run the server on boot of the Pi, so the scanner is ready to scan within seconds of you turning it on and without the need for you to start anything manually. To this end, this repository provides a *systemd* service `8mmfilmscanner.service` that runs the 8mm Film Scanner's server on boot. To set up the service, copy the `.service` file to `/etc/systemd/system` by running
 
 ```bash
 sudo cp 8mmfilmscanner.service /etc/systemd/system/
@@ -328,13 +315,7 @@ and then enable it via
 systemctl enable 8mmfilmscanner
 ```
 
-then to send email notifications on finished scans
-
-create mail account of your choice
-
-create file `notification_config.yaml` in project root directory
-
-Fill in the following with the details of your mail account and the mail address you want e-mails to be sent to
+In order to send email notifications on finished scans, create a mail account of your choice or use your personal account. Create a file `notification_config.yaml` in the project root directory and fill in the following with the details of your mail account and the mail address you want e-mails to be sent to.
 
 ```yaml
 user: scanners@mail.com           # Address of the scanner's account
@@ -343,10 +324,6 @@ to: your@mail.com                 # Address notifications are sent to (presumabl
 ```
 
 Please remember to **NEVER** commit `notification_config.yaml` as it contains the password to the scanner's mail account which should remain secret. Under normal circumstances, this repository's `.gitignore` should already take care of this.
-
-### How to use
-
-Type in path, click here to start scan or turn on light etc. ...
 
 
 # Contributing
