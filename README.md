@@ -242,7 +242,44 @@ At last, I export the final clip as `*reel-id* final`. If the reel is part of a 
 
 ### Cost
 
-TODO Put a table here of cost of everything
+Below is a table of all the items I used to build this scanner. Some of these I've already had, either because I bought them for an earlier project or because I was given them for some other reason. All prices are what I have actually paid or what I think they would have cost me if they were given to me. If I had to pay for shipping, this is included in the price. If I had to by multiple of the same item, even though I only needed one, I'm giving the price for the whole set. Your own milage may vary of course.
+
+| Item                                         |   Price |
+|----------------------------------------------|--------:|
+| Raspberry Pi 3B+                             |  42.00€ |
+| Micro SD card 32GB                           |   6.88€ |
+| Jumper cables                                |  11.78€ |
+| LED MR16 3W                                  |   5.99€ |
+| Relay                                        |   3.99€ |
+| Stepper Motor 1.5A                           |  10.99€ |
+| Hall effect sensor KY-024                    |   4.79€ |
+| Neodymium magnets (100 pieces)               |   6.99€ |
+| A4988 stepper driver(s)                      |   7.49€ |
+| Stepper driver parent PCB                    |   6.99€ |
+| Stepper motor mount                          |   6.97€ |
+| Belt pulley                                  |  11.16€ |
+| 50x25x6 mm acrylic sheet                     |  13.39€ |
+| Raspberry Pi HQ camera                       |  59.78€ |
+| Macro slider                                 |  32.89€ |
+| Screws                                       |       - |
+| Bolex projector                              |  10.00€ |
+| M42 to C-mount adapter                       |  39.90€ |
+| M42 to M39 adapter                           |   7.26€ |
+| Pentax extension tubes (3 pieces)            |       - |
+| Schneider Componon-S 50mm enlarger lens      |  64.99€ |
+| 45W USB-C power supply (+ USB-C power cable) |  29.99€ |
+| ZY12PDN USB-C PD trigger board               |  12.99€ |
+| Mini bread boards                            |   7.99€ |
+| Poplar plywood 120x160x0.8 cm                |  14.99€ |
+| 38x15 mm rubber feet (4 pieces)              |   4.99€ |
+| 3/8-16x1 screw(s)                            |   6.99€ |
+| PLEXIGLAS LED white WH52 GT sample           |   3.00€ |
+| Raspberry Pi cooling kit                     |   6.49€ |
+| 50 cm Raspberry Pi camera ribbon cable       |   7.99€ |
+| Old micro USB cable                          |       - |
+| LM2596S step down modules (3 pieces)         |   7.49€ |
+|----------------------------------------------|--------:|
+| Total                                        | 549.63€ | 
 
 
 ### Current issues, future features and fixes
