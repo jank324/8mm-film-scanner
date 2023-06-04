@@ -333,4 +333,4 @@ You are welcome to contribute to this project. If you find any issues, you may c
 
 # Acknowledgements
 
-Kinograph forum (and Matthew Aepler)
+First and foremost I would like to acknowledge Matthew Aepler and his Kinograph forum. The forum has been an invaluable resource for this project and is one of the best resources on motion picture film scanning out there. I would also like to acknowledge everyone who has contributed to the forum and thereby to this any many other projects. Furthermore, I would like to acknowledge Scott Schiller and his scanner build, which have been a major inspiration for the direction of this scanner build project.
