@@ -50,16 +50,14 @@ Some of the features of this scanner include:
 
 Below you find ...
 
- - ... a photo of the scanner
+ - ... a photo of the scanner (TODO replace with nice camera photo)
 ![Photo of the scanner](images/three_quarter.jpeg)
 
  - ... a screenshot of the scanner's web interface (light mode)
 ![Web interface in light mode](images/web_interface_desktop_light.png)
 
  - ... a video of samples scans
-TODO Sample scan.
-
-TODO Just an example video
+TODO Sample scan
 <iframe width="560" height="315" src="https://www.youtube.com/embed/dQVIjNfx9Is" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code required to build another one.
@@ -204,7 +202,6 @@ Once the scan (or multiple scans) is done, I shut down the scanner and connect t
 
 The next step is to import all the images into [*Adobe Lightroom*](https://lightroom.adobe.com). Here, we correct the white balance and the exposure, and crop into the frames, making sure to include the whole frame, not just a 4:3 crop of it. Some film stocks have changed colour or faded over time. They might required a colour correction as well. Luckily, the very common Kodachrome film stock usually retains its colours excellently. Use Lightroom's *Copy Develop Settings* feature to make sure the settings are consistent for all frames on the reel (or at the very minimum the in the scene).
 
-TODO Describe and provide Lightroom preset
 The `Super 8 Base (Kodachrome 1978).xmp` file provides a Lightroom preset that I always start from. It was tuned on unfaded Kodachrome stock that seems to have retained its colour just fine (it matches Kodak Ektachrome from 2022). This preset does three things: It matches the white balance to the light source, lifts the exposure to a be correct for a properly exposed film and reduces the contrast by lifting the shadows and lowering the highlights. The white balance was taken from a completely white and slightly underexposed photo of the film gate. Note that it does not perfectly match the advertised temperature of the LED, this is fine. The exposure is corrected in Lightroom instead of simply exposing one stop brighter in-camera to prevent highlights from blowing out. Pulling in the shadows and the highlights accounts for the naturally contrasty nature for positive film stocks and Kodachrome in particular.
 
 <img src="images/lightroom_preset_basic_panel.png" alt="Basic panel for the provided base Lightroom preset" width="250">
