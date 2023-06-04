@@ -53,7 +53,7 @@ Below you find ...
  - ... a photo of the scanner
 ![Photo of the scanner](images/three_quarter.jpeg)
 
- - ... a screenshot of the scanner's web interface
+ - ... a screenshot of the scanner's web interface (light mode)
 ![Web interface in light mode](images/web_interface_desktop_light.png)
 
  - ... a video of samples scans
@@ -179,7 +179,7 @@ Desktop web interface (dark mode)                                          |  Mo
 
 The web interface is implemented in `server.py` using the *Flask* package. A number of commands that can be sent to the scanner are implemented via different routes. The scanner also streams a live preview of the camera. During scanning, this preview is replaced with the most recently scanned frame.
 
-The frontend of the web interface is implemented in Javascript as a REACT app in the `frontend` directory. TailwindCSS was used for styling.
+The frontend of the web interface is implemented in Javascript as a [*React*](https://react.dev) app in the `frontend` directory. [*Tailwind CSS*](https://tailwindcss.com) was used for styling.
 
 Automated e-mail notifications are implemented using a callback to the callbacks provided by the `FilmScanner` class. These are currently set up to send an e-mail notification when a scan has finished or was aborted because of some error. Note that this requires the scanner to have either its own e-mail account or access to the user's e-mail account.
 
@@ -202,7 +202,7 @@ Rather than saving the scan on the Pi's SD card, I connect an external SSD via U
 
 Once the scan (or multiple scans) is done, I shut down the scanner and connect the SSD to my computer. At this stage I usually like to delete the empty frames from the end of the reel to save memory and processing time in the next steps. The Pi captures images, but only attaches the raw bayer data to JPG files. Therefore, the next step is to use the `dngconverter.py` script to convert the images to `.dng` files. Note that this specifically requires version `3.4.7` of the `pidng` package. The script provides a `--delete` option to automatically delete the original JPG files once they have been converted, but I prefer to do this manually once I know the conversion was successful. The converted DNG files may appear green. This is not a problem!
 
-The next step is to import all the images into *Adobe Lightroom*. Here, we correct the white balance and the exposure, and crop into the frames, making sure to include the whole frame, not just a 4:3 crop of it. Some film stocks have changed colour or faded over time. They might required a colour correction as well. Luckily, the very common Kodachrome film stock usually retains its colours excellently. Use Lightroom's *Copy Develop Settings* feature to make sure the settings are consistent for all frames on the reel (or at the very minimum the in the scene).
+The next step is to import all the images into [*Adobe Lightroom*](https://lightroom.adobe.com). Here, we correct the white balance and the exposure, and crop into the frames, making sure to include the whole frame, not just a 4:3 crop of it. Some film stocks have changed colour or faded over time. They might required a colour correction as well. Luckily, the very common Kodachrome film stock usually retains its colours excellently. Use Lightroom's *Copy Develop Settings* feature to make sure the settings are consistent for all frames on the reel (or at the very minimum the in the scene).
 
 TODO Describe and provide Lightroom preset
 
