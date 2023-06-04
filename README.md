@@ -223,7 +223,7 @@ The next step is to fix defects and remove the gate weave from the footage in my
 
 You should now have a project that correctly shows that it is 16 fps (or whatever you selected). If you want to avoid having to redo this process all the time, you can simply duplicate the project when you need a new one.
 
-**A little trick here:** Duplicating with the keyboard shortcut *cmd+D* works even when the context menu item is greyed out. Only Apple knows why 🤔.
+**A little trick here:** Duplicating with the keyboard shortcut *cmd+D* works even when the context menu item is greyed out. Only Apple know why 🤔.
 
 ![Screenshot of a 16 fps .fcpxml file](images/fcpxml_frame_rate.png)
 
