@@ -173,11 +173,9 @@ The scanning code provides callbacks for various events, such as beginning and e
 
 In order to make setting up and monitoring scans easier, the scanner provides a GUI. The goal was to make the scanner fully independent from other devices, such that a scan can be set up and then run fully unattended without even the need for a PC to be connected. To this end, a web interface was chosen. The web interface can be opened on any PC or even smartphone or tablet with a browser that is on the same network as the scanner, and it can be closed as soon as the scan is setup without interfering with the scan. Furthermore, the web interface can be reloaded at any time to check on the scan, again without interfering with the latter. Screenshots of both the desktop and mobile version of the web interface are shown below.
 
-<p>
-    <img src="images/web_interface_desktop_dark.png" alt="Desktop web interface dark mode" width="78%" align="left">
-    <img src="images/web_interface_mobile_dark.png" alt="Mobile web interface dark mode" width="22%" align="right">
-</p>
-
+Desktop web interface (dark mode)                                          |  Mobile web interface (dark mode)
+:-------------------------------------------------------------------------:|:---------------------------------:
+![Desktop web interface dark mode](images/web_interface_desktop_dark.png)  |  ![Mobile web interface dark mode](images/web_interface_mobile_dark.png)
 
 The web interface is implemented in `server.py` using the *Flask* package. A number of commands that can be sent to the scanner are implemented via different routes. The scanner also streams a live preview of the camera. During scanning, this preview is replaced with the most recently scanned frame.
 
