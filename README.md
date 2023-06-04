@@ -225,7 +225,7 @@ You should now have a project that correctly shows that it is 16 fps (or whateve
 
 **A little trick here:** Duplicating with the keyboard shortcut *cmd+D* works even when the context menu item is greyed out. Only Apple knows why 🤔.
 
-![](images/fcpxml_frame_rate.png)
+![Screenshot of a 16 fps .fcpxml file](images/fcpxml_frame_rate.png)
 
 After importing the clip, I first crop it to the correct aspect ratio by selecting *Spatial Conform* -> *Type* -> *Fit* for the whole clip. Then I go through the clip from beginning to end and cut it at each scene change. Sometimes in analog film, frames between scene changes at overexposed or have light leaks. I like to remove these frames. I then stabilise each scene using the *SmoothCam* method. To make sure I'm only removing the gate weave but retaining original camera movement as much as possible, I turn the *Rotation Smooth* and *Scale Smooth* settings all the way to 0.0. The *Translation Smooth* setting is set to 0.33. Note that for any lower setting, Final Cut will not perform any stabilisation. In some scenes (for example when shot from a driving car) the natural shakiness of the footage overpowers the gate weave. In these cases, I will not stabilise the clip, because doing so would look over-processed and crop in too much into the original footage. Sometimes clips seems table, but Final Cut still chooses to crop in a lot. In these cases it might help to remove just a few frames from either end of the clip. This step of the process is also the right time to remove scenes with those from other scans of the same reel, if there were defects like black frames, doubled frames or large static pieces of dust in your scan.
 
