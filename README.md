@@ -58,6 +58,7 @@ Below you find ...
   ![Web interface in light mode](images/web_interface_desktop_light.png)
 
 - ... a video of samples scan
+
   https://github.com/jank324/8mm-film-scanner/assets/17012833/c2678d32-6c46-42dd-8214-09e97e9141f0
 
 The rest of this README is intended as a documentation of every detail and lesson learned about my scanner. The goal here is to provide all the information and source code required to build another one.
