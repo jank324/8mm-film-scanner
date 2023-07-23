@@ -4,6 +4,8 @@ The _8mm Film Scanner_ is a project to build a scanner for digitising 8mm motion
 
 In this repository, I have collected all my materials on this project, including source code, information on the hardware and software design, instructions for using the software, a rundown of my scanning and editing workflow and many more.
 
+You might also want to check out my [post about this scanner over on the *Kinograph* fourms](https://forums.kinograph.cc/t/8mm-film-scanner-my-build/2574).
+
 <img src="icon.svg" align="right" width="25%"/>
 
 ### Table of contents
