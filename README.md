@@ -57,7 +57,7 @@ Below you find ...
 - ... a screenshot of the scanner's web interface (light mode)
   ![Web interface in light mode](images/web_interface_desktop_light.png)
 
-- ... a video of samples scan
+- ... a video of sample scans
 
   https://github.com/jank324/8mm-film-scanner/assets/17012833/1bc203a3-f0e7-4aa9-b80b-c313283cab2c
 
