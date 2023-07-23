@@ -8,6 +8,7 @@ notification_config.yaml
 *.fcpbundle
 *.fcpxml
 *.jpg
+*.jpeg
 *.log
 *.m4v
 *.pdf

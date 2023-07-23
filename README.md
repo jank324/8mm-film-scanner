@@ -51,8 +51,8 @@ Some of the features of this scanner include:
 
 Below you find ...
 
-- ... a photo of the scanner (TODO replace with nice camera photo)
-  ![Photo of the scanner](images/three_quarter.jpeg)
+- ... a photo of the scanner
+  ![Photo of the scanner](images/DSC00783-Edit.jpg)
 
 - ... a screenshot of the scanner's web interface (light mode)
   ![Web interface in light mode](images/web_interface_desktop_light.png)
